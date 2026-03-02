@@ -185,6 +185,21 @@ serve(async (req) => {
       if (agentData) vs = agentData;
     }
 
+    // --- Lead History & Recognition ---
+    let leadRecognitionNote = "";
+    if (lead_id) {
+      const { count: msgCount } = await supabase
+        .from("vox_messages")
+        .select("*", { count: "exact", head: true })
+        .eq("lead_id", lead_id);
+
+      if (msgCount && msgCount > 10) {
+        leadRecognitionNote = "\n[NOTA: Este é um lead recorrente e já conversou bastante. Seja mais informal e acolhedor.]";
+      } else if (msgCount && msgCount > 0) {
+        leadRecognitionNote = "\n[NOTA: O lead retornou para continuar a conversa. Retome do ponto onde pararam.]";
+      }
+    }
+
     // Fallback to user-level vox_settings
     if (!vs) {
       const { data: voxSettings } = await supabase
@@ -227,21 +242,40 @@ serve(async (req) => {
           : ""
       ).toLowerCase();
 
-      // Simple keyword matching for RAG
-      const filteredEntries = knowledgeEntries.filter((entry: any) => {
-        const titleMatch = entry.title.toLowerCase().split(" ").some((word: string) => word.length > 3 && userText.includes(word));
-        const catMatch = entry.category.toLowerCase().split(" ").some((word: string) => word.length > 3 && userText.includes(word));
-        const contentMatch = entry.content.toLowerCase().split(" ").some((word: string) => word.length > 4 && userText.includes(word));
-        return titleMatch || catMatch || contentMatch || entry.category === "geral"; // Always include general
+      // RAG 2.0: Matrix-based relevance scoring
+      const scoredEntries = knowledgeEntries.map((entry: any) => {
+        let score = 0;
+        const searchTerms = userText.split(/\s+/).filter(t => t.length > 3);
+
+        // Title match (High priority)
+        searchTerms.forEach(term => {
+          if (entry.title.toLowerCase().includes(term)) score += 5;
+        });
+
+        // Category match (Medium priority)
+        if (entry.category.toLowerCase().split(" ").some((t: string) => userText.includes(t))) score += 3;
+
+        // Content match (Base priority)
+        searchTerms.forEach((term: string) => {
+          if (entry.content.toLowerCase().includes(term)) score += 1;
+        });
+
+        // Always boost general content slightly if there's any match
+        if (score > 0 && entry.category === "geral") score += 2;
+
+        return { ...entry, score };
       });
 
-      // If no match found, take top 5 entries to avoid missing context entirely
-      const entriesToUse = filteredEntries.length > 0 ? filteredEntries : knowledgeEntries.slice(0, 5);
+      // Filter and sort by score
+      const usefulEntries = scoredEntries
+        .filter((e: any) => e.score > 0 || e.category === "geral")
+        .sort((a: any, b: any) => b.score - a.score)
+        .slice(0, 5);
 
-      knowledgeContext = "\n\nBASE DE CONHECIMENTO (CONTEXTO RELEVANTE):\n" +
-        entriesToUse.map((e: any) =>
-          `[${e.category.toUpperCase()}] ${e.title}:\n${e.content}`
-        ).join("\n\n");
+      knowledgeContext = "\n\nBASE DE CONHECIMENTO (CONTEXTO SELECIONADO):\n" +
+        usefulEntries.map((e: any) =>
+          `[FONTE: ${e.title}] (${e.category})\n${e.content}`
+        ).join("\n---\n");
     }
 
     // --- Build System Prompt ---
@@ -276,13 +310,42 @@ ANÁLISE DE IMAGENS E DOCUMENTOS:
       ? customPrompt + interactiveInstructions
       : `Você é ${aiName}, um assistente de IA amigável e profissional. Você ajuda leads a tirar dúvidas, agendar consultas e conhecer os serviços oferecidos. Seja conciso, educado e focado em converter leads em clientes. Sempre responda em português brasileiro.
 
-REGRAS IMPORTANTES:
-- Seja natural e humano, não robótico
-- Faça perguntas para qualificar o lead (interesse, orçamento, urgência)
-- Se o lead pedir atendimento humano, diga que vai transferir
-- Não invente informações que não tenha` + interactiveInstructions;
+ESTRUTURA DE PENSAMENTO (CHAIN OF THOUGHT):
+1. ATENÇÃO: Identifique a intenção do usuário e se ele é um cliente recorrente.
+2. CONTEXTO: Use a Base de Conhecimento fornecida para responder com precisão.
+3. CONVERSÃO: Se o lead demonstrar interesse real, use 'show_form' para capturar dados ou 'show_quick_replies' para agendar.
 
-    const systemPrompt = basePrompt + knowledgeContext;
+REGRAS IMPORTANTES:
+- Seja natural e humano, não robótico.
+- Se o histórico de mensagens for longo, reconheça que já estão conversando há algum tempo.
+- Se o lead pedir atendimento humano, utilize o tom de transição suave.
+- Nunca invente informações fora da Base de Conhecimento.` + interactiveInstructions;
+
+    const systemPrompt = basePrompt + knowledgeContext + leadRecognitionNote;
+
+    // --- Dynamic Lead Scoring (Initial Heuristics) ---
+    if (lead_id) {
+      const lastUserMsg = messages[messages.length - 1];
+      const userText = (typeof lastUserMsg?.content === "string" ? lastUserMsg.content : "").toLowerCase();
+
+      let scoreBoost = 0;
+      if (userText.includes("@")) scoreBoost += 20;
+      if (userText.match(/\d{8,}/)) scoreBoost += 20; // Possible phone
+      if (userText.includes("preço") || userText.includes("valor") || userText.includes("quanto")) scoreBoost += 10;
+      if (userText.includes("comprar") || userText.includes("contratar") || userText.includes("agendar")) scoreBoost += 30;
+
+      if (scoreBoost > 0) {
+        // We get current score first
+        const { data: currentLead } = await supabase.from("vox_leads").select("qualification_score").eq("id", lead_id).single();
+        const newScore = Math.min((currentLead?.qualification_score || 0) + scoreBoost, 100);
+
+        await supabase.from("vox_leads").update({
+          qualification_score: newScore,
+          status: newScore > 70 ? "Quente" : newScore > 30 ? "Morno" : "Frio",
+          updated_at: new Date().toISOString()
+        } as any).eq("id", lead_id);
+      }
+    }
 
     // --- Save User Message ---
     if (lead_id) {
