@@ -551,7 +551,8 @@ const PublicChat = () => {
 
       if (!response.ok) {
         const err = await response.json();
-        throw new Error(err.error || "Erro ao conectar com o servidor.");
+        const errorMessage = err.error || `Erro ${response.status}: Falha na comunicação com a IA.`;
+        throw new Error(errorMessage);
       }
 
       const reader = response.body!.getReader();
@@ -575,12 +576,12 @@ const PublicChat = () => {
 
           try {
             const json = JSON.parse(dataStr);
-            
+
             // Handle regular text content delta
             if (json.choices?.[0]?.delta?.content) {
               const content = json.choices[0].delta.content;
               streamContentRef.current += content;
-              
+
               if (!assistantMsgAdded) {
                 setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: "", timestamp: new Date() }]);
                 assistantMsgAdded = true;

@@ -341,11 +341,32 @@ REGRAS IMPORTANTES:
     console.log(`[vox-chat] OpenRouter response status: ${response.status}`);
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("OpenRouter error:", response.status, errorText);
+      let errorMsg = `OpenRouter API error: ${response.status}`;
+      try {
+        const errorJson = await response.json();
+        if (errorJson.error?.message) {
+          errorMsg = errorJson.error.message;
+        }
+      } catch (e) {
+        // Se não for JSON, tenta pegar como texto
+        try {
+          const errorText = await response.text();
+          if (errorText) errorMsg = errorText;
+        } catch (e2) { }
+      }
+
+      console.error(`[vox-chat] Error from OpenRouter:`, errorMsg);
+
+      // Sugestão amigável para erro 429 comum no OpenRouter
+      if (response.status === 429 && errorMsg.toLowerCase().includes("credit")) {
+        errorMsg = "Créditos insuficientes no OpenRouter. Por favor, recarregue sua conta para continuar usando o chat.";
+      } else if (response.status === 429) {
+        errorMsg = "Limite de requisições atingido no OpenRouter ou modelo congestionado. Tente novamente em alguns instantes ou troque o modelo no painel admin.";
+      }
+
       return new Response(
-        JSON.stringify({ error: `OpenRouter API error: ${response.status}` }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: errorMsg }),
+        { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
