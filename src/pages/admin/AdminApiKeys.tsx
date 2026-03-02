@@ -37,38 +37,66 @@ const AdminApiKeys = () => {
 
   const handleSave = async () => {
     if (!user) return;
-    setSaving(true);
-
-    const upserts = [
-      {
-        key: "openrouter_api_key",
-        value: openrouterKey,
-        description: "Chave API do OpenRouter para o chat IA",
-        updated_at: new Date().toISOString(),
-        updated_by: user.id,
-      },
-      {
-        key: "openrouter_model",
-        value: openrouterModel,
-        description: "Modelo padrão do OpenRouter",
-        updated_at: new Date().toISOString(),
-        updated_by: user.id,
-      },
-    ];
-
-    for (const row of upserts) {
-      const { error } = await supabase
-        .from("system_settings")
-        .upsert(row as any, { onConflict: "key" });
-      if (error) {
-        toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
-        setSaving(false);
-        return;
-      }
+    
+    // Basic validation
+    if (!openrouterKey.trim()) {
+      toast({ 
+        title: "Campo obrigatório", 
+        description: "A chave API não pode estar vazia.", 
+        variant: "destructive" 
+      });
+      return;
     }
 
-    setSaving(false);
-    toast({ title: "Configurações de API salvas!" });
+    if (!openrouterKey.startsWith("sk-or-")) {
+      toast({ 
+        title: "Aviso de formato", 
+        description: "A chave geralmente começa com 'sk-or-'. Verifique se colou corretamente.", 
+        variant: "destructive" 
+      });
+    }
+
+    setSaving(true);
+    try {
+      const upserts = [
+        {
+          key: "openrouter_api_key",
+          value: openrouterKey.trim(),
+          description: "Chave API do OpenRouter para o chat IA",
+          updated_at: new Date().toISOString(),
+          updated_by: user.id,
+        },
+        {
+          key: "openrouter_model",
+          value: openrouterModel.trim() || "qwen/qwen-2.5-72b-instruct",
+          description: "Modelo padrão do OpenRouter",
+          updated_at: new Date().toISOString(),
+          updated_by: user.id,
+        },
+      ];
+
+      for (const row of upserts) {
+        const { error } = await supabase
+          .from("system_settings")
+          .upsert(row as any, { onConflict: "key" });
+        
+        if (error) throw error;
+      }
+
+      toast({ 
+        title: "Configurações salvas", 
+        description: "As chaves API foram atualizadas com sucesso e estão seguras no servidor." 
+      });
+    } catch (error: any) {
+      console.error("Erro ao salvar configurações:", error);
+      toast({ 
+        title: "Erro ao salvar", 
+        description: error.message || "Ocorreu um erro inesperado ao salvar no banco de dados.", 
+        variant: "destructive" 
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {

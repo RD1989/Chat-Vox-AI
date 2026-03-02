@@ -130,13 +130,44 @@ serve(async (req) => {
       .in("key", settingsKeys);
 
     const apiKey = settings?.find((s: any) => s.key === "openrouter_api_key")?.value;
-    const model = settings?.find((s: any) => s.key === "openrouter_model")?.value || "google/gemini-3.1-flash-image-preview";
-    const visionModel = settings?.find((s: any) => s.key === "vision_model")?.value || "google/gemini-3.1-flash-image-preview";
+    const model = settings?.find((s: any) => s.key === "openrouter_model")?.value || "google/gemini-2.0-flash-001";
+    const visionModel = settings?.find((s: any) => s.key === "vision_model")?.value || "google/gemini-2.0-flash-001";
 
     if (!apiKey) {
       return new Response(
         JSON.stringify({ error: "OpenRouter API key not configured." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // --- Check User Plan and Limits (SAS PROFITABILITY) ---
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("plan")
+      .eq("id", user_id)
+      .single();
+
+    const currentPlan = profile?.plan || "free";
+
+    // Fetch plan limits
+    const { data: planLimits } = await supabase
+      .from("plans")
+      .select("*")
+      .eq("slug", currentPlan)
+      .single();
+
+    // Count leads
+    const { count: leadCount } = await supabase
+      .from("vox_leads")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user_id);
+
+    const limitReached = planLimits?.lead_limit !== null && (leadCount || 0) >= planLimits.lead_limit;
+
+    if (limitReached) {
+      return new Response(
+        JSON.stringify({ error: "Limite de leads atingido para o plano " + currentPlan + ". Faça upgrade para continuar capturando." }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -273,7 +304,14 @@ REGRAS IMPORTANTES:
     const hasImages = messages.some((m: any) =>
       Array.isArray(m.content) && m.content.some((c: any) => c.type === "image_url")
     );
-    const selectedModel = hasImages ? visionModel : model;
+
+    // Model Selection logic based on Plan (Financial Protection)
+    let selectedModel = hasImages ? visionModel : model;
+
+    // Free and Starter plans are RESTRICTED to Flash models (lowest cost, highest margin)
+    if (currentPlan === "free" || currentPlan === "starter") {
+      selectedModel = "google/gemini-2.0-flash-001";
+    }
 
     // --- Call OpenRouter ---
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
