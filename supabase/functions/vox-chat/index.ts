@@ -82,6 +82,7 @@ serve(async (req) => {
 
   try {
     const { messages, user_id, lead_id, agent_id } = await req.json();
+    console.log(`[vox-chat] Request starting: user=${user_id}, lead=${lead_id}, agent=${agent_id}`);
 
     if (!messages || !Array.isArray(messages) || !user_id) {
       return new Response(
@@ -134,11 +135,13 @@ serve(async (req) => {
     const visionModel = settings?.find((s: any) => s.key === "vision_model")?.value || "google/gemini-2.0-flash-001";
 
     if (!apiKey) {
+      console.error("[vox-chat] API Key missing in system_settings");
       return new Response(
         JSON.stringify({ error: "OpenRouter API key not configured." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    console.log(`[vox-chat] Using model: ${model}, Vision: ${visionModel}`);
 
     // --- Check User Plan and Limits (SAS PROFITABILITY) ---
     const { data: profile } = await supabase
@@ -312,6 +315,7 @@ REGRAS IMPORTANTES:
     if (currentPlan === "free" || currentPlan === "starter") {
       selectedModel = "google/gemini-2.0-flash-001";
     }
+    console.log(`[vox-chat] Final model selected: ${selectedModel} (Plan: ${currentPlan})`);
 
     // --- Call OpenRouter ---
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -333,6 +337,8 @@ REGRAS IMPORTANTES:
         max_tokens: 1024,
       }),
     });
+
+    console.log(`[vox-chat] OpenRouter response status: ${response.status}`);
 
     if (!response.ok) {
       const errorText = await response.text();
