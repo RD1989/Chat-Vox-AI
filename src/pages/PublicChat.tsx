@@ -521,62 +521,7 @@ const PublicChat = () => {
     streamContentRef.current = "";
 
     try {
-      // 1. Fetch System Settings (API Key & Models)
-      const { data: settings } = await supabase
-        .from("system_settings")
-        .select("key, value")
-        .in("key", ["openrouter_api_key", "openrouter_model", "vision_model"]);
-
-      const apiKey = settings?.find((s: any) => s.key === "openrouter_api_key")?.value;
-      const model = settings?.find((s: any) => s.key === "openrouter_model")?.value || "google/gemini-2.0-flash-001";
-      const visionModel = settings?.find((s: any) => s.key === "vision_model")?.value || "google/gemini-2.0-flash-001";
-
-      if (!apiKey) throw new Error("API do OpenRouter não configurada. Verifique as chaves no painel admin.");
-
-      // 2. Check Plan & Limits
-      const { data: profile } = await supabase.from("profiles").select("plan").eq("id", userId).single();
-      const currentPlan = profile?.plan || "free";
-
-      const { data: planLimits } = await supabase.from("plans").select("lead_limit").eq("slug", currentPlan).single();
-
-      const { count: leadCount } = await supabase.from("vox_leads").select("*", { count: "exact", head: true }).eq("user_id", userId);
-
-      if (planLimits?.lead_limit !== null && (leadCount || 0) >= (planLimits?.lead_limit || 0)) {
-        throw new Error(`Limite de leads atingido para o plano ${currentPlan}. Faça upgrade para continuar.`);
-      }
-
-      // 3. Knowledge Base Search (Simple RAG)
-      let knowledgeContext = "";
-      if (knowledgeBase) {
-        const userTerms = text.toLowerCase().split(" ").filter(t => t.length > 3);
-        const kbLines = knowledgeBase.split("\n\n");
-        const relevantLines = kbLines.filter(line =>
-          userTerms.some(term => line.toLowerCase().includes(term))
-        ).slice(0, 5);
-
-        if (relevantLines.length > 0) {
-          knowledgeContext = "\n\nCONTEXTO DO NEGÓCIO:\n" + relevantLines.join("\n\n");
-        }
-      }
-
-      // 4. Build System Prompt & Messages
-      const systemPrompt = `
-${systemPromptBase || `Você é ${config.ai_name}, um especialista em atendimento.`}
-${knowledgeContext}
-
-DIRETRIZES DE ATENDIMENTO:
-1. Aja de forma HUMANA e EMPÁTICA.
-2. Seja direto e use emojis estratégicos.
-3. Use show_quick_replies para opções (fallback via markdown list).
-4. Use show_form para capturar dados (email, whatsapp).
-5. NUNCA diga que é uma IA.
-
-FERRAMENTAS (Mapeamento Interno):
-Você pode sugerir o uso de botões usando o formato de lista:
-- Opção 1
-- Opção 2
-`.trim();
-
+      // Build messages history including images if present
       const buildContent = (content: string, imgs?: string[]) => {
         if (imgs && imgs.length > 0) {
           const parts: any[] = [];
@@ -590,36 +535,25 @@ Você pode sugerir o uso de botões usando o formato de lista:
       const history = [...messages.filter(m => m.id !== "welcome").map(m => ({
         role: m.role,
         content: buildContent(m.content, m.imageUrls),
-      })), { role: "user" as const, content: buildContent(text, imageUrls) }].slice(-10);
+      })), { role: "user" as const, content: buildContent(text, imageUrls) }].slice(-12);
 
-      // 5. Select Model
-      let selectedModel = (imageUrls && imageUrls.length > 0) ? visionModel : model;
-      if (currentPlan === "free" || currentPlan === "starter") {
-        selectedModel = "google/gemini-2.0-flash-001";
-      }
-
-      // 6. Call OpenRouter
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      // Call vox-chat Edge Function with SSE support
+      const response = await fetch(CHAT_URL, {
         method: "POST",
-        headers: {
-          "Authorization": `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          "X-Title": "ChatVox AI",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: selectedModel,
-          messages: [{ role: "system", content: systemPrompt }, ...history],
-          stream: true,
-          max_tokens: 1024,
+          messages: history,
+          user_id: userId,
+          lead_id: leadId,
+          agent_id: agentId
         }),
       });
 
       if (!response.ok) {
         const err = await response.json();
-        throw new Error(err.error?.message || "Erro na API do OpenRouter");
+        throw new Error(err.error || "Erro ao conectar com o servidor.");
       }
 
-      // 7. Stream Handling
       const reader = response.body!.getReader();
       const decoder = new TextDecoder();
       let assistantMsgAdded = false;
@@ -633,17 +567,20 @@ Você pode sugerir o uso de botões usando o formato de lista:
         if (done) break;
 
         const chunk = decoder.decode(value);
-        const lines = chunk.split("\n").filter(l => l.startsWith("data: "));
+        const lines = chunk.split("\n").filter(l => l.trim().startsWith("data: "));
 
         for (const line of lines) {
-          const data = line.replace("data: ", "").trim();
-          if (data === "[DONE]") break;
+          const dataStr = line.replace("data: ", "").trim();
+          if (dataStr === "[DONE]") break;
 
           try {
-            const json = JSON.parse(data);
-            const content = json.choices[0]?.delta?.content || "";
-            if (content) {
+            const json = JSON.parse(dataStr);
+            
+            // Handle regular text content delta
+            if (json.choices?.[0]?.delta?.content) {
+              const content = json.choices[0].delta.content;
               streamContentRef.current += content;
+              
               if (!assistantMsgAdded) {
                 setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: "", timestamp: new Date() }]);
                 assistantMsgAdded = true;
@@ -653,55 +590,28 @@ Você pode sugerir o uso de botões usando o formato de lista:
                 m.id === assistantId ? { ...m, content: streamContentRef.current } : m
               ));
             }
-          } catch (e) { }
-        }
-      }
 
-      // 8. Post-process (Interactive Buttons Fallback)
-      const current = streamContentRef.current;
-      const parsedOptions = parseTextToInteractiveOptions(current);
-      if (parsedOptions.hasList) {
-        setMessages(prev => prev.map(m =>
-          m.id === assistantId ? {
-            ...m,
-            content: parsedOptions.cleanText,
-            injectedInteractive: {
-              type: "show_quick_replies",
-              data: { message: "Escolha uma opção:", buttons: parsedOptions.buttons }
+            // Handle interactive elements (buttons/forms) sent as special SSE events
+            if (json.type === "interactive") {
+              if (!assistantMsgAdded) {
+                setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: "", timestamp: new Date() }]);
+                assistantMsgAdded = true;
+              }
+
+              setMessages(prev => prev.map(m =>
+                m.id === assistantId ? {
+                  ...m,
+                  interactive: {
+                    type: json.interactive_type as any,
+                    data: json.data,
+                    answered: false
+                  }
+                } : m
+              ));
             }
-          } : m
-        ));
-      }
-
-      // 9. Save Messages to Supabase
-      if (leadId) {
-        // User message
-        await supabase.from("vox_messages").insert({
-          user_id: userId,
-          lead_id: leadId,
-          role: "user",
-          content: text || "📎 Anexo",
-          message_type: imageUrls ? "image" : "text",
-          metadata: imageUrls ? { image_urls: imageUrls } : null,
-        });
-
-        // Assistant message
-        await supabase.from("vox_messages").insert({
-          user_id: userId,
-          lead_id: leadId,
-          role: "assistant",
-          content: streamContentRef.current,
-          message_type: "text"
-        });
-
-        // Simple Lead Qualification
-        const { count } = await supabase.from("vox_messages").select("*", { count: "exact" }).eq("lead_id", leadId);
-        if (count && count >= 4) {
-          await supabase.from("vox_leads").update({
-            status: "qualificado",
-            qualified: true,
-            qualification_score: 70
-          }).eq("id", leadId);
+          } catch (e) {
+            // Ignore partial JSON chunks during streaming
+          }
         }
       }
 
