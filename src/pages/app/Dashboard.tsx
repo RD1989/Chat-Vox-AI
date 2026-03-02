@@ -14,6 +14,7 @@ import TopCities from "@/components/dashboard/TopCities";
 import RecentLeads from "@/components/dashboard/RecentLeads";
 import UtmRoiPanel from "@/components/dashboard/UtmRoiPanel";
 import EngagementBySource from "@/components/dashboard/EngagementBySource";
+import RoiThermometer from "@/components/dashboard/RoiThermometer";
 
 interface DashboardStats {
   totalLeads: number;
@@ -206,7 +207,14 @@ const Dashboard = () => {
   return (
     <div className="space-y-8 max-w-7xl">
       <DashboardHeader plan={plan} />
-      <StatCardsGrid cards={statCards} />
+
+      {/* Top Value Section: Stats + ROI Thermometer */}
+      <div className="grid grid-cols-12 gap-8">
+        <div className="col-span-12 md:col-span-8">
+          <StatCardsGrid cards={statCards} />
+        </div>
+        <RoiThermometer qualifiedLeads={stats.qualified} avgScore={stats.avgScore} />
+      </div>
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
