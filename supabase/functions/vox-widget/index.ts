@@ -20,23 +20,30 @@ serve(async (req) => {
     });
   }
 
+  const agentId = url.searchParams.get("agent");
+
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const chatUrl = `${supabaseUrl.replace('.supabase.co', '.supabase.co')}/functions/v1/vox-chat`;
 
   // The widget JS creates an iframe pointing to the hosted chat page
   // This is the simplest and most maintainable approach
   const projectUrl = url.origin.replace("/functions/v1/vox-widget", "");
-  
+
   const widgetJS = `
 (function() {
   if (window.__voxWidgetLoaded) return;
   window.__voxWidgetLoaded = true;
 
   var userId = "${userId}";
+  var agentId = "${agentId || ""}";
   var chatOrigin = "${supabaseUrl}";
   
-  // Fetch settings
-  fetch(chatOrigin + "/rest/v1/vox_settings?user_id=eq." + userId + "&select=primary_color,widget_position,widget_trigger_seconds,widget_trigger_scroll,ai_name,ai_avatar_url", {
+  // Fetch settings (Agent specific or Global)
+  var settingsUrl = agentId 
+    ? chatOrigin + "/rest/v1/vox_agents?id=eq." + agentId + "&select=primary_color,widget_position,widget_trigger_seconds,widget_trigger_scroll,name,ai_avatar_url"
+    : chatOrigin + "/rest/v1/vox_settings?user_id=eq." + userId + "&select=primary_color,widget_position,widget_trigger_seconds,widget_trigger_scroll,ai_name,ai_avatar_url";
+
+  fetch(settingsUrl, {
     headers: { "apikey": "${Deno.env.get("SUPABASE_ANON_KEY")}", "Content-Type": "application/json" }
   })
   .then(function(r) { return r.json(); })
@@ -46,7 +53,7 @@ serve(async (req) => {
     var position = s.widget_position || "bottom-right";
     var triggerSeconds = s.widget_trigger_seconds || 0;
     var triggerScroll = s.widget_trigger_scroll || 0;
-    var aiName = s.ai_name || "Vox";
+    var aiName = s.ai_name || s.name || "Vox";
     var isRight = position === "bottom-right";
 
     // Create toggle button
@@ -71,14 +78,17 @@ serve(async (req) => {
     // Try using the published app URL from the script src
     var scripts = document.getElementsByTagName("script");
     for (var i = 0; i < scripts.length; i++) {
-      var dataSrc = scripts[i].getAttribute("data-vox-id");
+      var dataId = scripts[i].getAttribute("data-vox-id");
+      var dataAgent = scripts[i].getAttribute("data-vox-agent-id");
       var src = scripts[i].src || "";
-      if (dataSrc === userId && src.indexOf("vox-widget") > -1) {
-        var srcUrl = new URL(src);
-        // The chat page lives on the app's domain
+      if (dataId === userId && src.indexOf("vox-widget") > -1) {
+        if (dataAgent) {
+          agentId = dataAgent;
+          chatPageUrl += "?agent=" + agentId;
+        }
         var appOriginAttr = scripts[i].getAttribute("data-vox-origin");
         if (appOriginAttr) {
-          chatPageUrl = appOriginAttr + "/chat/" + userId;
+          chatPageUrl = appOriginAttr + "/chat/" + userId + (agentId ? "?agent=" + agentId : "");
         }
         break;
       }
@@ -86,9 +96,11 @@ serve(async (req) => {
 
     // Pass UTM params
     var utmKeys = ["utm_source", "utm_medium", "utm_campaign"];
-    var chatParams = new URLSearchParams();
+    var chatParams = new URLSearchParams(chatPageUrl.split("?")[1] || "");
     utmKeys.forEach(function(k) { var v = params.get(k); if (v) chatParams.set(k, v); });
-    if (chatParams.toString()) chatPageUrl += "?" + chatParams.toString();
+    
+    var baseUrl = chatPageUrl.split("?")[0];
+    if (chatParams.toString()) chatPageUrl = baseUrl + "?" + chatParams.toString();
 
     iframe.src = chatPageUrl;
     iframe.style.cssText = "width:100%;height:100%;border:none;";
@@ -96,12 +108,17 @@ serve(async (req) => {
     container.appendChild(iframe);
 
     var isOpen = false;
-    function toggle() {
+    function toggle(isAuto) {
       isOpen = !isOpen;
       if (isOpen) {
         container.style.display = "block";
         setTimeout(function() { container.style.opacity = "1"; container.style.transform = "translateY(0)"; }, 10);
         btn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+        
+        // If it was an auto-trigger, we can notify the iframe
+        if (isAuto && iframe.contentWindow) {
+          iframe.contentWindow.postMessage({ type: 'vox-trigger-active' }, '*');
+        }
       } else {
         container.style.opacity = "0";
         container.style.transform = "translateY(10px)";
@@ -109,14 +126,14 @@ serve(async (req) => {
         btn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>';
       }
     }
-    btn.onclick = toggle;
+    btn.onclick = function() { toggle(false); };
 
     document.body.appendChild(container);
     document.body.appendChild(btn);
 
     // Auto-open triggers
     if (triggerSeconds > 0) {
-      setTimeout(function() { if (!isOpen) toggle(); }, triggerSeconds * 1000);
+      setTimeout(function() { if (!isOpen) toggle(true); }, triggerSeconds * 1000);
     }
     if (triggerScroll > 0) {
       var scrollTriggered = false;
@@ -125,7 +142,7 @@ serve(async (req) => {
         var scrollPercent = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
         if (scrollPercent >= triggerScroll) {
           scrollTriggered = true;
-          toggle();
+          toggle(true);
         }
       });
     }

@@ -21,24 +21,34 @@ interface KnowledgeEntry {
 
 interface KnowledgeBaseProps {
   userId: string;
+  agentId?: string;
 }
 
 const CATEGORIES = ["geral", "serviços", "preços", "horários", "FAQ", "políticas"];
 
-export const KnowledgeBase = ({ userId }: KnowledgeBaseProps) => {
+export const KnowledgeBase = ({ userId, agentId }: KnowledgeBaseProps) => {
   const [entries, setEntries] = useState<KnowledgeEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [crawling, setCrawling] = useState(false);
+  const [crawlUrl, setCrawlUrl] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ title: "", content: "", category: "geral" });
 
   const fetchEntries = async () => {
-    const { data } = await supabase
+    let query = supabase
       .from("vox_knowledge" as any)
       .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
+      .eq("user_id", userId);
+
+    if (agentId) {
+      query = query.eq("agent_id", agentId);
+    } else {
+      query = query.is("agent_id", null);
+    }
+
+    const { data } = await query.order("created_at", { ascending: false });
     if (data) setEntries(data as unknown as KnowledgeEntry[]);
     setLoading(false);
   };
@@ -67,7 +77,7 @@ export const KnowledgeBase = ({ userId }: KnowledgeBaseProps) => {
     } else {
       const { error } = await supabase
         .from("vox_knowledge" as any)
-        .insert({ user_id: userId, title: form.title, content: form.content, category: form.category } as any);
+        .insert({ user_id: userId, agent_id: agentId || null, title: form.title, content: form.content, category: form.category } as any);
       if (error) {
         toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
       } else {
@@ -80,6 +90,24 @@ export const KnowledgeBase = ({ userId }: KnowledgeBaseProps) => {
     setShowForm(false);
     setEditingId(null);
     fetchEntries();
+  };
+
+  const handleCrawl = async () => {
+    if (!crawlUrl.trim()) return;
+    setCrawling(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('vox-crawler', {
+        body: { url: crawlUrl, user_id: userId, agent_id: agentId }
+      });
+      if (error) throw error;
+      toast({ title: "Crawl concluído!", description: "O conhecimento foi extraído e adicionado." });
+      setCrawlUrl("");
+      fetchEntries();
+    } catch (e: any) {
+      toast({ title: "Erro no Crawl", description: e.message, variant: "destructive" });
+    } finally {
+      setCrawling(false);
+    }
   };
 
   const toggleActive = async (id: string, current: boolean) => {
@@ -127,6 +155,7 @@ export const KnowledgeBase = ({ userId }: KnowledgeBaseProps) => {
 
       {/* Add/Edit Form */}
       {showForm ? (
+        // ... Card content (unchanged basically, but I'll skip for brevity if possible, but actually I need to maintain it)
         <Card className="border-primary/30">
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center justify-between">
@@ -183,9 +212,28 @@ export const KnowledgeBase = ({ userId }: KnowledgeBaseProps) => {
           </CardContent>
         </Card>
       ) : (
-        <Button variant="outline" size="sm" onClick={() => setShowForm(true)} className="text-xs">
-          <Plus size={14} className="mr-1" /> Adicionar Entrada
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button variant="outline" size="sm" onClick={() => setShowForm(true)} className="text-xs flex-1 sm:flex-none">
+            <Plus size={14} className="mr-1" /> Adicionar Manualmente
+          </Button>
+          <div className="flex-1 flex gap-2">
+            <Input
+              placeholder="Treinar via URL (ex: https://site.com/faq)"
+              value={crawlUrl}
+              onChange={(e) => setCrawlUrl(e.target.value)}
+              className="h-8 text-[11px] bg-accent/20 border-primary/20"
+            />
+            <Button
+              size="sm"
+              onClick={handleCrawl}
+              disabled={crawling || !crawlUrl}
+              className="h-8 text-[10px] font-bold gap-1 bg-primary text-black hover:bg-primary/90"
+            >
+              {crawling ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
+              CRAWL & LEARN
+            </Button>
+          </div>
+        </div>
       )}
 
       {/* Entries List */}

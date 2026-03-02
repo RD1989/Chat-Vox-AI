@@ -378,6 +378,33 @@ const PublicChat = () => {
     load();
   }, [userId, agentId]);
 
+  // Handle auto-trigger from parent widget
+  useEffect(() => {
+    const handleTrigger = (event: MessageEvent) => {
+      if (event.data?.type === 'vox-trigger-active') {
+        console.log("Chat triggered proactively by widget");
+        // Only nudge if no user message yet and it's not already loading
+        if (messages.length <= 1 && !isLoading) {
+          setIsTyping(true);
+          setTimeout(() => {
+            setIsTyping(false);
+            // We can either restate the welcome message or send a slightly more proactive one
+            const nudge = config.welcome_message || "Olá! Como posso te ajudar hoje?";
+            // Check if already in messages to avoid duplication
+            setMessages(prev => {
+              if (prev.some(m => m.id === 'proactive-nudge')) return prev;
+              return [...prev, { id: 'proactive-nudge', role: 'assistant', content: nudge, timestamp: new Date() }];
+            });
+            playIncomingSound();
+          }, 1500);
+        }
+      }
+    };
+
+    window.addEventListener('message', handleTrigger);
+    return () => window.removeEventListener('message', handleTrigger);
+  }, [messages, isLoading, config.welcome_message]);
+
   const createLead = async (name: string) => {
     if (!userId) return;
     const params = new URLSearchParams(window.location.search);

@@ -24,6 +24,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
 import { OnboardingWizard } from "@/components/agents/OnboardingWizard";
+import { KnowledgeBase } from "@/components/settings/KnowledgeBase";
+import { BookOpen } from "lucide-react";
 
 interface Agent {
   id: string;
@@ -39,6 +41,9 @@ interface Agent {
   vision_model?: string;
   follow_up_enabled?: boolean;
   follow_up_config?: { id: number; delay_hours: number; message: string; }[];
+  widget_trigger_seconds?: number;
+  widget_trigger_scroll?: number;
+  widget_position?: string;
 }
 
 const PIXEL_PLATFORMS = [
@@ -176,7 +181,10 @@ const Agents = () => {
         openrouter_model: updatedAgent.openrouter_model,
         vision_model: updatedAgent.vision_model,
         follow_up_enabled: editAgent.follow_up_enabled,
-        follow_up_config: editAgent.follow_up_config
+        follow_up_config: editAgent.follow_up_config,
+        widget_trigger_seconds: editAgent.widget_trigger_seconds,
+        widget_trigger_scroll: editAgent.widget_trigger_scroll,
+        widget_position: editAgent.widget_position
       } as any)
       .eq("id", editAgent.id);
 
@@ -384,6 +392,12 @@ const Agents = () => {
                   <TabsTrigger value="followup" className="rounded-lg text-xs font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:shadow-sm px-4">
                     <RefreshCcw size={14} /> Follow-up
                   </TabsTrigger>
+                  <TabsTrigger value="widget" className="rounded-lg text-xs font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:shadow-sm px-4">
+                    <MessageSquare size={14} /> Widget & Gatilhos
+                  </TabsTrigger>
+                  <TabsTrigger value="knowledge" className="rounded-lg text-xs font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:shadow-sm px-4">
+                    <BookOpen size={14} /> Conhecimento
+                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="behavior" className="space-y-6 mt-0">
@@ -588,6 +602,110 @@ const Agents = () => {
                       <Plus size={14} className="mr-2" /> Adicionar mais um passo (Máx 5)
                     </Button>
                   </div>
+                </TabsContent>
+
+                <TabsContent value="widget" className="mt-0 space-y-6">
+                  <div className="bg-slate-50 dark:bg-black/40 p-4 rounded-xl border border-slate-200 dark:border-white/5">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-1">
+                      <Sparkles size={16} className="text-primary" /> Conversão Ativa
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-white/50">
+                      Configure quando o chat deve abrir sozinho para abordar o visitante.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold text-slate-500 dark:text-white/50 uppercase tracking-widest ml-1">Abrir após (segundos)</Label>
+                      <Input
+                        type="number"
+                        value={editAgent.widget_trigger_seconds || 0}
+                        onChange={e => setEditAgent({ ...editAgent, widget_trigger_seconds: parseInt(e.target.value) || 0 })}
+                        className="h-10 bg-slate-50 dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-xl focus:border-primary/50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold text-slate-500 dark:text-white/50 uppercase tracking-widest ml-1">Abrir ao scrollar (%)</Label>
+                      <Input
+                        type="number"
+                        value={editAgent.widget_trigger_scroll || 0}
+                        onChange={e => setEditAgent({ ...editAgent, widget_trigger_scroll: parseInt(e.target.value) || 0 })}
+                        className="h-10 bg-slate-50 dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-xl focus:border-primary/50"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold text-slate-500 dark:text-white/50 uppercase tracking-widest ml-1">Posição do Widget</Label>
+                    <div className="flex gap-3">
+                      {["bottom-right", "bottom-left"].map((pos) => (
+                        <Button
+                          key={pos}
+                          variant={editAgent.widget_position === pos ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setEditAgent({ ...editAgent, widget_position: pos })}
+                          className={`flex-1 rounded-xl h-10 font-bold ${editAgent.widget_position === pos ? "bg-primary text-black" : "dark:border-white/10"}`}
+                        >
+                          {pos === "bottom-right" ? "Direita" : "Esquerda"}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-primary/5 dark:bg-primary/10 rounded-2xl border border-primary/20 space-y-3">
+                    <Label className="text-xs font-bold text-primary flex items-center gap-2 uppercase tracking-tighter">
+                      <Code2 size={14} /> Código de Incorporação do Agente
+                    </Label>
+                    <div className="bg-black/40 p-3 rounded-xl font-mono text-[10px] text-white/70 break-all border border-white/5 max-h-[100px] overflow-y-auto">
+                      {`<!-- Chat Vox Agent: ${editAgent.name} -->
+<script>
+(function(){
+  var d=document,s=d.createElement('script');
+  s.src='${import.meta.env.VITE_SUPABASE_URL}/functions/v1/vox-widget?id=${user?.id}&agent=${editAgent.id}';
+  s.setAttribute('data-vox-id','${user?.id}');
+  s.setAttribute('data-vox-agent-id','${editAgent.id}');
+  s.setAttribute('data-vox-origin','${window.location.origin}');
+  s.async=true;
+  d.head.appendChild(s);
+})();
+</script>`}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-primary hover:text-primary hover:bg-primary/10 text-xs font-bold gap-2"
+                      onClick={() => {
+                        const code = `<!-- Chat Vox Agent: ${editAgent.name} -->
+<script>
+(function(){
+  var d=document,s=d.createElement('script');
+  s.src='${import.meta.env.VITE_SUPABASE_URL}/functions/v1/vox-widget?id=${user?.id}&agent=${editAgent.id}';
+  s.setAttribute('data-vox-id','${user?.id}');
+  s.setAttribute('data-vox-agent-id','${editAgent.id}');
+  s.setAttribute('data-vox-origin','${window.location.origin}');
+  s.async=true;
+  d.head.appendChild(s);
+})();
+</script>`;
+                        navigator.clipboard.writeText(code);
+                        toast({ title: "Código do Agente copiado!" });
+                      }}
+                    >
+                      <Copy size={14} /> Copiar Código Master
+                    </Button>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="knowledge" className="mt-0 space-y-4">
+                  <div className="bg-slate-50 dark:bg-black/40 p-4 rounded-xl border border-slate-200 dark:border-white/5 mb-4">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-1">
+                      <BookOpen size={16} className="text-primary" /> Cérebro do Agente
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-white/50">
+                      Adicione informações exclusivas deste agente. Ele usará esses dados para responder clientes com precisão.
+                    </p>
+                  </div>
+                  {user && <KnowledgeBase userId={user.id} agentId={editAgent.id} />}
                 </TabsContent>
               </Tabs>
             </div>
