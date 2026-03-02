@@ -593,7 +593,16 @@ FAÇA O USO DESTAS FERRAMENTAS A TODO MOMENTO ESTUDANDO O CONTEXTO.`;
 
       if (!resp.ok) {
         if (resp.status === 429) throw new Error("rate_limit");
-        throw new Error("Failed to start stream");
+
+        let errorData;
+        try {
+          errorData = await resp.json();
+        } catch {
+          errorData = { error: "Failed to parse error response" };
+        }
+
+        console.error("Agent fetch error:", resp.status, errorData);
+        throw new Error(errorData.error || "Failed to start stream");
       }
       if (!resp.body) throw new Error("Failed to start stream");
 
@@ -705,9 +714,16 @@ FAÇA O USO DESTAS FERRAMENTAS A TODO MOMENTO ESTUDANDO O CONTEXTO.`;
     } catch (e: any) {
       console.error("Chat error:", e);
       setIsTyping(false);
-      const errorMsg = e?.message === "rate_limit"
-        ? "Você enviou muitas mensagens. Aguarde um momento e tente novamente."
-        : "Desculpe, ocorreu um erro. Tente novamente.";
+
+      let errorMsg = "Desculpe, ocorreu um erro. Tente novamente.";
+
+      if (e?.message === "rate_limit") {
+        errorMsg = "Você enviou muitas mensagens. Aguarde um momento e tente novamente.";
+      } else if (e?.message) {
+        // Use the message from our improved fetch handling
+        errorMsg = e.message;
+      }
+
       setMessages(prev => [
         ...prev,
         { id: `error-${Date.now()}`, role: "assistant", content: errorMsg, timestamp: new Date() },
