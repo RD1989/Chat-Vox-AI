@@ -517,216 +517,199 @@ const PublicChat = () => {
     setIsLoading(true);
     setIsTyping(true);
 
-    // Build message content - multimodal if images present
-    const buildContent = (content: string, imgs?: string[]) => {
-      if (imgs && imgs.length > 0) {
-        const parts: any[] = [];
-        if (content) parts.push({ type: "text", text: content });
-        for (const url of imgs) {
-          parts.push({ type: "image_url", image_url: { url } });
-        }
-        return parts;
-      }
-      return content;
-    };
-
-    const allMessages = [...messages.filter(m => m.id !== "welcome").map(m => ({
-      role: m.role,
-      content: buildContent(m.content, m.imageUrls),
-    })), { role: "user" as const, content: text }];
-
-    // Override last message if we have images for current send
-    if (imageUrls && imageUrls.length > 0) {
-      allMessages[allMessages.length - 1].content = buildContent(text, imageUrls);
-    }
-
-    // STRICT PURGE: Ensure only valid OpenAI roles and string/array content go to the Backend
-    // This prevents "dirty" objects from breaking the Supabase/OpenRouter schema
-    const strictCleanMessages = allMessages
-      .map(m => ({
-        role: m.role,
-        content: m.content
-      }))
-      .filter(m => m.content && m.content.length > 0)
-      .slice(-15); // SLIDING WINDOW: Keep only the last 15 interactions to avoid token limit crashes
-
     const assistantId = `assistant-${Date.now()}`;
     streamContentRef.current = "";
 
     try {
-      const fullSystemContext = `
+      // 1. Fetch System Settings (API Key & Models)
+      const { data: settings } = await supabase
+        .from("system_settings")
+        .select("key, value")
+        .in("key", ["openrouter_api_key", "openrouter_model", "vision_model"]);
+
+      const apiKey = settings?.find((s: any) => s.key === "openrouter_api_key")?.value;
+      const model = settings?.find((s: any) => s.key === "openrouter_model")?.value || "google/gemini-2.0-flash-001";
+      const visionModel = settings?.find((s: any) => s.key === "vision_model")?.value || "google/gemini-2.0-flash-001";
+
+      if (!apiKey) throw new Error("API do OpenRouter não configurada. Verifique as chaves no painel admin.");
+
+      // 2. Check Plan & Limits
+      const { data: profile } = await supabase.from("profiles").select("plan").eq("id", userId).single();
+      const currentPlan = profile?.plan || "free";
+
+      const { data: planLimits } = await supabase.from("plans").select("lead_limit").eq("slug", currentPlan).single();
+
+      const { count: leadCount } = await supabase.from("vox_leads").select("*", { count: "exact", head: true }).eq("user_id", userId);
+
+      if (planLimits?.lead_limit !== null && (leadCount || 0) >= (planLimits?.lead_limit || 0)) {
+        throw new Error(`Limite de leads atingido para o plano ${currentPlan}. Faça upgrade para continuar.`);
+      }
+
+      // 3. Knowledge Base Search (Simple RAG)
+      let knowledgeContext = "";
+      if (knowledgeBase) {
+        const userTerms = text.toLowerCase().split(" ").filter(t => t.length > 3);
+        const kbLines = knowledgeBase.split("\n\n");
+        const relevantLines = kbLines.filter(line =>
+          userTerms.some(term => line.toLowerCase().includes(term))
+        ).slice(0, 5);
+
+        if (relevantLines.length > 0) {
+          knowledgeContext = "\n\nCONTEXTO DO NEGÓCIO:\n" + relevantLines.join("\n\n");
+        }
+      }
+
+      // 4. Build System Prompt & Messages
+      const systemPrompt = `
 ${systemPromptBase || `Você é ${config.ai_name}, um especialista em atendimento.`}
+${knowledgeContext}
 
-${knowledgeBase ? `BASE DE CONHECIMENTO DO NEGÓCIO:\n${knowledgeBase}` : ''}
+DIRETRIZES DE ATENDIMENTO:
+1. Aja de forma HUMANA e EMPÁTICA.
+2. Seja direto e use emojis estratégicos.
+3. Use show_quick_replies para opções (fallback via markdown list).
+4. Use show_form para capturar dados (email, whatsapp).
+5. NUNCA diga que é uma IA.
 
-DIRETRIZES DE PERSONALIDADE E ATENDIMENTO (OBRIGATÓRIO):
-1. Aja de forma EXTREMAMENTE HUMANA, EMPÁTICA E CORTÊS. Como se fosse um especialista apaixonado pelo que faz no WhatsApp.
-2. Seja sempre direto, ágil e nunca dê respostas robóticas ou engessadas. Responda de forma leve.
-3. Use emojis estratégicos (😃, ✨, 🚀, 🙌) para manter o clima super amigável e acolhedor, mas sem exageros.
-4. Foco Comercial: Sempre conduza a conversa de forma sutil para ajudar o cliente a avançar, escolher um serviço ou tirar dúvidas que levem ao fechamento.
-5. Em hipótese alguma diga que você é uma IA ou Inteligência Artificial, atue sempre como "Atendimento da Equipe".
+FERRAMENTAS (Mapeamento Interno):
+Você pode sugerir o uso de botões usando o formato de lista:
+- Opção 1
+- Opção 2
+`.trim();
 
-ELEMENTOS INTERATIVOS DEVEM SER USADOS OBRIGATORIAMENTE (Ferramentas):
-Você tem a OBRIGAÇÃO de usar ferramentas de interface gráfica, nunca enviando opções de múltipla escolha ou pedindo e-mails de forma textual plana:
-
-1. show_quick_replies: Use SEMPRE que for oferecer qualquer tipo de opções para o usuário. 
-   - É EXTREMAMENTE PROIBIDO escrever as opções dentro do texto. SE VOCÊ FIZER UMA PERGUNTA DO TIPO "A ou B?", OS ITENS A E B DEVEM SER ENVIADOS COMO BOTÕES.
-   - NUNCA coloque bullet points de opções de planos, serviços ou escolhas. Gere os botões visualmente.
-
-2. show_form: OBRIGATÓRIO utilizar em algum momento estratégico da conversa para capturar o Telefone (WhatsApp) e o E-mail de forma profissional para cadastro do cliente.
-   - Exemplo: Quando o lead avançar na qualificação ou pedir mais informações, lance a ferramenta de formulário solicitando os campos "E-mail" e "WhatsApp", e agradeça cordialmente.
-
-FAÇA O USO DESTAS FERRAMENTAS A TODO MOMENTO ESTUDANDO O CONTEXTO.`;
-
-      const strictInteractivePrompt = {
-        role: "system" as const,
-        content: fullSystemContext.trim()
+      const buildContent = (content: string, imgs?: string[]) => {
+        if (imgs && imgs.length > 0) {
+          const parts: any[] = [];
+          if (content) parts.push({ type: "text", text: content });
+          for (const url of imgs) parts.push({ type: "image_url", image_url: { url } });
+          return parts;
+        }
+        return content;
       };
 
-      const messagesWithPrompt = [strictInteractivePrompt, ...strictCleanMessages];
+      const history = [...messages.filter(m => m.id !== "welcome").map(m => ({
+        role: m.role,
+        content: buildContent(m.content, m.imageUrls),
+      })), { role: "user" as const, content: buildContent(text, imageUrls) }].slice(-10);
 
-      const resp = await fetch(CHAT_URL, {
+      // 5. Select Model
+      let selectedModel = (imageUrls && imageUrls.length > 0) ? visionModel : model;
+      if (currentPlan === "free" || currentPlan === "starter") {
+        selectedModel = "google/gemini-2.0-flash-001";
+      }
+
+      // 6. Call OpenRouter
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: messagesWithPrompt, user_id: userId, lead_id: leadId, agent_id: agentId }),
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "X-Title": "ChatVox AI",
+        },
+        body: JSON.stringify({
+          model: selectedModel,
+          messages: [{ role: "system", content: systemPrompt }, ...history],
+          stream: true,
+          max_tokens: 1024,
+        }),
       });
 
-      if (!resp.ok) {
-        if (resp.status === 429) throw new Error("rate_limit");
-
-        let errorData;
-        try {
-          errorData = await resp.json();
-        } catch {
-          errorData = { error: "Failed to parse error response" };
-        }
-
-        console.error("Agent fetch error:", resp.status, errorData);
-        throw new Error(errorData.error || "Failed to start stream");
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error?.message || "Erro na API do OpenRouter");
       }
-      if (!resp.body) throw new Error("Failed to start stream");
 
-      const reader = resp.body.getReader();
+      // 7. Stream Handling
+      const reader = response.body!.getReader();
       const decoder = new TextDecoder();
-      let textBuffer = "";
-      let rafPending = false;
-      const assistantTimestamp = new Date();
-      const interactiveElements: InteractiveElement[] = [];
+      let assistantMsgAdded = false;
 
       setIsTyping(false);
       playIncomingSound();
       notifyNewMessage();
-      setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: "", timestamp: assistantTimestamp }]);
-
-      const flushToState = () => {
-        const current = streamContentRef.current;
-        setMessages(prev => prev.map(m => {
-          if (m.id === assistantId) {
-            // Fallback interceptor on the final message
-            const parsedOptions = parseTextToInteractiveOptions(current);
-            if (parsedOptions.hasList && !m.interactive) {
-              return {
-                ...m,
-                content: parsedOptions.cleanText,
-                injectedInteractive: {
-                  type: "show_quick_replies",
-                  data: {
-                    message: "Escolha uma das opções abaixo:",
-                    buttons: parsedOptions.buttons
-                  }
-                }
-              };
-            }
-            return { ...m, content: current };
-          }
-          return m;
-        }));
-        rafPending = false;
-      };
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        textBuffer += decoder.decode(value, { stream: true });
 
-        let newlineIndex: number;
-        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
-          let line = textBuffer.slice(0, newlineIndex);
-          textBuffer = textBuffer.slice(newlineIndex + 1);
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n").filter(l => l.startsWith("data: "));
 
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (line.startsWith(":") || line.trim() === "") continue;
-          if (!line.startsWith("data: ")) continue;
-
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") break;
+        for (const line of lines) {
+          const data = line.replace("data: ", "").trim();
+          if (data === "[DONE]") break;
 
           try {
-            const parsed = JSON.parse(jsonStr);
-
-            if (parsed.type === "interactive") {
-              interactiveElements.push({
-                type: parsed.interactive_type,
-                data: parsed.data,
-              });
-              continue;
-            }
-
-            const content = parsed.choices?.[0]?.delta?.content;
+            const json = JSON.parse(data);
+            const content = json.choices[0]?.delta?.content || "";
             if (content) {
               streamContentRef.current += content;
-              if (!rafPending) {
-                rafPending = true;
-                requestAnimationFrame(flushToState);
+              if (!assistantMsgAdded) {
+                setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: "", timestamp: new Date() }]);
+                assistantMsgAdded = true;
               }
+
+              setMessages(prev => prev.map(m =>
+                m.id === assistantId ? { ...m, content: streamContentRef.current } : m
+              ));
             }
-          } catch {
-            textBuffer = line + "\n" + textBuffer;
-            break;
-          }
+          } catch (e) { }
         }
       }
 
-      // Final flush
-      flushToState();
-
-      // Add interactive elements as separate messages
-      if (interactiveElements.length > 0) {
-        setTimeout(() => {
-          setMessages(prev => {
-            const newMsgs = [...prev];
-            for (const ie of interactiveElements) {
-              const interactiveMsg: Message = {
-                id: `interactive-${Date.now()}-${Math.random()}`,
-                role: "assistant",
-                content: ie.data.message || "",
-                timestamp: new Date(),
-                interactive: ie,
-              };
-              newMsgs.push(interactiveMsg);
+      // 8. Post-process (Interactive Buttons Fallback)
+      const current = streamContentRef.current;
+      const parsedOptions = parseTextToInteractiveOptions(current);
+      if (parsedOptions.hasList) {
+        setMessages(prev => prev.map(m =>
+          m.id === assistantId ? {
+            ...m,
+            content: parsedOptions.cleanText,
+            injectedInteractive: {
+              type: "show_quick_replies",
+              data: { message: "Escolha uma opção:", buttons: parsedOptions.buttons }
             }
-            return newMsgs;
-          });
-        }, 300);
+          } : m
+        ));
       }
 
+      // 9. Save Messages to Supabase
+      if (leadId) {
+        // User message
+        await supabase.from("vox_messages").insert({
+          user_id: userId,
+          lead_id: leadId,
+          role: "user",
+          content: text || "📎 Anexo",
+          message_type: imageUrls ? "image" : "text",
+          metadata: imageUrls ? { image_urls: imageUrls } : null,
+        });
+
+        // Assistant message
+        await supabase.from("vox_messages").insert({
+          user_id: userId,
+          lead_id: leadId,
+          role: "assistant",
+          content: streamContentRef.current,
+          message_type: "text"
+        });
+
+        // Simple Lead Qualification
+        const { count } = await supabase.from("vox_messages").select("*", { count: "exact" }).eq("lead_id", leadId);
+        if (count && count >= 4) {
+          await supabase.from("vox_leads").update({
+            status: "qualificado",
+            qualified: true,
+            qualification_score: 70
+          }).eq("id", leadId);
+        }
+      }
 
     } catch (e: any) {
       console.error("Chat error:", e);
-      setIsTyping(false);
-
-      let errorMsg = "Desculpe, ocorreu um erro. Tente novamente.";
-
-      if (e?.message === "rate_limit") {
-        errorMsg = "Você enviou muitas mensagens. Aguarde um momento e tente novamente.";
-      } else if (e?.message) {
-        // Use the message from our improved fetch handling
-        errorMsg = e.message;
-      }
-
       setMessages(prev => [
         ...prev,
-        { id: `error-${Date.now()}`, role: "assistant", content: errorMsg, timestamp: new Date() },
+        { id: `error-${Date.now()}`, role: "assistant", content: e.message || "Erro de conexão.", timestamp: new Date() },
       ]);
     } finally {
       setIsLoading(false);
