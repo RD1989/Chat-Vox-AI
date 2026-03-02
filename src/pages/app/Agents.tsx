@@ -19,7 +19,7 @@ import {
 import {
   Bot, Plus, Trash2, Copy, ExternalLink, Loader2, Save, Pencil, Power, Eye, EyeOff,
   MessageSquare, Users, Sparkles, Lock, Link as LinkIcon, AlertTriangle, Target, Mic,
-  Facebook, Megaphone, BarChart3, ShoppingBag, Code2
+  Facebook, Megaphone, BarChart3, ShoppingBag, Code2, Clock, RefreshCcw
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
@@ -37,6 +37,8 @@ interface Agent {
   chat_theme_config?: any;
   openrouter_model?: string;
   vision_model?: string;
+  follow_up_enabled?: boolean;
+  follow_up_config?: { id: number; delay_hours: number; message: string; }[];
 }
 
 const PIXEL_PLATFORMS = [
@@ -172,7 +174,9 @@ const Agents = () => {
         is_active: updatedAgent.is_active,
         chat_theme_config: updatedAgent.chat_theme_config,
         openrouter_model: updatedAgent.openrouter_model,
-        vision_model: updatedAgent.vision_model
+        vision_model: updatedAgent.vision_model,
+        follow_up_enabled: editAgent.follow_up_enabled,
+        follow_up_config: editAgent.follow_up_config
       } as any)
       .eq("id", editAgent.id);
 
@@ -377,6 +381,9 @@ const Agents = () => {
                   <TabsTrigger value="pixels" className="rounded-lg text-xs font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:shadow-sm px-4">
                     <Code2 size={14} /> Integrações & Pixels
                   </TabsTrigger>
+                  <TabsTrigger value="followup" className="rounded-lg text-xs font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:shadow-sm px-4">
+                    <RefreshCcw size={14} /> Follow-up
+                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="behavior" className="space-y-6 mt-0">
@@ -507,31 +514,79 @@ const Agents = () => {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="pixels" className="mt-0">
-                  <div className="bg-slate-50 dark:bg-black/40 p-4 rounded-xl border border-slate-200 dark:border-white/5 mb-6">
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-1">
-                      <Target size={16} className="text-primary" /> Tracking Exclusivo
-                    </h4>
-                    <p className="text-xs text-slate-500 dark:text-white/50">
-                      Cole seus IDs de conversão abaixo. O Lead Central usará apenas os Pixels preenchidos para rastrear quem abrir o Link Público de Chat <strong>específico desse Colaborador IA</strong>.
-                    </p>
+                <TabsContent value="followup" className="mt-0 space-y-6">
+                  <div className="bg-primary/5 dark:bg-primary/10 p-5 rounded-2xl border border-primary/20 flex items-center justify-between">
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <RefreshCcw size={16} className="text-primary" /> Recuperação Automática (Follow-up)
+                      </h4>
+                      <p className="text-xs text-slate-500 dark:text-white/50">
+                        Ative sequências de até 5 mensagens para leads que pararem de responder.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={editAgent.follow_up_enabled || false}
+                      onCheckedChange={(val) => setEditAgent({ ...editAgent, follow_up_enabled: val })}
+                      className="data-[state=checked]:bg-primary shadow-[0_0_10px_rgba(0,255,157,0.3)]"
+                    />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-                    {PIXEL_PLATFORMS.map((p) => (
-                      <div key={p.key} className="space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-600 dark:text-white/70 flex items-center gap-2">
-                          <p.icon size={13} className={p.color} />
-                          {p.label}
-                        </Label>
-                        <Input
-                          value={pixelsConfig[p.key] || ""}
-                          onChange={(e) => setPixelsConfig({ ...pixelsConfig, [p.key]: e.target.value })}
-                          placeholder={p.placeholder}
-                          className="h-10 bg-slate-50 dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-xs rounded-xl focus:border-primary/50"
+                  <div className="space-y-4">
+                    {(editAgent.follow_up_config || [
+                      { id: 1, delay_hours: 2, message: "" },
+                      { id: 2, delay_hours: 24, message: "" },
+                      { id: 3, delay_hours: 48, message: "" }
+                    ]).map((step, idx) => (
+                      <div key={step.id} className="p-4 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] space-y-3 relative overflow-hidden group">
+                        <div className="flex items-center justify-between">
+                          <Badge variant="outline" className="text-[10px] font-bold bg-white dark:bg-black/20 text-slate-500 dark:text-white/40 border-slate-200 dark:border-white/10">
+                            MENSAGEM {idx + 1}
+                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Clock size={12} className="text-primary/70" />
+                            <span className="text-[10px] font-bold text-slate-400 dark:text-white/30 uppercase tracking-tighter">Aguardar</span>
+                            <Input
+                              type="number"
+                              value={step.delay_hours}
+                              onChange={(e) => {
+                                const newConfig = [...(editAgent.follow_up_config || [])];
+                                newConfig[idx] = { ...step, delay_hours: parseInt(e.target.value) || 0 };
+                                setEditAgent({ ...editAgent, follow_up_config: newConfig });
+                              }}
+                              className="w-16 h-7 text-[11px] bg-white dark:bg-black/40 border-slate-200 dark:border-white/10 text-center font-bold rounded-lg"
+                            />
+                            <span className="text-[10px] font-bold text-slate-400 dark:text-white/30 uppercase tracking-tighter">Horas</span>
+                          </div>
+                        </div>
+                        <Textarea
+                          value={step.message}
+                          onChange={(e) => {
+                            const newConfig = [...(editAgent.follow_up_config || [])];
+                            newConfig[idx] = { ...step, message: e.target.value };
+                            setEditAgent({ ...editAgent, follow_up_config: newConfig });
+                          }}
+                          placeholder="Ex: Olá! Ainda estou por aqui para te ajudar..."
+                          className="bg-white dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-xs rounded-xl focus:border-primary/50 p-3 min-h-[60px]"
                         />
                       </div>
                     ))}
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const current = editAgent.follow_up_config || [];
+                        if (current.length < 5) {
+                          setEditAgent({
+                            ...editAgent,
+                            follow_up_config: [...current, { id: Date.now(), delay_hours: 24, message: "" }]
+                          });
+                        }
+                      }}
+                      className="w-full border border-dashed border-slate-200 dark:border-white/10 text-slate-400 dark:text-white/30 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl h-10"
+                    >
+                      <Plus size={14} className="mr-2" /> Adicionar mais um passo (Máx 5)
+                    </Button>
                   </div>
                 </TabsContent>
               </Tabs>
