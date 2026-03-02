@@ -1,0 +1,225 @@
+#lovable-badge {
+  display: none !important;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light Theme Optimization (Fundo Fosco Mais Escuro e Contraste na Sidebar) */
+    --background: 210 15% 88%;
+    /* Mais fechado, cinza fosco escurecido (Muted Darker Matte) */
+    --foreground: 222.2 84% 4.9%;
+    /* #020817 slate-950 */
+
+    --card: 0 0% 100%;
+    /* #ffffff */
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 154 90% 40%;
+    /* Verde Esmeralda Vibrante mas mais escuro para o claro */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 40% 96.1%;
+    /* #f1f5f9 slate-100 */
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* #0f172a slate-900 */
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    /* #64748b slate-500 */
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 154 90% 40%;
+    /* Verde Padrão do Software para as bordas */
+    --input: 154 90% 40%;
+    --ring: 154 90% 40%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 210 20% 95%;
+    /* Fundo da Sidebar um pouco mais claro que o body para dar contraste */
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-primary: 154 90% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 96.1%;
+    --sidebar-accent-foreground: 222.2 84% 4.9%;
+    --sidebar-border: 154 90% 40%;
+    --sidebar-ring: 154 90% 40%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
+    --chart-1: 158 64% 51%;
+    --chart-2: 141 69% 58%;
+    --chart-3: 172 66% 50%;
+    --chart-4: 38 92% 50%;
+    --chart-5: 0 0% 45%;
+    --sidebar: 0 0% 99%;
+    --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-serif: 'Lora', ui-serif, Georgia, serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --shadow-2xs: 0 1px 2px 0px hsl(0 0% 0% / 0.03);
+    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.04);
+    --shadow-sm: 0 1px 2px 0px hsl(0 0% 0% / 0.05);
+    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.08), 0 1px 2px -1px hsl(0 0% 0% / 0.08);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.08), 0 2px 4px -2px hsl(0 0% 0% / 0.05);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.08), 0 4px 6px -4px hsl(0 0% 0% / 0.04);
+    --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.08), 0 8px 10px -6px hsl(0 0% 0% / 0.04);
+    --shadow-2xl: 0 25px 50px -12px hsl(0 0% 0% / 0.15);
+    --tracking-normal: 0em;
+    --spacing: 0.25rem;
+  }
+
+  .dark {
+    /* Pure Black & Neon Green Aesthetic for Enterprise Level */
+    --background: 0 0% 2%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 154 100% 50%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 0 0% 12%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 0 0% 12%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
+    --ring: 154 100% 50%;
+
+    --sidebar-background: 0 0% 2%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 154 100% 50%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 0 0% 12%;
+    --sidebar-ring: 154 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    background-image: none;
+    background-attachment: scroll;
+  }
+
+  .dark body {
+    background: linear-gradient(135deg, hsl(154, 60%, 10%) 0%, hsl(154, 100%, 4%) 50%, hsl(0, 0%, 2%) 100%);
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    background: hsl(154 100% 50% / 0.2);
+    color: hsl(0 0% 98%);
+  }
+}
+
+/* Scrollbar — minimal */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.5);
+}
+
+/* Custom Glass Panels - Ajustado p/ Light e Dark */
+.glass-panel {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: var(--card);
+  /* No Dark será super escuro, no Light será branco opaco/semitransparente dependendo do tailwind */
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+}
+
+.dark .glass-panel {
+  background: hsl(var(--card) / 0.4);
+  border-color: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+}
+
+.glass-nav {
+  @apply bg-background/60 backdrop-blur-md border-b border-border shadow-sm;
+}
+
+.glow-primary {
+  box-shadow: 0 0 20px hsl(var(--primary) / 0.15), 0 0 60px hsl(var(--primary) / 0.05);
+}
+
+.animate-marquee-slow {
+  animation: marquee-slow 30s linear infinite;
+}
+
+@keyframes marquee-slow {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.bg-gradient-radial {
+  background: radial-gradient(circle, var(--tw-gradient-stops));
+}

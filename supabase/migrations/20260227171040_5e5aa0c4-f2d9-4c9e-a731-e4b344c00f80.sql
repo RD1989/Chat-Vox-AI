@@ -1,0 +1,14 @@
+
+ALTER TABLE public.vox_settings
+  ADD COLUMN IF NOT EXISTS google_ads text DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS google_analytics text DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS hotmart_pixel text DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS kiwify_pixel text DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS eduzz_pixel text DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS monetizze_pixel text DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS braip_pixel text DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS perfectpay_pixel text DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS ticto_pixel text DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS greenn_pixel text DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS kwai_pixel text DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS taboola_pixel text DEFAULT NULL;

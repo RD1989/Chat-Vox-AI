@@ -1,0 +1,16 @@
+project_id = "fwqzlaifkkoweqvsqvxx"
+
+[functions.vox-chat]
+verify_jwt = false
+
+[functions.vox-widget]
+verify_jwt = false
+
+[functions.notify-lead]
+verify_jwt = false
+
+[functions.lgpd-deletion-request]
+verify_jwt = false
+
+[functions.vox-audio]
+verify_jwt = false
