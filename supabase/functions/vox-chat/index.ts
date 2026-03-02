@@ -170,11 +170,9 @@ serve(async (req) => {
       .from("vox_knowledge")
       .select("title, content, category")
       .eq("user_id", user_id)
-      .eq("is_active", true)
-      .order("category");
+      .eq("is_active", true);
 
     if (agent_id) {
-      // Get agent-specific + shared (null agent_id) knowledge
       knowledgeQuery = knowledgeQuery.or(`agent_id.eq.${agent_id},agent_id.is.null`);
     }
 
@@ -182,8 +180,27 @@ serve(async (req) => {
 
     let knowledgeContext = "";
     if (knowledgeEntries && knowledgeEntries.length > 0) {
-      knowledgeContext = "\n\nBASE DE CONHECIMENTO:\n" +
-        knowledgeEntries.map((e: any) =>
+      const lastUserMsg = messages[messages.length - 1];
+      const userText = (typeof lastUserMsg?.content === "string"
+        ? lastUserMsg.content
+        : Array.isArray(lastUserMsg?.content)
+          ? lastUserMsg.content.filter((c: any) => c.type === "text").map((c: any) => c.text).join(" ")
+          : ""
+      ).toLowerCase();
+
+      // Simple keyword matching for RAG
+      const filteredEntries = knowledgeEntries.filter((entry: any) => {
+        const titleMatch = entry.title.toLowerCase().split(" ").some((word: string) => word.length > 3 && userText.includes(word));
+        const catMatch = entry.category.toLowerCase().split(" ").some((word: string) => word.length > 3 && userText.includes(word));
+        const contentMatch = entry.content.toLowerCase().split(" ").some((word: string) => word.length > 4 && userText.includes(word));
+        return titleMatch || catMatch || contentMatch || entry.category === "geral"; // Always include general
+      });
+
+      // If no match found, take top 5 entries to avoid missing context entirely
+      const entriesToUse = filteredEntries.length > 0 ? filteredEntries : knowledgeEntries.slice(0, 5);
+
+      knowledgeContext = "\n\nBASE DE CONHECIMENTO (CONTEXTO RELEVANTE):\n" +
+        entriesToUse.map((e: any) =>
           `[${e.category.toUpperCase()}] ${e.title}:\n${e.content}`
         ).join("\n\n");
     }

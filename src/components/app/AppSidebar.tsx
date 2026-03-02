@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Kanban, Settings, LogOut, MessageSquare,
-  Zap, Shield, CreditCard, BarChart3, Bot, Moon, Sun
+  Zap, Shield, CreditCard, BarChart3, Bot, Moon, Sun, ShoppingBag
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
@@ -16,6 +16,7 @@ import { useTheme } from "../ThemeProvider";
 const mainNav = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/app" },
   { label: "Vendas e CRM", icon: Kanban, path: "/app/crm" },
+  { label: "Recuperação", icon: ShoppingBag, path: "/app/retargeting" },
   { label: "Agentes de IA", icon: Bot, path: "/app/agents" },
   { label: "Inbox Inteligente", icon: MessageSquare, path: "/app/conversations" },
 ];

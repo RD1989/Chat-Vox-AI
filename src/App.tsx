@@ -18,6 +18,7 @@ import VoxSettings from "./pages/app/VoxSettings";
 import Conversations from "./pages/app/Conversations";
 import Analytics from "./pages/app/Analytics";
 import Agents from "./pages/app/Agents";
+import Retargeting from "./pages/app/Retargeting";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
@@ -54,6 +55,7 @@ const App = () => (
               <Route path="conversations" element={<Conversations />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="agents" element={<Agents />} />
+              <Route path="retargeting" element={<Retargeting />} />
               <Route path="settings" element={<VoxSettings />} />
             </Route>
             <Route path="/admin" element={<AdminLayout />}>
