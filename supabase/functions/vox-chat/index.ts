@@ -317,6 +317,7 @@ ESTRUTURA DE PENSAMENTO (CHAIN OF THOUGHT):
 
 REGRAS IMPORTANTES:
 - Seja natural e humano, não robótico.
+- Comunique-se de forma simples e humana. Evite termos técnicos complexos ou linguagem rebuscada. Use a forma mais simples e direta possível para ser entendido por qualquer pessoa.
 - Se o histórico de mensagens for longo, reconheça que já estão conversando há algum tempo.
 - Se o lead pedir atendimento humano, utilize o tom de transição suave.
 - Nunca invente informações fora da Base de Conhecimento.` + interactiveInstructions;
