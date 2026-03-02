@@ -15,6 +15,7 @@ import RecentLeads from "@/components/dashboard/RecentLeads";
 import UtmRoiPanel from "@/components/dashboard/UtmRoiPanel";
 import EngagementBySource from "@/components/dashboard/EngagementBySource";
 import RoiThermometer from "@/components/dashboard/RoiThermometer";
+import TrafficCopilot from "@/components/dashboard/TrafficCopilot";
 
 interface DashboardStats {
   totalLeads: number;
@@ -215,6 +216,9 @@ const Dashboard = () => {
         </div>
         <RoiThermometer qualifiedLeads={stats.qualified} avgScore={stats.avgScore} />
       </div>
+
+      {/* Traffic Copilot Row */}
+      <TrafficCopilot stats={stats} />
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

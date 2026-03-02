@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
+import { OnboardingWizard } from "@/components/agents/OnboardingWizard";
 
 interface Agent {
   id: string;
@@ -117,26 +118,35 @@ const Agents = () => {
   const agentLimit = planInfo.loading ? null : (planInfo as any).agentLimit;
   const canCreate = agentLimit === null || agents.length < (agentLimit ?? 1);
 
-  const handleCreate = async () => {
+  const [wizardOpen, setWizardOpen] = useState(false);
+
+  const handleCreate = async (generatedPrompt?: string, suggestedName?: string) => {
     if (!user || !canCreate) return;
     setCreating(true);
+
+    // Fallback if manual
+    const finalName = suggestedName || `Assistente ${agents.length + 1}`;
+    const finalPrompt = generatedPrompt || "";
+
     const { data, error } = await supabase
       .from("vox_agents")
       .insert({
         user_id: user.id,
-        name: `Assistente ${agents.length + 1}`,
+        name: finalName,
+        system_prompt: finalPrompt,
         welcome_message: "Olá! Como posso ajudar você hoje?",
         primary_color: "#00FF9D"
       } as any)
       .select()
       .single();
+
     setCreating(false);
     if (error) {
       toast({ title: "Erro ao criar agente", description: error.message, variant: "destructive" });
     } else if (data) {
       setAgents(prev => [...prev, data as unknown as Agent]);
       openEditModal(data as unknown as Agent);
-      toast({ title: "Agente criado!" });
+      toast({ title: generatedPrompt ? "Agente treinado e gerado com sucesso!" : "Agente criado!" });
     }
   };
 
@@ -222,7 +232,7 @@ const Agents = () => {
             Uso: {agents.length}/{agentLimit ?? "Ilimitado"}
           </Badge>
           <Button
-            onClick={handleCreate}
+            onClick={() => setWizardOpen(true)}
             disabled={!canCreate || creating}
             className="rounded-xl bg-primary hover:bg-primary/90 text-black shadow-[0_0_15px_rgba(0,255,157,0.4)] hover:shadow-[0_0_20px_rgba(0,255,157,0.6)] transition-all font-bold gap-2 px-6"
           >
@@ -231,6 +241,12 @@ const Agents = () => {
           </Button>
         </div>
       </div>
+
+      <OnboardingWizard
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        onSuccess={(prompt, name) => handleCreate(prompt, name)}
+      />
 
       {!canCreate && (
         <Card className="bg-amber-50 border-warning/30 dark:bg-warning/10 shadow-sm">
@@ -260,7 +276,7 @@ const Agents = () => {
           <p className="text-[15px] font-medium text-slate-500 dark:text-white/40 max-w-lg mb-8">
             Nenhum atendente IA foi provisionado. Crie agentes especialistas em Vendas, Suporte ou Onboarding num instante.
           </p>
-          <Button onClick={handleCreate} disabled={creating} className="rounded-xl h-12 px-8 font-bold bg-primary text-black hover:bg-primary/90 shadow-md">
+          <Button onClick={() => setWizardOpen(true)} disabled={creating} className="rounded-xl h-12 px-8 font-bold bg-primary text-black hover:bg-primary/90 shadow-md">
             {creating ? <Loader2 size={18} className="animate-spin mr-2" /> : <Plus size={18} className="mr-2" />}
             Criar Primeiro Agente
           </Button>
