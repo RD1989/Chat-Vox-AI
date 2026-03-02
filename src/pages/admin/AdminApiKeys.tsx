@@ -14,7 +14,7 @@ const AdminApiKeys = () => {
   const [saving, setSaving] = useState(false);
   const [showKey, setShowKey] = useState(false);
   const [openrouterKey, setOpenrouterKey] = useState("");
-  const [openrouterModel, setOpenrouterModel] = useState("qwen/qwen3.5-flash-02-23");
+  const [openrouterModel, setOpenrouterModel] = useState("google/gemini-2.0-flash-001");
 
   useEffect(() => {
     const load = async () => {
@@ -37,22 +37,22 @@ const AdminApiKeys = () => {
 
   const handleSave = async () => {
     if (!user) return;
-    
+
     // Basic validation
     if (!openrouterKey.trim()) {
-      toast({ 
-        title: "Campo obrigatório", 
-        description: "A chave API não pode estar vazia.", 
-        variant: "destructive" 
+      toast({
+        title: "Campo obrigatório",
+        description: "A chave API não pode estar vazia.",
+        variant: "destructive"
       });
       return;
     }
 
     if (!openrouterKey.startsWith("sk-or-")) {
-      toast({ 
-        title: "Aviso de formato", 
-        description: "A chave geralmente começa com 'sk-or-'. Verifique se colou corretamente.", 
-        variant: "destructive" 
+      toast({
+        title: "Aviso de formato",
+        description: "A chave geralmente começa com 'sk-or-'. Verifique se colou corretamente.",
+        variant: "destructive"
       });
     }
 
@@ -68,7 +68,7 @@ const AdminApiKeys = () => {
         },
         {
           key: "openrouter_model",
-          value: openrouterModel.trim() || "qwen/qwen-2.5-72b-instruct",
+          value: openrouterModel.trim() || "google/gemini-2.0-flash-001",
           description: "Modelo padrão do OpenRouter",
           updated_at: new Date().toISOString(),
           updated_by: user.id,
@@ -79,20 +79,20 @@ const AdminApiKeys = () => {
         const { error } = await supabase
           .from("system_settings")
           .upsert(row as any, { onConflict: "key" });
-        
+
         if (error) throw error;
       }
 
-      toast({ 
-        title: "Configurações salvas", 
-        description: "As chaves API foram atualizadas com sucesso e estão seguras no servidor." 
+      toast({
+        title: "Configurações salvas",
+        description: "As chaves API foram atualizadas com sucesso e estão seguras no servidor."
       });
     } catch (error: any) {
       console.error("Erro ao salvar configurações:", error);
-      toast({ 
-        title: "Erro ao salvar", 
-        description: error.message || "Ocorreu um erro inesperado ao salvar no banco de dados.", 
-        variant: "destructive" 
+      toast({
+        title: "Erro ao salvar",
+        description: error.message || "Ocorreu um erro inesperado ao salvar no banco de dados.",
+        variant: "destructive"
       });
     } finally {
       setSaving(false);
@@ -159,10 +159,10 @@ const AdminApiKeys = () => {
             <Input
               value={openrouterModel}
               onChange={(e) => setOpenrouterModel(e.target.value)}
-              placeholder="qwen/qwen3.5-flash-02-23"
+              placeholder="google/gemini-2.0-flash-001"
             />
             <p className="text-[10px] text-muted-foreground">
-              Ex: qwen/qwen3.5-flash-02-23, google/gemini-2.5-flash, openai/gpt-4o-mini
+              Ex: google/gemini-2.0-flash-001, google/gemini-2.0-pro-exp-02-05, openai/gpt-4o-mini
             </p>
           </div>
         </CardContent>
