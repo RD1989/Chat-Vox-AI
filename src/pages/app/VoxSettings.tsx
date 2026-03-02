@@ -12,9 +12,8 @@ import { Switch } from "@/components/ui/switch";
 import {
   Loader2, Save, Copy, ExternalLink, Palette, Bot, Code2,
   Facebook, BarChart3, ShoppingBag, Megaphone, Target,
-  Webhook, Braces, MessageSquareCode, Sparkles, Bell, BookOpen, Volume2,
+  Webhook, Braces, MessageSquareCode, Sparkles, Bell, BookOpen,
 } from "lucide-react";
-import VoiceSettings from "@/components/settings/VoiceSettings";
 import { ChatThemeSelector, type ChatTheme } from "@/components/settings/ChatThemeSelector";
 import { AvatarUpload } from "@/components/settings/AvatarUpload";
 import { KnowledgeBase } from "@/components/settings/KnowledgeBase";
@@ -32,12 +31,6 @@ interface VoxForm {
   widget_trigger_seconds: number;
   widget_trigger_scroll: number;
   widget_position: string;
-  voice_enabled: number;
-  voice_response_pct: number;
-  voice_name: string;
-  voice_speed: number;
-  voice_show_text: number;
-  voice_accent: string;
   [key: string]: string | number;
 }
 
@@ -73,12 +66,6 @@ const VoxSettings = () => {
     notify_email: "",
     notify_on_new_lead: 1,
     notify_on_qualified: 1,
-    voice_enabled: 0,
-    voice_response_pct: 50,
-    voice_name: "alloy",
-    voice_speed: 1.0,
-    voice_show_text: 1,
-    voice_accent: "pt-BR",
   });
 
   useEffect(() => {
@@ -227,9 +214,6 @@ const VoxSettings = () => {
           </TabsTrigger>
           <TabsTrigger value="knowledge" className="gap-1.5 text-xs rounded-lg">
             <BookOpen size={13} /> Base de Conhecimento
-          </TabsTrigger>
-          <TabsTrigger value="voice" className="gap-1.5 text-xs rounded-lg">
-            <Volume2 size={13} /> Voz
           </TabsTrigger>
         </TabsList>
 
@@ -519,24 +503,7 @@ const VoxSettings = () => {
           </Card>
         </TabsContent>
 
-        {/* Voice Tab */}
-        <TabsContent value="voice" className="mt-6">
-          <VoiceSettings
-            voiceEnabled={!!form.voice_enabled}
-            voiceResponsePct={form.voice_response_pct as number}
-            voiceName={form.voice_name as string}
-            voiceSpeed={form.voice_speed as number}
-            voiceShowText={!!form.voice_show_text}
-            voiceAccent={form.voice_accent as string}
-            onUpdate={(key, value) => {
-              if (typeof value === "boolean") {
-                update(key, value ? 1 : 0);
-              } else {
-                update(key, value);
-              }
-            }}
-          />
-        </TabsContent>
+
       </Tabs>
 
       <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">

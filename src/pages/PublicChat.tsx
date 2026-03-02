@@ -1,10 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Send, Bot, Loader2, Check, CheckCheck, Smile, Paperclip, Mic, MoreVertical, Search, ArrowLeft, X, Image as ImageIcon } from "lucide-react";
+import { Send, Bot, Loader2, Check, CheckCheck, Smile, Paperclip, MoreVertical, Search, ArrowLeft, X, Image as ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import AudioRecorder from "@/components/chat/AudioRecorder";
-import AudioPlayer from "@/components/chat/AudioPlayer";
 import { playIncomingSound, playOutgoingSound } from "@/components/chat/WhatsAppSounds";
 
 // Background notification: flash title when tab is hidden
@@ -204,9 +202,6 @@ interface Message {
   content: string;
   timestamp: Date;
   interactive?: InteractiveElement;
-  audioData?: string;
-  audioFormat?: string;
-  isAudioMessage?: boolean;
   imageUrls?: string[];
   injectedInteractive?: InteractiveElement; // To store virtual buttons created by the Regex Interceptor
 }
@@ -229,16 +224,9 @@ interface VoxConfig {
     inputBarBg?: string;
     pixels?: Record<string, string>;
   };
-  voice_enabled: boolean;
-  voice_response_pct: number;
-  voice_name: string;
-  voice_speed: number;
-  voice_show_text: boolean;
-  voice_accent: string;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/vox-chat`;
-const AUDIO_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/vox-audio`;
 
 const formatTime = (date: Date) => {
   return date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
@@ -278,19 +266,11 @@ const PublicChat = () => {
     welcome_message: "Olá! Como posso ajudar você hoje?",
     chat_theme: "whatsapp",
     chat_theme_config: {},
-    voice_enabled: false,
-    voice_response_pct: 50,
-    voice_name: "alloy",
-    voice_speed: 1.0,
-    voice_show_text: true,
-    voice_accent: "pt-BR",
   });
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [isTranscribing, setIsTranscribing] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
   const [leadId, setLeadId] = useState<string | null>(null);
   const [leadCreated, setLeadCreated] = useState(false);
   const [nameInput, setNameInput] = useState("");
@@ -335,12 +315,6 @@ const PublicChat = () => {
             welcome_message: a.welcome_message || "Olá! Como posso ajudar você hoje?",
             chat_theme: a.chat_theme || "whatsapp",
             chat_theme_config: a.chat_theme_config || {},
-            voice_enabled: a.voice_enabled || false,
-            voice_response_pct: a.voice_response_pct ?? 50,
-            voice_name: a.voice_name || "alloy",
-            voice_speed: a.voice_speed ?? 1.0,
-            voice_show_text: a.voice_show_text ?? true,
-            voice_accent: a.voice_accent || "pt-BR",
           });
 
           if (a.system_prompt) setSystemPromptBase(a.system_prompt);
@@ -371,12 +345,6 @@ const PublicChat = () => {
           welcome_message: d.welcome_message || "Olá! Como posso ajudar você hoje?",
           chat_theme: d.chat_theme || "whatsapp",
           chat_theme_config: d.chat_theme_config || {},
-          voice_enabled: d.voice_enabled || false,
-          voice_response_pct: d.voice_response_pct ?? 50,
-          voice_name: d.voice_name || "alloy",
-          voice_speed: d.voice_speed ?? 1.0,
-          voice_show_text: d.voice_show_text ?? true,
-          voice_accent: d.voice_accent || "pt-BR",
         });
 
         if (d.system_prompt) setSystemPromptBase(d.system_prompt);
@@ -503,29 +471,7 @@ const PublicChat = () => {
     sendMessageWithContent(formText);
   };
 
-  // Generate TTS for assistant response
-  const generateTTS = async (text: string, messageId: string) => {
-    try {
-      const resp = await fetch(AUDIO_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: userId, mode: "tts", messages: [{ content: text }] }),
-      });
 
-      if (resp.ok) {
-        const data = await resp.json();
-        if (data.audio_data) {
-          setMessages(prev => prev.map(m =>
-            m.id === messageId
-              ? { ...m, audioData: data.audio_data, audioFormat: data.format || "mp3" }
-              : m
-          ));
-        }
-      }
-    } catch (e) {
-      console.error("TTS error:", e);
-    }
-  };
 
   // Upload files to storage and get public URLs
   const uploadFiles = async (files: { file: File; preview: string }[]): Promise<string[]> => {
@@ -755,13 +701,7 @@ FAÇA O USO DESTAS FERRAMENTAS A TODO MOMENTO ESTUDANDO O CONTEXTO.`;
         }, 300);
       }
 
-      // Generate TTS if voice is enabled
-      if (config.voice_enabled && streamContentRef.current.trim()) {
-        const shouldGenerateAudio = Math.random() * 100 < config.voice_response_pct;
-        if (shouldGenerateAudio) {
-          generateTTS(streamContentRef.current, assistantId);
-        }
-      }
+
     } catch (e: any) {
       console.error("Chat error:", e);
       setIsTyping(false);
@@ -804,66 +744,7 @@ FAÇA O USO DESTAS FERRAMENTAS A TODO MOMENTO ESTUDANDO O CONTEXTO.`;
     sendMessageWithContent(displayText, uploadedUrls.length > 0 ? uploadedUrls : undefined);
   };
 
-  // Handle audio recording
-  const handleAudioRecorded = async (base64: string, format: string) => {
-    if (!userId || isLoading) return;
-    setIsTranscribing(true);
 
-    playOutgoingSound();
-
-    // Show audio message from user (WhatsApp-style: no transcription visible)
-    const audioMsgId = `audio-${Date.now()}`;
-    setMessages(prev => [...prev, {
-      id: audioMsgId,
-      role: "user",
-      content: "🎤 Mensagem de áudio",
-      timestamp: new Date(),
-      isAudioMessage: true,
-      audioData: base64,
-      audioFormat: format,
-    }]);
-
-    try {
-      const resp = await fetch(AUDIO_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          audio_data: base64,
-          audio_format: format,
-          user_id: userId,
-          mode: "transcribe",
-        }),
-      });
-
-      if (!resp.ok) throw new Error("Transcription failed");
-
-      const data = await resp.json();
-      const transcription = data.transcription?.trim();
-
-      setIsTranscribing(false);
-
-      if (transcription) {
-        // Send transcription to bot internally — user still sees "🎤 Mensagem de áudio"
-        sendMessageWithContent(transcription);
-      } else {
-        setMessages(prev => [...prev, {
-          id: `error-${Date.now()}`,
-          role: "assistant",
-          content: "Desculpe, não consegui entender o áudio. Pode tentar novamente?",
-          timestamp: new Date(),
-        }]);
-      }
-    } catch (e) {
-      console.error("Audio transcription error:", e);
-      setIsTranscribing(false);
-      setMessages(prev => [...prev, {
-        id: `error-${Date.now()}`,
-        role: "assistant",
-        content: "⚠️ Erro ao processar o áudio. Tente novamente.",
-        timestamp: new Date(),
-      }]);
-    }
-  };
 
   if (configLoading) {
     return (
@@ -910,7 +791,7 @@ FAÇA O USO DESTAS FERRAMENTAS A TODO MOMENTO ESTUDANDO O CONTEXTO.`;
               {config.ai_name}
             </h1>
             <p className="text-[13px] leading-tight" style={{ color: `${headerText}99` }}>
-              {isTranscribing ? "transcrevendo áudio..." : isTyping ? "digitando..." : "online"}
+              {isTyping ? "digitando..." : "online"}
             </p>
           </div>
         </div>
@@ -937,14 +818,13 @@ FAÇA O USO DESTAS FERRAMENTAS A TODO MOMENTO ESTUDANDO O CONTEXTO.`;
           {messages.map((msg) => {
             const hasText = msg.content && msg.content.trim().length > 0;
             const hasImages = msg.imageUrls && msg.imageUrls.length > 0;
-            const hasAudio = !!msg.audioData;
             const hasNativeInteractive = msg.interactive &&
               (msg.interactive.type === "show_form" ||
                 (msg.interactive.type === "show_quick_replies" && msg.interactive.data.buttons?.length));
             const hasInjectedInteractive = msg.injectedInteractive && msg.injectedInteractive.data.buttons?.length;
 
             // If the message is completely empty of any visual payload, hide the entire bubble
-            const isCompletelyEmpty = !hasText && !hasImages && !hasAudio && !hasNativeInteractive && !hasInjectedInteractive;
+            const isCompletelyEmpty = !hasText && !hasImages && !hasNativeInteractive && !hasInjectedInteractive;
 
             if (isCompletelyEmpty) return null;
 
@@ -988,34 +868,12 @@ FAÇA O USO DESTAS FERRAMENTAS A TODO MOMENTO ESTUDANDO O CONTEXTO.`;
                         ))}
                       </div>
                     )}
-                    {/* Audio Player for assistant messages with audio */}
-                    {msg.audioData && msg.role === "assistant" && (
-                      <AudioPlayer
-                        audioData={msg.audioData}
-                        format={msg.audioFormat}
-                        bubbleColor={aiBubbleBg}
-                        textColor={aiBubbleText}
+                    {/* Text content */}
+                    {msg.content?.trim() && (
+                      <span
+                        className="break-words"
+                        dangerouslySetInnerHTML={{ __html: formatWhatsAppText(msg.content) }}
                       />
-                    )}
-
-                    {/* Audio Player for user audio messages */}
-                    {msg.isAudioMessage && msg.audioData && msg.role === "user" && (
-                      <AudioPlayer
-                        audioData={msg.audioData}
-                        format={msg.audioFormat || "webm"}
-                        bubbleColor={userBubbleBg}
-                        textColor={userBubbleText}
-                      />
-                    )}
-
-                    {/* Text content - hide for user audio messages, show conditionally for assistant audio */}
-                    {msg.isAudioMessage && msg.role === "user" ? null : (
-                      (!msg.audioData || config.voice_show_text || msg.role === "user") && msg.content?.trim() && (
-                        <span
-                          className="break-words"
-                          dangerouslySetInnerHTML={{ __html: formatWhatsAppText(msg.content) }}
-                        />
-                      )
                     )}
 
                     {/* Quick Reply Buttons (Native + Injected Fallbacks) */}
@@ -1180,7 +1038,7 @@ FAÇA O USO DESTAS FERRAMENTAS A TODO MOMENTO ESTUDANDO O CONTEXTO.`;
             </button>
             <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex-1 flex items-center">
               <input ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)}
-                placeholder="Mensagem" disabled={isLoading || isTranscribing}
+                placeholder="Mensagem" disabled={isLoading}
                 className="w-full rounded-lg px-4 py-[10px] text-[15px] outline-none border-none shadow-sm"
                 style={{ backgroundColor: inputBg, color: getContrastColor(inputBg) }} />
             </form>
