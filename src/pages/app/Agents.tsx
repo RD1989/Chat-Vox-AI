@@ -17,7 +17,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Bot, Plus, Trash2, Copy, ExternalLink, Loader2, Save, Pencil, Power,
+  Bot, Plus, Trash2, Copy, ExternalLink, Loader2, Save, Pencil, Power, Eye, EyeOff,
   MessageSquare, Users, Sparkles, Lock, Link as LinkIcon, AlertTriangle, Target, Mic,
   Facebook, Megaphone, BarChart3, ShoppingBag, Code2
 } from "lucide-react";
@@ -35,6 +35,8 @@ interface Agent {
   is_active: boolean;
   created_at: string;
   chat_theme_config?: any;
+  openrouter_model?: string;
+  vision_model?: string;
 }
 
 const PIXEL_PLATFORMS = [
@@ -124,7 +126,6 @@ const Agents = () => {
     if (!user || !canCreate) return;
     setCreating(true);
 
-    // Fallback if manual
     const finalName = suggestedName || `Assistente ${agents.length + 1}`;
     const finalPrompt = generatedPrompt || "";
 
@@ -169,9 +170,12 @@ const Agents = () => {
         welcome_message: updatedAgent.welcome_message,
         primary_color: updatedAgent.primary_color,
         is_active: updatedAgent.is_active,
-        chat_theme_config: updatedAgent.chat_theme_config
+        chat_theme_config: updatedAgent.chat_theme_config,
+        openrouter_model: updatedAgent.openrouter_model,
+        vision_model: updatedAgent.vision_model
       } as any)
       .eq("id", editAgent.id);
+
     setSaving(false);
     if (error) {
       toast({ title: "Erro ao salvar", variant: "destructive" });
@@ -325,7 +329,7 @@ const Agents = () => {
                     </div>
 
                     <div className="flex gap-2">
-                      <Button variant="secondary" className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-white/5 dark:hover:bg-white/10 dark:text-white font-bold border-none dark:border-solid dark:border dark:border-white/10 rounded-lg text-xs h-9 gap-2 shadow-sm dark:shadow-none" onClick={() => setEditAgent(agent)}>
+                      <Button variant="secondary" className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-white/5 dark:hover:bg-white/10 dark:text-white font-bold border-none dark:border-solid dark:border dark:border-white/10 rounded-lg text-xs h-9 gap-2 shadow-sm dark:shadow-none" onClick={() => openEditModal(agent)}>
                         <Pencil size={13} /> Editar Modelo
                       </Button>
                       <Button variant="secondary" className="w-10 h-9 p-0 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-white/5 dark:hover:bg-white/10 dark:text-white border-none dark:border-solid dark:border dark:border-white/10 rounded-lg tooltip shadow-sm dark:shadow-none" title="Copiar Link" onClick={() => copyLink(agent.id)}>
@@ -365,7 +369,6 @@ const Agents = () => {
 
           {editAgent && (
             <div className="px-8 py-6 space-y-6 max-h-[65vh] overflow-y-auto custom-scrollbar">
-
               <Tabs defaultValue="behavior" className="w-full">
                 <TabsList className="w-full justify-start bg-slate-100 dark:bg-black/40 p-1 mb-6 rounded-xl border border-slate-200 dark:border-white/5">
                   <TabsTrigger value="behavior" className="rounded-lg text-xs font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:shadow-sm px-4">
@@ -474,6 +477,31 @@ const Agents = () => {
                           className="bg-slate-50 border-slate-200 text-slate-800 dark:bg-black/60 dark:border-white/10 dark:text-primary/80 font-mono rounded-xl focus:border-primary/50 text-[13px] leading-relaxed p-5 placeholder:text-slate-400 dark:placeholder:text-white/20"
                         />
                         <div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-primary/50 to-transparent rounded-l-xl opacity-20 pointer-events-none"></div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-6 bg-slate-50 dark:bg-black/20 p-4 rounded-2xl border border-slate-200 dark:border-white/5">
+                      <div className="space-y-2">
+                        <Label className="text-xs font-bold text-slate-500 dark:text-white/50 uppercase tracking-widest ml-1 flex items-center gap-2">
+                          Modelo de Chat (IA) <Sparkles size={12} className="text-primary" />
+                        </Label>
+                        <Input
+                          value={editAgent.openrouter_model || ""}
+                          onChange={e => setEditAgent({ ...editAgent, openrouter_model: e.target.value })}
+                          placeholder="google/gemini-2.0-flash-001"
+                          className="h-10 bg-white dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-xs rounded-xl focus:border-primary/50"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs font-bold text-slate-500 dark:text-white/50 uppercase tracking-widest ml-1 flex items-center gap-2">
+                          Modelo Vision (Imagens) <Eye size={12} className="text-primary" />
+                        </Label>
+                        <Input
+                          value={editAgent.vision_model || ""}
+                          onChange={e => setEditAgent({ ...editAgent, vision_model: e.target.value })}
+                          placeholder="google/gemini-2.0-flash-001"
+                          className="h-10 bg-white dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-xs rounded-xl focus:border-primary/50"
+                        />
                       </div>
                     </div>
                   </div>

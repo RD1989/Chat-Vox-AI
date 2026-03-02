@@ -131,8 +131,8 @@ serve(async (req) => {
       .in("key", settingsKeys);
 
     const apiKey = settings?.find((s: any) => s.key === "openrouter_api_key")?.value;
-    const model = settings?.find((s: any) => s.key === "openrouter_model")?.value || "google/gemini-2.0-flash-001";
-    const visionModel = settings?.find((s: any) => s.key === "vision_model")?.value || "google/gemini-2.0-flash-001";
+    const globalModel = settings?.find((s: any) => s.key === "openrouter_model")?.value || "google/gemini-2.0-flash-001";
+    const globalVisionModel = settings?.find((s: any) => s.key === "vision_model")?.value || "google/gemini-2.0-flash-001";
 
     if (!apiKey) {
       console.error("[vox-chat] API Key missing in system_settings");
@@ -141,7 +141,6 @@ serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    console.log(`[vox-chat] Using model: ${model}, Vision: ${visionModel}`);
 
     // --- Check User Plan and Limits (SAS PROFITABILITY) ---
     const { data: profile } = await supabase
@@ -198,6 +197,12 @@ serve(async (req) => {
 
     const aiName = vs?.ai_name || vs?.name || "Vox";
     const webhookUrl = vs?.webhook_url || null;
+
+    // Determine models to use (Agent specific override)
+    const model = vs?.openrouter_model || globalModel;
+    const visionModel = vs?.vision_model || globalVisionModel;
+
+    console.log(`[vox-chat] Agent: ${aiName}, Using model: ${model}, Vision: ${visionModel}`);
 
     // --- Fetch Knowledge Base (agent-specific or all) ---
     let knowledgeQuery = supabase
