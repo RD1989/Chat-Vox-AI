@@ -488,7 +488,7 @@ const Agents = () => {
                         <Input
                           value={editAgent.openrouter_model || ""}
                           onChange={e => setEditAgent({ ...editAgent, openrouter_model: e.target.value })}
-                          placeholder="google/gemini-2.0-flash-001"
+                          placeholder="google/gemini-3-flash-preview"
                           className="h-10 bg-white dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-xs rounded-xl focus:border-primary/50"
                         />
                       </div>
@@ -499,7 +499,7 @@ const Agents = () => {
                         <Input
                           value={editAgent.vision_model || ""}
                           onChange={e => setEditAgent({ ...editAgent, vision_model: e.target.value })}
-                          placeholder="google/gemini-2.0-flash-001"
+                          placeholder="google/gemini-3-flash-preview"
                           className="h-10 bg-white dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-xs rounded-xl focus:border-primary/50"
                         />
                       </div>

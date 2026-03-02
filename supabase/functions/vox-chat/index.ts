@@ -131,8 +131,8 @@ serve(async (req) => {
       .in("key", settingsKeys);
 
     const apiKey = settings?.find((s: any) => s.key === "openrouter_api_key")?.value;
-    const globalModel = settings?.find((s: any) => s.key === "openrouter_model")?.value || "google/gemini-2.0-flash-001";
-    const globalVisionModel = settings?.find((s: any) => s.key === "vision_model")?.value || "google/gemini-2.0-flash-001";
+    const globalModel = settings?.find((s: any) => s.key === "openrouter_model")?.value || "google/gemini-3-flash-preview";
+    const globalVisionModel = settings?.find((s: any) => s.key === "vision_model")?.value || "google/gemini-3-flash-preview";
 
     if (!apiKey) {
       console.error("[vox-chat] API Key missing in system_settings");

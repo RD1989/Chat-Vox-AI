@@ -14,7 +14,7 @@ const AdminApiKeys = () => {
   const [saving, setSaving] = useState(false);
   const [showKey, setShowKey] = useState(false);
   const [openrouterKey, setOpenrouterKey] = useState("");
-  const [openrouterModel, setOpenrouterModel] = useState("google/gemini-2.0-flash-001");
+  const [openrouterModel, setOpenrouterModel] = useState("google/gemini-3-flash-preview");
 
   useEffect(() => {
     const load = async () => {
@@ -68,7 +68,7 @@ const AdminApiKeys = () => {
         },
         {
           key: "openrouter_model",
-          value: openrouterModel.trim() || "google/gemini-2.0-flash-001",
+          value: openrouterModel.trim() || "google/gemini-3-flash-preview",
           description: "Modelo padrão do OpenRouter",
           updated_at: new Date().toISOString(),
           updated_by: user.id,
