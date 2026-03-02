@@ -130,8 +130,8 @@ serve(async (req) => {
       .in("key", settingsKeys);
 
     const apiKey = settings?.find((s: any) => s.key === "openrouter_api_key")?.value;
-    const model = settings?.find((s: any) => s.key === "openrouter_model")?.value || "google/gemini-3.1-flash-001";
-    const visionModel = settings?.find((s: any) => s.key === "vision_model")?.value || "google/gemini-3.1-flash-001";
+    const model = settings?.find((s: any) => s.key === "openrouter_model")?.value || "google/gemini-3.1-flash-image-preview";
+    const visionModel = settings?.find((s: any) => s.key === "vision_model")?.value || "google/gemini-3.1-flash-image-preview";
 
     if (!apiKey) {
       return new Response(
