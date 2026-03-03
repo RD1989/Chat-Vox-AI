@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Check, ArrowRight, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { PixCheckoutModal } from "@/components/checkout/PixCheckoutModal";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -54,7 +56,29 @@ const plans = [
 
 const Pricing = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [billing, setBilling] = useState<"monthly" | "quarterly">("quarterly");
+  const [checkoutData, setCheckoutData] = useState<{ open: boolean; plan: { slug: string; name: string } | null }>({
+    open: false,
+    plan: null,
+  });
+
+  const handleSubscribe = (plan: any) => {
+    if (!user) {
+      navigate("/signup");
+      return;
+    }
+
+    if (plan.slug === "free") {
+      navigate("/app");
+      return;
+    }
+
+    setCheckoutData({
+      open: true,
+      plan: { slug: plan.slug, name: plan.name }
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -94,22 +118,20 @@ const Pricing = () => {
           <div className="inline-flex items-center bg-secondary border border-border rounded-full p-1 mt-8">
             <button
               onClick={() => setBilling("quarterly")}
-              className={`relative text-[13px] font-medium px-5 py-2 rounded-full transition-all ${
-                billing === "quarterly"
+              className={`relative text-[13px] font-medium px-5 py-2 rounded-full transition-all ${billing === "quarterly"
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
             >
               Trimestral
               <span className={`ml-1 text-[10px] font-bold ${billing === "quarterly" ? "text-primary-foreground/80" : "text-emerald-500"}`}>(Recomendado)</span>
             </button>
             <button
               onClick={() => setBilling("monthly")}
-              className={`text-[13px] font-medium px-5 py-2 rounded-full transition-all ${
-                billing === "monthly"
+              className={`text-[13px] font-medium px-5 py-2 rounded-full transition-all ${billing === "monthly"
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
             >
               Mensal
             </button>
@@ -128,11 +150,10 @@ const Pricing = () => {
                 animate="visible"
                 variants={fadeUp}
                 custom={i}
-                className={`relative flex flex-col rounded-lg border p-6 transition-all ${
-                  plan.highlight
+                className={`relative flex flex-col rounded-lg border p-6 transition-all ${plan.highlight
                     ? "border-primary bg-card shadow-md ring-1 ring-primary/20"
                     : "border-border bg-card hover:border-primary/20"
-                }`}
+                  }`}
               >
                 {plan.highlight && (
                   <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-[10px] font-semibold px-3 py-0.5 rounded-full whitespace-nowrap">
@@ -163,7 +184,7 @@ const Pricing = () => {
                 </ul>
 
                 <Button
-                  onClick={() => navigate("/signup")}
+                  onClick={() => handleSubscribe(plan)}
                   variant={plan.highlight ? "default" : "outline"}
                   className="w-full h-9 text-[12px] font-medium"
                 >
@@ -188,6 +209,16 @@ const Pricing = () => {
           </Button>
         </div>
       </section>
+
+      {user && checkoutData.plan && (
+        <PixCheckoutModal
+          isOpen={checkoutData.open}
+          onClose={() => setCheckoutData({ ...checkoutData, open: false })}
+          planSlug={checkoutData.plan.slug}
+          planName={checkoutData.plan.name}
+          userId={user.id}
+        />
+      )}
     </div>
   );
 };

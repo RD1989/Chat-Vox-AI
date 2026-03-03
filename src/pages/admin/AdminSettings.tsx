@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, Zap } from "lucide-react";
 
 const AdminSettings = () => {
   const { user } = useAuth();
@@ -18,6 +18,10 @@ const AdminSettings = () => {
     support_email: "",
     max_leads_free: "500",
     maintenance_mode: "false",
+    efi_client_id: "",
+    efi_client_secret: "",
+    efi_certificate_p12: "",
+    efi_sandbox: "true",
   });
 
   useEffect(() => {
@@ -107,6 +111,60 @@ const AdminSettings = () => {
               value={form.max_leads_free}
               onChange={(e) => setForm({ ...form, max_leads_free: e.target.value })}
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-primary/20 bg-primary/5 dark:bg-primary/10">
+        <CardHeader>
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Zap className="text-primary" size={16} /> Gateway de Pagamento Pix (EFI)
+          </CardTitle>
+          <CardDescription>Configure suas credenciais da EFI para receber pagamentos via Pix no automático.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Client ID</Label>
+              <Input
+                value={form.efi_client_id}
+                onChange={(e) => setForm({ ...form, efi_client_id: e.target.value })}
+                placeholder="Ex: Client_Id_..."
+                className="font-mono text-xs"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Client Secret</Label>
+              <Input
+                type="password"
+                value={form.efi_client_secret}
+                onChange={(e) => setForm({ ...form, efi_client_secret: e.target.value })}
+                placeholder="••••••••••••••••"
+                className="font-mono text-xs"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Certificado .P12 (Base64)</Label>
+            <Textarea
+              value={form.efi_certificate_p12}
+              onChange={(e) => setForm({ ...form, efi_certificate_p12: e.target.value })}
+              placeholder="Cole o conteúdo do seu certificado convertido para Base64 aqui..."
+              className="font-mono text-[10px] min-h-[100px] bg-white dark:bg-black/20"
+            />
+            <p className="text-[10px] text-muted-foreground italic">
+              * Dica: Use um conversor online de .p12 para Base64 para colar o conteúdo binário como texto aqui.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 pt-2">
+            <input
+              type="checkbox"
+              id="efi_sandbox"
+              checked={form.efi_sandbox === "true"}
+              onChange={(e) => setForm({ ...form, efi_sandbox: e.target.checked ? "true" : "false" })}
+              className="accent-primary"
+            />
+            <Label htmlFor="efi_sandbox" className="text-xs font-bold text-primary cursor-pointer">ATIVAR MODO SANDBOX (TESTE)</Label>
           </div>
         </CardContent>
       </Card>
