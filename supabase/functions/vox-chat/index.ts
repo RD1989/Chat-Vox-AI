@@ -361,7 +361,10 @@ REGRAS IMPORTANTES:
 - Comunique-se de forma simples e humana. Evite termos técnicos complexos ou linguagem rebuscada. Use a forma mais simples e direta possível para ser entendido por qualquer pessoa.
 - Se o histórico de mensagens for longo, reconheça que já estão conversando há algum tempo.
 - Se o lead pedir atendimento humano, utilize o tom de transição suave.
-- Nunca invente informações fora da Base de Conhecimento.` + interactiveInstructions;
+- Nunca invente informações fora da Base de Conhecimento.
+- FONTE ÚNICA DE VERDADE: Use APENAS a Base de Conhecimento para dados da empresa.
+- SE NÃO SOUBER: Responda que não tem a informação e ofereça transbordo humano.
+- NÃO INVENTE: Nunca crie telefones, preços ou endereços que não estejam na Base.` + interactiveInstructions;
 
     const systemPrompt = basePrompt + knowledgeContext + leadRecognitionNote;
 

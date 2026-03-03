@@ -918,17 +918,35 @@ const PublicChat = () => {
 
         {/* Typing indicator */}
         {isTyping && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start mb-1">
+          <motion.div
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="flex justify-start mb-2"
+          >
             <div className="relative max-w-[75%]">
               <svg className="absolute -left-2 top-0" width="8" height="13" viewBox="0 0 8 13">
                 <path d="M7 0L8 0C8 0 4 4 4 13L0 0Z" fill={aiBubbleBg} />
               </svg>
-              <div className="px-4 py-3 rounded-tr-lg rounded-br-lg rounded-bl-lg shadow-sm"
+              <div className="px-[12px] py-[10px] rounded-tr-lg rounded-br-lg rounded-bl-lg shadow-sm"
                 style={{ backgroundColor: aiBubbleBg }}>
-                <div className="flex gap-[5px] items-center h-[19px]">
+                <div className="flex gap-[4px] items-center h-[14px]">
                   {[0, 200, 400].map(delay => (
-                    <span key={delay} className="w-[7px] h-[7px] rounded-full animate-bounce"
-                      style={{ backgroundColor: `${aiBubbleText}66`, animationDelay: `${delay}ms`, animationDuration: "1.2s" }} />
+                    <motion.span
+                      key={delay}
+                      animate={{
+                        opacity: [0.3, 1, 0.3],
+                        translateY: [0, -2, 0]
+                      }}
+                      transition={{
+                        duration: 1.2,
+                        repeat: Infinity,
+                        delay: delay / 1000,
+                        ease: "easeInOut"
+                      }}
+                      className="w-[6px] h-[6px] rounded-full"
+                      style={{ backgroundColor: `${aiBubbleText}99` }}
+                    />
                   ))}
                 </div>
               </div>
