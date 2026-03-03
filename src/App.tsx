@@ -28,7 +28,6 @@ import AdminAlerts from "./pages/admin/AdminAlerts";
 import AdminPlans from "./pages/admin/AdminPlans";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import DataDeletion from "./pages/DataDeletion";
-import CookieConsent from "./components/CookieConsent";
 import { ThemeProvider } from "./components/ThemeProvider";
 
 const queryClient = new QueryClient();
@@ -69,7 +68,6 @@ const App = () => (
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
-          <CookieConsent />
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

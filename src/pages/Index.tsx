@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import ChatPreview from "@/components/landing/ChatPreview";
+import CookieConsent from "@/components/CookieConsent";
 import { useRef } from "react";
 
 const fadeUp = {
@@ -989,6 +990,7 @@ const Index = () => {
           </div>
         </div>
       </footer>
+      <CookieConsent />
     </div>
   );
 };
