@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Send, Bot, Loader2, Check, CheckCheck, Smile, Paperclip, MoreVertical, Search, ArrowLeft, X, Image as ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { playIncomingSound, playOutgoingSound } from "@/components/chat/WhatsAppSounds";
+import { toast } from "sonner";
 
 // Background notification: flash title when tab is hidden
 const useBackgroundNotification = () => {
@@ -454,6 +455,10 @@ const PublicChat = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: userId, lead_id: newLeadId, event_type: "new_lead" }),
       }).catch(() => { });
+    } else {
+      console.error("Error creating lead:", error);
+      toast.error("Erro ao iniciar chat. Por favor, tente novamente.");
+      setIsLoading(false);
     }
   };
 
@@ -921,9 +926,9 @@ const PublicChat = () => {
                 placeholder="Seu nome..." autoFocus
                 className="flex-1 rounded-lg px-3 py-2 text-[14px] outline-none border-none"
                 style={{ backgroundColor: inputBg, color: getContrastColor(inputBg) }} />
-              <button type="submit" className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+              <button type="submit" disabled={isLoading} className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 disabled:opacity-50"
                 style={{ backgroundColor: accentColor, color: "#fff" }}>
-                <Send size={18} />
+                {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
               </button>
             </form>
           </motion.div>
