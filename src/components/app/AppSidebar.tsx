@@ -34,7 +34,13 @@ const AppSidebar = () => {
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const { isAdmin } = useAdminCheck();
-  const { name: planName, currentLeads, leadLimit } = usePlanLimits();
+  const {
+    name: planName,
+    currentLeads,
+    leadLimit,
+    currentRequests,
+    requestLimit
+  } = usePlanLimits();
   const { theme, setTheme } = useTheme();
 
   const isActive = (path: string) => location.pathname === path;
@@ -49,7 +55,12 @@ const AppSidebar = () => {
           <div className="flex flex-col items-start">
             <span className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white font-sans flex items-center gap-1.5">
               Chat Vox
-              <span className="bg-slate-100 text-slate-800 dark:bg-primary/20 dark:text-primary text-[9px] px-1.5 py-0.5 rounded border border-slate-300 dark:border-primary/30 uppercase tracking-widest font-bold">Pro</span>
+              <span className={`text-[9px] px-1.5 py-0.5 rounded border uppercase tracking-widest font-bold ${isAdmin
+                  ? "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-500/20 dark:text-amber-500 dark:border-amber-500/30"
+                  : "bg-slate-100 text-slate-800 dark:bg-primary/20 dark:text-primary border-slate-300 dark:border-primary/30"
+                }`}>
+                {isAdmin ? "Admin" : (planName === "Free" ? "Free" : "Pro")}
+              </span>
             </span>
           </div>
         </button>
@@ -57,9 +68,8 @@ const AppSidebar = () => {
 
       <SidebarSeparator className="bg-slate-200 dark:bg-white/10 mx-5" />
 
-      <SidebarContent className="px-3 pt-5 custom-scrollbar">
+      <SidebarContent className="px-3 pt-5 custom-scrollbar flex flex-col">
         {/* Principal */}
-        {/* Nav Unificada - Sem Categorias */}
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="gap-2 mt-4">
@@ -88,31 +98,80 @@ const AppSidebar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Plan card — Solid, no glass */}
-        <div className="mx-4 mt-8 p-5 rounded-xl border border-slate-300 bg-white dark:border-white/10 dark:bg-white/5 relative overflow-hidden group">
-          <div className="flex items-center justify-between mb-3 relative z-10">
+        {/* Plan card — Premium Look */}
+        <div className="mx-3 mt-8 mb-6 p-4 rounded-xl border border-slate-300 bg-white dark:border-white/10 dark:bg-white/5 relative overflow-hidden group">
+          <div className="flex items-center justify-between mb-4 relative z-10">
             <span className="text-[10px] uppercase tracking-widest font-bold text-slate-500 dark:text-white/50">Licença Atual</span>
-            <span className="text-[10px] uppercase font-bold text-slate-700 bg-slate-200 dark:text-primary dark:bg-primary/20 px-2 py-0.5 rounded-full">{planName}</span>
+            <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${isAdmin
+                ? "text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-500/20"
+                : "text-slate-700 bg-slate-200 dark:text-primary dark:bg-primary/20"
+              }`}>
+              {isAdmin ? "Ilimitada" : planName}
+            </span>
           </div>
-          <div className="flex items-baseline gap-1 mb-2 relative z-10">
-            <span className="font-sans text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">{currentLeads}</span>
-            <span className="text-[11px] text-slate-500 dark:text-white/40 font-bold tracking-widest uppercase">/ {leadLimit === null ? "∞" : leadLimit} LEADS</span>
+
+          {/* Leads Limit */}
+          <div className="space-y-1.5 mb-4 relative z-10">
+            <div className="flex items-baseline justify-between">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Leads Capturados</span>
+              <div className="flex items-baseline gap-1">
+                <span className="font-sans text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">{currentLeads}</span>
+                <span className="text-[10px] text-slate-500 dark:text-white/40 font-bold uppercase">/ {leadLimit === null ? "∞" : leadLimit}</span>
+              </div>
+            </div>
+            {leadLimit !== null && (
+              <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-black/40 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-1000 ease-out ${(currentLeads >= leadLimit) ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" : "bg-primary"
+                    }`}
+                  style={{ width: `${Math.min((currentLeads / leadLimit) * 100, 100)}%` }}
+                />
+              </div>
+            )}
           </div>
-          {leadLimit !== null && (
-            <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-black/40 overflow-hidden relative z-10">
-              <div
-                className="h-full rounded-full bg-slate-800 dark:bg-gradient-to-r dark:from-emerald-500 dark:to-primary dark:shadow-[0_0_10px_rgba(0,255,157,0.5)] transition-all duration-1000 ease-out"
-                style={{ width: `${Math.min((currentLeads / leadLimit) * 100, 100)}%` }}
-              />
+
+          {/* Messages Limit */}
+          <div className="space-y-1.5 mb-6 relative z-10">
+            <div className="flex items-baseline justify-between">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Interações IA</span>
+              <div className="flex items-baseline gap-1">
+                <span className="font-sans text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">{currentRequests}</span>
+                <span className="text-[10px] text-slate-500 dark:text-white/40 font-bold uppercase">/ {requestLimit === null ? "∞" : requestLimit}</span>
+              </div>
+            </div>
+            {requestLimit !== null && (
+              <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-black/40 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-1000 ease-out ${(currentRequests >= requestLimit) ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" : "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]"
+                    }`}
+                  style={{ width: `${Math.min((currentRequests / requestLimit) * 100, 100)}%` }}
+                />
+              </div>
+            )}
+          </div>
+
+          {!isAdmin && (
+            <button
+              onClick={() => navigate("/pricing")}
+              className={`w-full h-10 rounded-lg text-[11px] font-bold shadow-md transition-all flex items-center justify-center gap-2 relative z-10 active:scale-[0.98] ${(leadLimit && currentLeads >= leadLimit) || (requestLimit && currentRequests >= requestLimit)
+                  ? "bg-red-600 text-white hover:bg-red-700 animate-bounce"
+                  : "bg-primary text-black hover:opacity-90 dark:shadow-[0_0_15px_rgba(0,255,157,0.3)]"
+                }`}
+            >
+              <Zap size={14} fill="currentColor" />
+              Escalar meu Negócio
+            </button>
+          )}
+
+          {isAdmin && (
+            <div className="text-center py-2 px-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+              <span className="text-[10px] font-bold text-amber-600 dark:text-amber-500 uppercase tracking-widest">Acesso de Desenvolvedor</span>
             </div>
           )}
-          <button
-            onClick={() => navigate("/pricing")}
-            className="mt-5 w-full h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 hover:border-slate-300 text-slate-800 dark:bg-white/10 dark:border-transparent dark:text-white dark:hover:bg-white/20 text-[12px] font-bold dark:text-white shadow-sm transition-all flex items-center justify-center gap-2 relative z-10 dark:hover:text-primary"
-          >
-            <CreditCard size={14} /> Fazer Upgrade
-          </button>
         </div>
+
+        {/* Anti-clipping spacer */}
+        <div className="h-10 shrink-0" />
       </SidebarContent>
 
       <SidebarFooter className="p-4 border-t border-slate-300 bg-slate-100 dark:border-white/10 dark:bg-[#050505]">
