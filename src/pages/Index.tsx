@@ -31,7 +31,6 @@ import {
 } from "lucide-react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import ChatPreview from "@/components/landing/ChatPreview";
-import authorImg from "@/assets/author.png";
 import { useRef } from "react";
 
 const fadeUp = {
@@ -872,7 +871,7 @@ const Index = () => {
               <div className="absolute -inset-4 bg-primary/20 blur-3xl rounded-full opacity-50 pointer-events-none" />
               <div className="relative aspect-square rounded-3xl overflow-hidden border-2 border-primary/20 shadow-2xl">
                 <img
-                  src={authorImg}
+                  src="/idealizador.png"
                   alt="O Idealizador"
                   className="w-full h-full object-cover"
                 />
