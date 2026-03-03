@@ -26,7 +26,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
 import { OnboardingWizard } from "@/components/agents/OnboardingWizard";
 import { KnowledgeBase } from "@/components/settings/KnowledgeBase";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Link as LinkIcon2 } from "lucide-react";
+import { AgentButtonsManager } from "@/components/agents/AgentButtonsManager";
 
 interface Agent {
   id: string;
@@ -405,6 +406,9 @@ const Agents = () => {
                   <TabsTrigger value="knowledge" className="rounded-lg text-xs font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:shadow-sm px-4">
                     <BookOpen size={14} /> Conhecimento
                   </TabsTrigger>
+                  <TabsTrigger value="links" className="rounded-lg text-xs font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:shadow-sm px-4 text-primary">
+                    <LinkIcon2 size={14} /> Links de Conversão
+                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="behavior" className="space-y-6 mt-0">
@@ -731,6 +735,18 @@ const Agents = () => {
                     </p>
                   </div>
                   {user && <KnowledgeBase userId={user.id} agentId={editAgent.id} />}
+                </TabsContent>
+
+                <TabsContent value="links" className="mt-0 space-y-4">
+                  <div className="bg-primary/5 dark:bg-primary/10 p-4 rounded-xl border border-primary/20 mb-4">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-1">
+                      <LinkIcon2 size={16} className="text-primary" /> Atalhos de Conversão (CTA)
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-white/50">
+                      Cadastre links estratégicos (WhatsApp, Checkout, Agendamento) que a IA poderá oferecer como botões de alta conversão.
+                    </p>
+                  </div>
+                  <AgentButtonsManager agentId={editAgent.id} />
                 </TabsContent>
               </Tabs>
             </div>

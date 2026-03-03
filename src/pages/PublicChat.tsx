@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Send, Bot, Loader2, Check, CheckCheck, Smile, Paperclip, MoreVertical, Search, ArrowLeft, X, Image as ImageIcon } from "lucide-react";
+import { Send, Bot, Loader2, Check, CheckCheck, Smile, Paperclip, MoreVertical, Search, ArrowLeft, X, Image as ImageIcon, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { playIncomingSound, playOutgoingSound } from "@/components/chat/WhatsAppSounds";
 import { toast } from "sonner";
@@ -227,6 +227,11 @@ interface VoxConfig {
   };
 }
 
+interface ConversionButton {
+  label: string;
+  url: string;
+}
+
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/vox-chat`;
 
 const formatTime = (date: Date) => {
@@ -279,6 +284,7 @@ const PublicChat = () => {
   const [configLoading, setConfigLoading] = useState(true);
   const [systemPromptBase, setSystemPromptBase] = useState("");
   const [knowledgeBase, setKnowledgeBase] = useState("");
+  const [conversionButtons, setConversionButtons] = useState<ConversionButton[]>([]);
   const [pendingFiles, setPendingFiles] = useState<{ file: File; preview: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -320,6 +326,14 @@ const PublicChat = () => {
 
           if (a.system_prompt) setSystemPromptBase(a.system_prompt);
           if (a.knowledge_base) setKnowledgeBase(a.knowledge_base);
+
+          // Get conversion buttons for this agent
+          const { data: buttonsData } = await supabase
+            .from("vox_agent_buttons" as any)
+            .select("label, url")
+            .eq("agent_id", agentId)
+            .eq("is_active", true);
+          if (buttonsData) setConversionButtons(buttonsData as ConversionButton[]);
 
           setConfigLoading(false);
           setTimeout(() => {
@@ -839,10 +853,35 @@ const PublicChat = () => {
                     )}
                     {/* Text content */}
                     {msg.content?.trim() && (
-                      <span
-                        className="break-words"
-                        dangerouslySetInnerHTML={{ __html: formatWhatsAppText(msg.content) }}
-                      />
+                      <div className="space-y-3">
+                        <span
+                          className="break-words"
+                          dangerouslySetInnerHTML={{ __html: formatWhatsAppText(msg.content.replace(/\[BUTTON:.*?\]/g, '').trim()) }}
+                        />
+
+                        {/* CTA Buttons via [BUTTON: Label] marker */}
+                        {msg.role === "assistant" && Array.from(msg.content.matchAll(/\[BUTTON:\s*(.*?)\]/g)).map((match, idx) => {
+                          const label = match[1].trim();
+                          const btnConfig = conversionButtons.find(b => b.label.toLowerCase() === label.toLowerCase());
+                          if (!btnConfig) return null;
+
+                          return (
+                            <button
+                              key={idx}
+                              onClick={() => window.open(btnConfig.url, "_blank")}
+                              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-[14px] transition-all shadow-md group hover:scale-[1.02] active:scale-95"
+                              style={{
+                                backgroundColor: accentColor,
+                                color: "#fff",
+                                boxShadow: `0 4px 15px ${accentColor}40`
+                              }}
+                            >
+                              <ExternalLink size={16} className="group-hover:translate-x-0.5 transition-transform" />
+                              {btnConfig.label}
+                            </button>
+                          );
+                        })}
+                      </div>
                     )}
 
                     {/* Quick Reply Buttons (Native + Injected Fallbacks) */}

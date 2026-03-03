@@ -314,6 +314,24 @@ serve(async (req) => {
       }
     }
 
+    // --- Fetch Conversion Buttons ---
+    let conversionButtonsPrompt = "";
+    if (agent_id) {
+      const { data: buttons } = await supabase
+        .from("vox_agent_buttons")
+        .select("label, description")
+        .eq("agent_id", agent_id)
+        .eq("is_active", true);
+
+      if (buttons && buttons.length > 0) {
+        conversionButtonsPrompt = "\n\nBOTÕES DE CONVERSÃO DISPONÍVEIS (MUITO IMPORTANTE):\n" +
+          "Você tem acesso a 'Atalhos de Conversão' rápidos. Quando o lead demonstrar interesse em um desses tópicos, você DEVE encerrar sua resposta chamando o botão usando o marcador exato: [BUTTON: Rótulo do Botão].\n" +
+          "Instrução: Use apenas UM botão por mensagem, o mais relevante.\n" +
+          "Botões disponíveis para este agente:\n" +
+          buttons.map((b: any) => `- [BUTTON: ${b.label}]: ${b.description || 'Use este botão para conversão'}`).join("\n");
+      }
+    }
+
     // --- Build System Prompt ---
     const customPrompt = vs?.system_prompt?.trim();
     const interactiveInstructions = `
@@ -338,6 +356,7 @@ REGRAS DE USO (OBRIGATÓRIO):
 - Use formulário quando precisar de 2+ informações de uma vez.
 - Não deixe de ser estratégico, use os botões a todo momento para engajar o usuário.
 - Quando o lead responder a um botão/formulário, continue o diálogo e prossiga se baseando na escolha do botão.
+${conversionButtonsPrompt}
 
 ANÁLISE DE IMAGENS E DOCUMENTOS:
 - Você pode receber imagens (fotos, comprovantes, documentos, screenshots)
