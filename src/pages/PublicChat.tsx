@@ -643,8 +643,14 @@ const PublicChat = () => {
             // Handle interactive elements (buttons/forms) sent as special SSE events
             if (json.type === "interactive") {
               if (!assistantMsgAdded) {
-                setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: "", timestamp: new Date() }]);
+                // Se a ferramenta trouxer uma mensagem de contexto, usamos como conteúdo
+                setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: json.data?.message || "", timestamp: new Date() }]);
                 assistantMsgAdded = true;
+              } else if (json.data?.message) {
+                // Se o balão já foi criado (via stream) mas está vazio, preenchemos com o texto da ferramenta
+                setMessages(prev => prev.map(m =>
+                  m.id === assistantId && !m.content ? { ...m, content: json.data.message } : m
+                ));
               }
 
               setMessages(prev => prev.map(m =>

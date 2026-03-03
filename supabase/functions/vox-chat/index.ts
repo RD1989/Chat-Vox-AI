@@ -319,7 +319,12 @@ serve(async (req) => {
     const interactiveInstructions = `
 
 ELEMENTOS INTERATIVOS (MUITO IMPORTANTE):
-Você tem a OBRIGAÇÃO de usar ferramentas especiais de interface gráfica para interagir com o usuário, abandonando textos planos de opções:
+Você tem a OBRIGAÇÃO de usar ferramentas especiais de interface gráfica para interagir com o usuário, abandonando textos planos de opções.
+
+⚠️ REGRA DE OURO PARA CONTEXTO:
+Toda vez que você usar uma ferramenta (show_quick_replies ou show_form), você DEVE preencher o campo 'message' com a pergunta ou o texto de contexto que descreve as opções. 
+Exemplo: Se você vai mostrar botões de planos, a 'message' deve ser "Qual desses planos faz mais sentido para o seu momento atual?".
+Isso é vital porque o usuário precisa ler a pergunta ANTES de clicar nos botões.
 
 1. show_quick_replies: Você DEVE usar essa ferramenta SEMPRE que for oferecer respostas de múltipla escolha para o usuário.
    - Exemplo absoluto: Se a pergunta for "Você prefere X ou Y?", você NÃO pode escrever as opções em texto. Você DEVE usar a ferramenta show_quick_replies chamando os botões "X" e "Y".
