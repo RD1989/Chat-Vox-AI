@@ -3,7 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, BarChart3, Clock, MapPin, TrendingUp, Users, Target, Zap } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
+import { Loader2, BarChart3, Clock, MapPin, TrendingUp, Users, Target, Zap, DollarSign } from "lucide-react";
 import { format, subDays, startOfDay, getHours } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -25,14 +27,22 @@ const Analytics = () => {
   const [loading, setLoading] = useState(true);
   const [leads, setLeads] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
+  const [plan, setPlan] = useState<any>(null);
 
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const [{ data: l }, { data: m }] = await Promise.all([
+      const [{ data: l }, { data: m }, { data: profile }] = await Promise.all([
         supabase.from("vox_leads").select("*").eq("user_id", user.id),
         supabase.from("vox_messages").select("*").eq("user_id", user.id),
+        supabase.from("profiles").select("plan").eq("id", user.id).single(),
       ]);
+
+      if (profile?.plan) {
+        const { data: p } = await supabase.from("plans").select("*").eq("slug", profile.plan).single();
+        setPlan(p);
+      }
+
       setLeads(l || []);
       setMessages(m || []);
       setLoading(false);
@@ -111,6 +121,15 @@ const Analytics = () => {
     : "0%";
   const todayLeads = leads.filter((l) => new Date(l.created_at) >= today).length;
 
+  // ROI Calculations
+  const totalPipelineValue = leads.reduce((sum, l) => sum + (Number(l.estimated_value) || 0), 0);
+  const totalCost = leads.reduce((sum, l) => sum + (Number(l.acquisition_cost) || 0), 0);
+  const netROI = totalPipelineValue - totalCost;
+  const roas = totalCost > 0 ? (totalPipelineValue / totalCost).toFixed(1) : "∞";
+
+  const formatCurrency = (val: number) =>
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
   return (
     <div className="space-y-8 max-w-7xl">
       <div>
@@ -118,8 +137,58 @@ const Analytics = () => {
         <p className="text-sm text-muted-foreground mt-1">Métricas detalhadas do seu funil de leads.</p>
       </div>
 
+      {/* Message Quota Indicator */}
+      {plan && (
+        <Card className="border-primary/20 bg-primary/5 overflow-hidden relative">
+          <div className="absolute top-0 right-0 p-2 opacity-10">
+            <Zap size={80} className="text-primary" />
+          </div>
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  Plano Atual: <Badge className="bg-primary text-black font-black">{plan.name}</Badge>
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-white/40">
+                  Uso de mensagens: <span className="font-bold text-slate-700 dark:text-white/60">{messages.length}</span> / {plan.request_limit || "Ilimitado"}
+                </p>
+              </div>
+
+              {plan.request_limit && (
+                <div className="flex-1 max-w-md space-y-2">
+                  <div className="w-full h-3 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden border border-slate-300 dark:border-white/5">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.min((messages.length / plan.request_limit) * 100, 100)}%` }}
+                      transition={{ duration: 1, ease: "easeOut" }}
+                      className={`h-full rounded-full ${(messages.length / plan.request_limit) > 0.8 ? 'bg-red-500' : 'bg-primary'}`}
+                      style={{ boxShadow: '0 0 15px rgba(0,255,157,0.3)' }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    <span>{Math.round((messages.length / plan.request_limit) * 100)}% Utilizado</span>
+                    {(messages.length / plan.request_limit) > 0.8 && (
+                      <span className="text-red-500 animate-pulse">Cota Quase Esgotada!</span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {(!plan.request_limit || (messages.length / plan.request_limit) > 0.5) && (
+                <Button
+                  onClick={() => window.location.href = "/pricing"}
+                  className="bg-white dark:bg-white/10 hover:bg-slate-50 dark:hover:bg-white/20 text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 font-bold rounded-xl"
+                >
+                  {plan.slug === 'scale' ? 'Gerenciar Plano' : 'Fazer Upgrade para Scale'}
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Top metrics */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         {[
           { label: "Leads Hoje", value: todayLeads, icon: Zap, color: "text-primary", bg: "bg-primary/10" },
           { label: "Taxa Conversão", value: convRate, icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/10" },
@@ -136,6 +205,42 @@ const Analytics = () => {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      {/* ROI & Financial Performance */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="border-emerald-500/20 bg-emerald-500/5">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Valor em Pipeline</span>
+              <TrendingUp size={16} className="text-emerald-500" />
+            </div>
+            <p className="text-2xl font-black text-slate-900 dark:text-white">{formatCurrency(totalPipelineValue)}</p>
+            <p className="text-[10px] text-slate-500 dark:text-white/40 mt-1">Soma do valor estimado de todos os leads</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-blue-500/20 bg-blue-500/5">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">Lucro Estimado (ROI)</span>
+              <DollarSign size={16} className="text-blue-500" />
+            </div>
+            <p className="text-2xl font-black text-slate-900 dark:text-white">{formatCurrency(netROI)}</p>
+            <p className="text-[10px] text-slate-500 dark:text-white/40 mt-1">Pipeline - Custo de Aquisição</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-amber-500/20 bg-amber-500/5">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest">ROAS do Robô</span>
+              <Zap size={16} className="text-amber-500" />
+            </div>
+            <p className="text-2xl font-black text-slate-900 dark:text-white">{roas}x</p>
+            <p className="text-[10px] text-slate-500 dark:text-white/40 mt-1">Retorno por cada R$ 1,00 investido</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Charts row 1 */}
@@ -276,7 +381,7 @@ const Analytics = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </div >
   );
 };
 

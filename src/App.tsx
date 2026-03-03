@@ -25,6 +25,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminApiKeys from "./pages/admin/AdminApiKeys";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminAlerts from "./pages/admin/AdminAlerts";
+import AdminPlans from "./pages/admin/AdminPlans";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import DataDeletion from "./pages/DataDeletion";
 import CookieConsent from "./components/CookieConsent";
@@ -64,6 +65,7 @@ const App = () => (
               <Route path="api" element={<AdminApiKeys />} />
               <Route path="settings" element={<AdminSettings />} />
               <Route path="alerts" element={<AdminAlerts />} />
+              <Route path="plans" element={<AdminPlans />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

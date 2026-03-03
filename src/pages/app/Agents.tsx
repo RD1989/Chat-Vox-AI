@@ -19,7 +19,8 @@ import {
 import {
   Bot, Plus, Trash2, Copy, ExternalLink, Loader2, Save, Pencil, Power, Eye, EyeOff,
   MessageSquare, Users, Sparkles, Lock, Link as LinkIcon, AlertTriangle, Target, Mic,
-  Facebook, Megaphone, BarChart3, ShoppingBag, Code2, Clock, RefreshCcw
+  Facebook, Megaphone, BarChart3, ShoppingBag, Code2, Clock, RefreshCcw,
+  DollarSign, TrendingUp
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
@@ -44,6 +45,7 @@ interface Agent {
   widget_trigger_seconds?: number;
   widget_trigger_scroll?: number;
   widget_position?: string;
+  avg_conversion_value?: number;
 }
 
 const PIXEL_PLATFORMS = [
@@ -109,6 +111,10 @@ const Agents = () => {
     setEditAgent(agent);
     setAgentConfig(parseSystemPrompt(agent.system_prompt || "Você é um assistente virtual útil de vendas."));
     setPixelsConfig(agent.chat_theme_config?.pixels || {});
+    setEditAgent({
+      ...agent,
+      avg_conversion_value: agent.avg_conversion_value || 0
+    });
   };
 
   const fetchAgents = useCallback(async () => {
@@ -184,7 +190,8 @@ const Agents = () => {
         follow_up_config: editAgent.follow_up_config,
         widget_trigger_seconds: editAgent.widget_trigger_seconds,
         widget_trigger_scroll: editAgent.widget_trigger_scroll,
-        widget_position: editAgent.widget_position
+        widget_position: editAgent.widget_position,
+        avg_conversion_value: editAgent.avg_conversion_value
       } as any)
       .eq("id", editAgent.id);
 
@@ -523,6 +530,24 @@ const Agents = () => {
                           placeholder="google/gemini-3-flash-preview"
                           className="h-10 bg-white dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-xs rounded-xl focus:border-primary/50"
                         />
+                      </div>
+                    </div>
+                    <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-white/5">
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <DollarSign size={16} className="text-green-500" /> Inteligência de ROI
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Valor Médio de Venda (R$)</Label>
+                          <Input
+                            type="number"
+                            value={editAgent.avg_conversion_value || 0}
+                            onChange={(e) => setEditAgent({ ...editAgent, avg_conversion_value: parseFloat(e.target.value) || 0 })}
+                            className="bg-white dark:bg-black/20 border-slate-200 dark:border-white/10 rounded-lg"
+                            placeholder="Ex: 500"
+                          />
+                          <p className="text-[10px] text-slate-500">Quanto vale, em média, um cliente fechado por este robô?</p>
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -81,7 +81,32 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, user_id, lead_id, agent_id } = await req.json();
+    const body = await req.json();
+
+    // ── Fallback lead creation (bypass RLS via service_role) ──
+    if (body.action === "create_lead") {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+      const { user_id, name, status, source, city, region, ip_address, utm_source, utm_medium, utm_campaign } = body;
+      const { data, error } = await supabase.from("vox_leads").insert({
+        user_id, name, status: status || "novo", source: source || "chat",
+        city, region, ip_address, utm_source, utm_medium, utm_campaign,
+      }).select("id").single();
+
+      if (error) {
+        console.error("[vox-chat] create_lead error:", error);
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ lead_id: data.id }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { messages, user_id, lead_id, agent_id } = body;
     console.log(`[vox-chat] Request starting: user=${user_id}, lead=${lead_id}, agent=${agent_id}`);
 
     if (!messages || !Array.isArray(messages) || !user_id) {
@@ -154,9 +179,28 @@ serve(async (req) => {
     // Fetch plan limits
     const { data: planLimits } = await supabase
       .from("plans")
-      .select("*")
+      .select("lead_limit, request_limit")
       .eq("slug", currentPlan)
       .single();
+
+    // Count messages (Total usage for the user)
+    const { count: messageCount } = await supabase
+      .from("vox_messages")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user_id);
+
+    // Hard Stop: Request Limit (Messages)
+    const requestLimitReached = planLimits?.request_limit !== null && (messageCount || 0) >= planLimits?.request_limit;
+
+    if (requestLimitReached) {
+      return new Response(
+        JSON.stringify({
+          error: "Cota de mensagens atingida para seu plano (" + currentPlan + ").",
+          details: "Você utilizou " + messageCount + " de " + planLimits?.request_limit + " mensagens permitidas. Faça upgrade para o plano Scale para uso ilimitado."
+        }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Count leads
     const { count: leadCount } = await supabase
@@ -219,63 +263,55 @@ serve(async (req) => {
 
     console.log(`[vox-chat] Agent: ${aiName}, Using model: ${model}, Vision: ${visionModel}`);
 
-    // --- Fetch Knowledge Base (agent-specific or all) ---
-    let knowledgeQuery = supabase
-      .from("vox_knowledge")
-      .select("title, content, category")
-      .eq("user_id", user_id)
-      .eq("is_active", true);
-
-    if (agent_id) {
-      knowledgeQuery = knowledgeQuery.or(`agent_id.eq.${agent_id},agent_id.is.null`);
-    }
-
-    const { data: knowledgeEntries } = await knowledgeQuery;
-
+    // --- Fetch Knowledge Base (Semantic Search using Vector DB) ---
     let knowledgeContext = "";
-    if (knowledgeEntries && knowledgeEntries.length > 0) {
-      const lastUserMsg = messages[messages.length - 1];
-      const userText = (typeof lastUserMsg?.content === "string"
-        ? lastUserMsg.content
-        : Array.isArray(lastUserMsg?.content)
-          ? lastUserMsg.content.filter((c: any) => c.type === "text").map((c: any) => c.text).join(" ")
-          : ""
-      ).toLowerCase();
+    const lastUserMsg = messages[messages.length - 1];
+    const userText = (typeof lastUserMsg?.content === "string"
+      ? lastUserMsg.content
+      : Array.isArray(lastUserMsg?.content)
+        ? lastUserMsg.content.filter((c: any) => c.type === "text").map((c: any) => c.text).join(" ")
+        : ""
+    ).trim();
 
-      // RAG 2.0: Matrix-based relevance scoring
-      const scoredEntries = knowledgeEntries.map((entry: any) => {
-        let score = 0;
-        const searchTerms = userText.split(/\s+/).filter(t => t.length > 3);
+    if (userText) {
+      try {
+        // 1. Generate query embedding
+        const googleApiKey = Deno.env.get("GOOGLE_GENERATIVE_AI_API_KEY");
+        const embedRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${googleApiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: "models/text-embedding-004",
+              content: { parts: [{ text: userText }] },
+            }),
+          }
+        );
+        const embedData = await embedRes.json();
+        const queryEmbedding = embedData.embedding?.values;
 
-        // Title match (High priority)
-        searchTerms.forEach(term => {
-          if (entry.title.toLowerCase().includes(term)) score += 5;
-        });
+        if (queryEmbedding) {
+          // 2. Search using match_knowledge RPC
+          const { data: matchResult, error: matchError } = await supabase.rpc("match_knowledge", {
+            query_embedding: queryEmbedding,
+            match_threshold: 0.5,
+            match_count: 5,
+            p_user_id: user_id,
+            p_agent_id: agent_id || null
+          });
 
-        // Category match (Medium priority)
-        if (entry.category.toLowerCase().split(" ").some((t: string) => userText.includes(t))) score += 3;
-
-        // Content match (Base priority)
-        searchTerms.forEach((term: string) => {
-          if (entry.content.toLowerCase().includes(term)) score += 1;
-        });
-
-        // Always boost general content slightly if there's any match
-        if (score > 0 && entry.category === "geral") score += 2;
-
-        return { ...entry, score };
-      });
-
-      // Filter and sort by score
-      const usefulEntries = scoredEntries
-        .filter((e: any) => e.score > 0 || e.category === "geral")
-        .sort((a: any, b: any) => b.score - a.score)
-        .slice(0, 5);
-
-      knowledgeContext = "\n\nBASE DE CONHECIMENTO (CONTEXTO SELECIONADO):\n" +
-        usefulEntries.map((e: any) =>
-          `[FONTE: ${e.title}] (${e.category})\n${e.content}`
-        ).join("\n---\n");
+          if (!matchError && matchResult && matchResult.length > 0) {
+            knowledgeContext = "\n\nBASE DE CONHECIMENTO (BUSCA SEMÂNTICA):\n" +
+              matchResult.map((e: any) =>
+                `[FONTE: ${e.title}] (${e.category})\n${e.content}`
+              ).join("\n---\n");
+            console.log(`[vox-chat] Semantic search found ${matchResult.length} relevant entries.`);
+          }
+        }
+      } catch (e) {
+        console.error("[vox-chat] Semantic search failed, falling back to basic context:", e);
+      }
     }
 
     // --- Build System Prompt ---
@@ -343,6 +379,9 @@ REGRAS IMPORTANTES:
         await supabase.from("vox_leads").update({
           qualification_score: newScore,
           status: newScore > 70 ? "Quente" : newScore > 30 ? "Morno" : "Frio",
+          qualified: newScore > 70,
+          estimated_value: newScore > 70 ? (vs?.avg_conversion_value || 0) : 0,
+          acquisition_cost: 5,
           updated_at: new Date().toISOString()
         } as any).eq("id", lead_id);
       }

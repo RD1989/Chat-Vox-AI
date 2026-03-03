@@ -64,6 +64,26 @@ ${cleanHtml}`;
 
         if (!extractedContent) throw new Error("Falha na extração com Gemini.");
 
+        // --- Generate Embedding ---
+        let embedding = null;
+        try {
+            const embedRes = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${googleApiKey}`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        model: "models/text-embedding-004",
+                        content: { parts: [{ text: extractedContent }] },
+                    }),
+                }
+            );
+            const embedData = await embedRes.json();
+            embedding = embedData.embedding?.values;
+        } catch (e) {
+            console.error("[vox-crawler] Embedding generation failed:", e);
+        }
+
         // 4. Insert into vox_knowledge
         const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
         const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -77,6 +97,7 @@ ${cleanHtml}`;
                 title: `Crawl: ${new URL(url).hostname}`,
                 content: extractedContent,
                 category: "geral",
+                embedding: embedding,
                 is_active: true
             })
             .select()

@@ -64,10 +64,28 @@ export const KnowledgeBase = ({ userId, agentId }: KnowledgeBaseProps) => {
     }
     setSaving(true);
 
+    let embedding = null;
+    try {
+      const { data: embedData, error: embedError } = await supabase.functions.invoke('vox-embedder', {
+        body: { text: form.content }
+      });
+      if (!embedError && embedData?.embedding) {
+        embedding = embedData.embedding;
+      }
+    } catch (e) {
+      console.error("Failed to generate embedding, falling back to text-only:", e);
+    }
+
     if (editingId) {
       const { error } = await supabase
         .from("vox_knowledge" as any)
-        .update({ title: form.title, content: form.content, category: form.category, updated_at: new Date().toISOString() } as any)
+        .update({
+          title: form.title,
+          content: form.content,
+          category: form.category,
+          embedding: embedding,
+          updated_at: new Date().toISOString()
+        } as any)
         .eq("id", editingId);
       if (error) {
         toast({ title: "Erro ao atualizar", variant: "destructive" });
@@ -77,7 +95,14 @@ export const KnowledgeBase = ({ userId, agentId }: KnowledgeBaseProps) => {
     } else {
       const { error } = await supabase
         .from("vox_knowledge" as any)
-        .insert({ user_id: userId, agent_id: agentId || null, title: form.title, content: form.content, category: form.category } as any);
+        .insert({
+          user_id: userId,
+          agent_id: agentId || null,
+          title: form.title,
+          content: form.content,
+          category: form.category,
+          embedding: embedding
+        } as any);
       if (error) {
         toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
       } else {

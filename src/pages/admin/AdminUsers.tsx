@@ -33,6 +33,9 @@ interface EnrichedUser {
   interactive_messages: number;
   avg_score: number;
   conversion_rate: number;
+  revenue: number;
+  est_ia_cost: number;
+  net_profit: number;
   top_cities: Array<{ city: string; count: number }>;
   top_regions: Array<{ region: string; count: number }>;
   roles: string[];
@@ -226,6 +229,14 @@ const AdminUsers = () => {
                   <div className="text-center min-w-[45px]">
                     <p className="text-lg font-bold text-foreground">{u.conversion_rate}%</p>
                     <p className="text-[10px]">Conv.</p>
+                  </div>
+                  <div className="text-center min-w-[45px]">
+                    <p className="text-lg font-bold text-emerald-500">R$ {u.revenue.toFixed(2)}</p>
+                    <p className="text-[10px]">Receita</p>
+                  </div>
+                  <div className="text-center min-w-[45px]">
+                    <p className={`text-lg font-bold ${u.net_profit > 0 ? 'text-blue-500' : 'text-red-500'}`}>R$ {u.net_profit.toFixed(2)}</p>
+                    <p className="text-[10px]">Lucro</p>
                   </div>
                   <div className="text-center">
                     <Badge variant="outline" className="text-[10px] capitalize">{u.plan}</Badge>

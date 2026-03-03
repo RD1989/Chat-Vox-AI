@@ -64,6 +64,13 @@ interface AdminStats {
   topCities: Array<{ city: string; state: string; count: number }>;
   planDistribution: Array<{ plan: string; count: number }>;
   userPerformance: UserPerformance[];
+  financials: Array<{
+    plan_name: string;
+    active_users: number;
+    total_revenue: number;
+    total_ia_cost: number;
+    net_profit: number;
+  }>;
 }
 
 const AdminDashboard = () => {
@@ -176,6 +183,7 @@ const AdminDashboard = () => {
       topCities,
       planDistribution,
       userPerformance: users.sort((a, b) => b.leads_count - a.leads_count),
+      financials: usersRes.financials || [],
     });
 
     // Evaluate metric alerts
@@ -243,6 +251,17 @@ const AdminDashboard = () => {
     { label: "Msgs/Usuário", value: stats.avgMsgsPerUser, icon: MessageSquare, desc: "Média por conta" },
   ];
 
+  const totalMRR = stats.financials.reduce((sum, f) => sum + f.total_revenue, 0);
+  const totalIACost = stats.financials.reduce((sum, f) => sum + f.total_ia_cost, 0);
+  const globalMargin = totalMRR > 0 ? `${Math.round(((totalMRR - totalIACost) / totalMRR) * 100)}%` : "0%";
+
+  const financialCards = [
+    { label: "Receita (MRR)", value: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalMRR), icon: DollarSign, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+    { label: "Custo IA Est.", value: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalIACost), icon: Zap, color: "text-amber-500", bg: "bg-amber-500/10" },
+    { label: "Lucro Líquido", value: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalMRR - totalIACost), icon: TrendingUp, color: "text-blue-500", bg: "bg-blue-500/10" },
+    { label: "Margem Global", value: globalMargin, icon: BarChart3, color: "text-violet-500", bg: "bg-violet-500/10" },
+  ];
+
   return (
     <div className="space-y-8 max-w-7xl">
       {/* Header */}
@@ -304,6 +323,29 @@ const AdminDashboard = () => {
           </button>
         </div>
       )}
+      {/* Financial Overview (Master Only) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {financialCards.map((card) => (
+          <Card key={card.label} className="border-border/60 bg-gradient-to-br from-card to-background shadow-sm overflow-hidden relative group">
+            <div className={`absolute -right-2 -bottom-2 opacity-5 scale-150 transition-transform group-hover:scale-[1.7]`}>
+              <card.icon size={80} />
+            </div>
+            <CardContent className="p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <div className={`w-8 h-8 rounded-lg ${card.bg} flex items-center justify-center shrink-0`}>
+                  <card.icon size={16} className={card.color} />
+                </div>
+                <span className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{card.label}</span>
+              </div>
+              <p className="text-2xl font-black text-foreground">{card.value}</p>
+              <div className="flex items-center gap-1 mt-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span className="text-[10px] text-muted-foreground">Métrica em tempo real</span>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">

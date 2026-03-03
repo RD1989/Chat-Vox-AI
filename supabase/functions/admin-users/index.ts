@@ -99,24 +99,18 @@ serve(async (req) => {
       }
 
       const { data: profiles } = await supabase.from("profiles").select("*");
-
-      // Get all leads with qualification data
-      const { data: allLeads } = await supabase
-        .from("vox_leads")
-        .select("user_id, qualified, qualification_score, status, created_at, city, region");
-
-      // Get all messages with type
-      const { data: allMessages } = await supabase
-        .from("vox_messages")
-        .select("user_id, message_type, created_at");
-
+      const { data: allLeads } = await supabase.from("vox_leads").select("user_id, qualified, qualification_score");
+      const { data: allMessages } = await supabase.from("vox_messages").select("user_id, message_type");
       const { data: roles } = await supabase.from("user_roles").select("*");
+      const { data: plans } = await supabase.from("plans").select("*");
+      const { data: finStats } = await supabase.from("admin_financial_performance").select("*");
 
       const enrichedUsers = users.map((u) => {
         const profile = profiles?.find((p: any) => p.id === u.id) as any;
         const userLeads = allLeads?.filter((l: any) => l.user_id === u.id) || [];
         const userMsgs = allMessages?.filter((m: any) => m.user_id === u.id) || [];
         const userRoles = roles?.filter((r: any) => r.user_id === u.id).map((r: any) => r.role) || [];
+        const userPlan = plans?.find((p: any) => p.slug === (profile?.plan || "free"));
 
         const qualifiedLeads = userLeads.filter((l: any) => l.qualified).length;
         const interactiveMsgs = userMsgs.filter((m: any) => m.message_type === "interactive").length;
@@ -134,15 +128,10 @@ serve(async (req) => {
           .slice(0, 3)
           .map(([city, count]) => ({ city, count }));
 
-        // Top regions for this user
-        const regionCount: Record<string, number> = {};
-        userLeads.forEach((l: any) => {
-          if (l.region) regionCount[l.region] = (regionCount[l.region] || 0) + 1;
-        });
-        const topRegions = Object.entries(regionCount)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 3)
-          .map(([region, count]) => ({ region, count }));
+        // IA Cost: R$ 0.005 per message (standard)
+        const estIaCost = (userMsgs.length * 0.005).toFixed(2);
+        const revenue = ((userPlan?.price_brl || 0) / 100).toFixed(2);
+        const profit = (parseFloat(revenue) - parseFloat(estIaCost)).toFixed(2);
 
         return {
           id: u.id,
@@ -160,13 +149,18 @@ serve(async (req) => {
           interactive_messages: interactiveMsgs,
           avg_score: avgScore,
           conversion_rate: userLeads.length > 0 ? Math.round((qualifiedLeads / userLeads.length) * 100) : 0,
+          revenue: parseFloat(revenue),
+          est_ia_cost: parseFloat(estIaCost),
+          net_profit: parseFloat(profit),
           top_cities: topCities,
-          top_regions: topRegions,
           roles: userRoles,
         };
       });
 
-      return new Response(JSON.stringify({ users: enrichedUsers }), {
+      return new Response(JSON.stringify({
+        users: enrichedUsers,
+        financials: finStats
+      }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 const navItems = [
   { label: "Visão Geral", icon: LayoutDashboard, path: "/admin" },
   { label: "Usuários", icon: Users, path: "/admin/users" },
+  { label: "Planos & Preços", icon: Settings, path: "/admin/plans" },
   { label: "Alertas", icon: Bell, path: "/admin/alerts" },
   { label: "Chave API", icon: Key, path: "/admin/api" },
   { label: "Configurações", icon: Settings, path: "/admin/settings" },

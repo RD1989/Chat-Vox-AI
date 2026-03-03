@@ -408,57 +408,73 @@ const PublicChat = () => {
 
   const createLead = async (name: string) => {
     if (!userId) return;
+
+    // ✅ ALWAYS advance the chat immediately — never block on lead creation
+    setLeadCreated(true);
+    setShowNamePrompt(false);
+    setMessages((prev) => [
+      ...prev,
+      { id: "name-resp", role: "user", content: name, timestamp: new Date() },
+      { id: "name-ack", role: "assistant", content: `Prazer, ${name}! 😊 Como posso te ajudar?`, timestamp: new Date() },
+    ]);
+    inputRef.current?.focus();
+
+    // 🔄 Try to create lead in background (best-effort, non-blocking)
     const params = new URLSearchParams(window.location.search);
-
-    let geoCity: string | null = null;
-    let geoRegion: string | null = null;
-    let geoIp: string | null = null;
     try {
-      const geoRes = await fetch("https://ip-api.com/json/?fields=status,city,regionName,query&lang=pt-BR");
-      if (geoRes.ok) {
-        const geo = await geoRes.json();
-        if (geo.status === "success") {
-          geoCity = geo.city || null;
-          geoRegion = geo.regionName || null;
-          geoIp = geo.query || null;
+      let geoCity: string | null = null;
+      let geoRegion: string | null = null;
+      let geoIp: string | null = null;
+      try {
+        const geoRes = await fetch("https://ip-api.com/json/?fields=status,city,regionName,query&lang=pt-BR");
+        if (geoRes.ok) {
+          const geo = await geoRes.json();
+          if (geo.status === "success") {
+            geoCity = geo.city || null;
+            geoRegion = geo.regionName || null;
+            geoIp = geo.query || null;
+          }
         }
+      } catch { /* ignore */ }
+
+      const leadPayload = {
+        user_id: userId, name, status: "novo", source: "chat",
+        city: geoCity, region: geoRegion, ip_address: geoIp,
+        utm_source: params.get("utm_source") || null,
+        utm_medium: params.get("utm_medium") || null,
+        utm_campaign: params.get("utm_campaign") || null,
+      };
+
+      // Try SDK insert first
+      let { data, error } = await supabase.from("vox_leads").insert(leadPayload as any).select().single();
+
+      // Fallback: Edge Function (bypasses RLS)
+      if (error) {
+        console.warn("[Chat] SDK insert failed, trying fallback:", error.message);
+        try {
+          const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/vox-chat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "create_lead", ...leadPayload }),
+          });
+          if (res.ok) {
+            const fb = await res.json();
+            if (fb.lead_id) { data = { id: fb.lead_id } as any; error = null; }
+          }
+        } catch { /* silent */ }
       }
-    } catch { /* silently ignore geo errors */ }
 
-    const { data, error } = await supabase.from("vox_leads").insert({
-      user_id: userId,
-      name,
-      status: "novo",
-      source: "chat",
-      city: geoCity,
-      region: geoRegion,
-      ip_address: geoIp,
-      utm_source: params.get("utm_source") || null,
-      utm_medium: params.get("utm_medium") || null,
-      utm_campaign: params.get("utm_campaign") || null,
-    } as any).select().single();
-
-    if (data && !error) {
-      const newLeadId = (data as any).id;
-      setLeadId(newLeadId);
-      setLeadCreated(true);
-      setShowNamePrompt(false);
-      setMessages((prev) => [
-        ...prev,
-        { id: "name-resp", role: "user", content: name, timestamp: new Date() },
-        { id: "name-ack", role: "assistant", content: `Prazer, ${name}! 😊 Como posso te ajudar?`, timestamp: new Date() },
-      ]);
-      inputRef.current?.focus();
-
-      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-lead`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: userId, lead_id: newLeadId, event_type: "new_lead" }),
-      }).catch(() => { });
-    } else {
-      console.error("Error creating lead:", error);
-      toast.error("Erro ao iniciar chat. Por favor, tente novamente.");
-      setIsLoading(false);
+      if (data && !error) {
+        setLeadId((data as any).id);
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-lead`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: userId, lead_id: (data as any).id, event_type: "new_lead" }),
+        }).catch(() => { });
+      } else {
+        console.warn("[Chat] Lead creation failed (chat continues without lead):", error?.message);
+      }
+    } catch (e) {
+      console.warn("[Chat] Lead error (non-blocking):", e);
     }
   };
 
