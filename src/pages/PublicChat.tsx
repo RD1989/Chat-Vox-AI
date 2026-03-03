@@ -737,11 +737,16 @@ const PublicChat = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: chatBg }}>
+    <div className="h-[100dvh] flex flex-col overflow-hidden" style={{ backgroundColor: chatBg }}>
       {/* WhatsApp Header */}
-      <header className="flex items-center px-4 py-2 z-10" style={{ backgroundColor: headerBg }}>
+      <header className="flex items-center px-4 py-2 z-10 shrink-0" style={{ backgroundColor: headerBg }}>
         <div className="flex items-center gap-3 flex-1">
-          <ArrowLeft size={20} style={{ color: headerText, opacity: 0.9 }} className="sm:hidden" />
+          <ArrowLeft
+            size={20}
+            style={{ color: headerText, opacity: 0.9 }}
+            className="sm:hidden cursor-pointer"
+            onClick={() => window.parent.postMessage({ type: "vox-close" }, "*")}
+          />
           <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden"
             style={{ backgroundColor: "rgba(255,255,255,0.1)" }}>
             {config.ai_avatar_url ? (

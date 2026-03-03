@@ -67,7 +67,19 @@ serve(async (req) => {
     // Create iframe container
     var container = document.createElement("div");
     container.id = "vox-widget-container";
-    container.style.cssText = "position:fixed;bottom:86px;" + (isRight ? "right:20px" : "left:20px") + ";width:380px;height:550px;max-height:80vh;border-radius:16px;overflow:hidden;z-index:99998;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:none;transition:opacity 0.2s,transform 0.2s;opacity:0;transform:translateY(10px);";
+    
+    // Dynamic styles based on screen size
+    var isMobile = window.innerWidth < 768;
+    function updateStyles() {
+      isMobile = window.innerWidth < 768;
+      if (isMobile) {
+        container.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;z-index:99998;display:none;transition:opacity 0.2s;opacity:0;border-radius:0;overflow:hidden;";
+      } else {
+        container.style.cssText = "position:fixed;bottom:86px;" + (isRight ? "right:20px" : "left:20px") + ";width:380px;height:550px;max-height:80vh;border-radius:16px;overflow:hidden;z-index:99998;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:none;transition:opacity 0.2s,transform 0.2s;opacity:0;transform:translateY(10px);";
+      }
+    }
+    updateStyles();
+    window.addEventListener('resize', updateStyles);
 
     var iframe = document.createElement("iframe");
     var params = new URLSearchParams(window.location.search);
@@ -112,21 +124,38 @@ serve(async (req) => {
       isOpen = !isOpen;
       if (isOpen) {
         container.style.display = "block";
-        setTimeout(function() { container.style.opacity = "1"; container.style.transform = "translateY(0)"; }, 10);
+        if (isMobile) {
+          btn.style.display = "none"; // Hide button on mobile when open
+          document.body.style.overflow = "hidden"; // Prevent background scroll
+        }
+        setTimeout(function() { 
+          container.style.opacity = "1"; 
+          if (!isMobile) container.style.transform = "translateY(0)"; 
+        }, 10);
         btn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
         
-        // If it was an auto-trigger, we can notify the iframe
         if (isAuto && iframe.contentWindow) {
           iframe.contentWindow.postMessage({ type: 'vox-trigger-active' }, '*');
         }
       } else {
         container.style.opacity = "0";
-        container.style.transform = "translateY(10px)";
-        setTimeout(function() { container.style.display = "none"; }, 200);
+        if (!isMobile) container.style.transform = "translateY(10px)";
+        document.body.style.overflow = "";
+        setTimeout(function() { 
+          container.style.display = "none";
+          if (isMobile) btn.style.display = "flex";
+        }, 200);
         btn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>';
       }
     }
     btn.onclick = function() { toggle(false); };
+
+    // Listen for close message from iframe
+    window.addEventListener('message', function(event) {
+      if (event.data && event.data.type === 'vox-close') {
+        if (isOpen) toggle(false);
+      }
+    });
 
     document.body.appendChild(container);
     document.body.appendChild(btn);
