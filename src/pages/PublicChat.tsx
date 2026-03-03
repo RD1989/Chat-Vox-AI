@@ -213,6 +213,7 @@ interface VoxConfig {
   primary_color: string;
   welcome_message: string;
   chat_theme: string;
+  chat_appearance_mode?: "light" | "dark" | "auto";
   chat_theme_config: {
     headerBg?: string;
     headerText?: string;
@@ -333,7 +334,7 @@ const PublicChat = () => {
             .select("label, url")
             .eq("agent_id", agentId)
             .eq("is_active", true);
-          if (buttonsData) setConversionButtons(buttonsData as ConversionButton[]);
+          if (buttonsData) setConversionButtons(buttonsData as unknown as ConversionButton[]);
 
           setConfigLoading(false);
           setTimeout(() => {
@@ -733,21 +734,31 @@ const PublicChat = () => {
   }
 
   const isWhatsApp = config.chat_theme === "whatsapp";
+
+  // Dynamic Theme Logic
+  const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const appearance = config.chat_appearance_mode === "auto" || !config.chat_appearance_mode
+    ? (systemPrefersDark ? "dark" : "light")
+    : config.chat_appearance_mode;
+
+  const isDark = appearance === "dark";
+
   const tc = config.chat_theme_config;
-  const headerBg = tc.headerBg || (isWhatsApp ? "#1f2c34" : config.primary_color);
-  const headerText = tc.headerText || "#e9edef";
-  const chatBg = tc.chatBg || "#0b141a";
-  const userBubbleBg = tc.userBubbleBg || (isWhatsApp ? "#005c4b" : config.primary_color);
-  const userBubbleText = tc.userBubbleText || (isWhatsApp ? "#e9edef" : "#ffffff");
-  const aiBubbleBg = tc.aiBubbleBg || "#1f2c34";
-  const aiBubbleText = tc.aiBubbleText || "#e9edef";
-  const inputBg = tc.inputBg || "#2a3942";
-  const inputBarBg = tc.inputBarBg || "#1f2c34";
-  const accentColor = "#00a884";
+  const headerBg = tc.headerBg || (isWhatsApp ? (isDark ? "#202c33" : "#008069") : config.primary_color);
+  const headerText = tc.headerText || (isDark ? "#e9edef" : "#ffffff");
+  const chatBg = tc.chatBg || (isDark ? "#0b141a" : "#efeae2");
+  const userBubbleBg = tc.userBubbleBg || (isWhatsApp ? (isDark ? "#005c4b" : "#d9fdd3") : config.primary_color);
+  const userBubbleText = tc.userBubbleText || (isDark ? "#e9edef" : "#111b21");
+  const aiBubbleBg = tc.aiBubbleBg || (isDark ? "#202c33" : "#ffffff");
+  const aiBubbleText = tc.aiBubbleText || (isDark ? "#e9edef" : "#111b21");
+  const inputBg = tc.inputBg || (isDark ? "#2a3942" : "#ffffff");
+  const inputBarBg = tc.inputBarBg || (isDark ? "#202c33" : "#f0f2f5");
+  const secondaryText = isDark ? "#8696a0" : "#667781";
+  const accentColor = isDark ? "#00a884" : "#128c7e";
 
   const wallpaperStyle = {
     backgroundColor: chatBg,
-    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cdefs%3E%3Cstyle%3E.a%7Bfill:%23ffffff;fill-opacity:0.02%7D%3C/style%3E%3C/defs%3E%3Cpath class='a' d='M30 10c-2 0-4 2-4 4s2 4 4 4 4-2 4-4-2-4-4-4zm0 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z'/%3E%3Cpath class='a' d='M70 30l-4-4-4 4 4 4zm-4-2l-2 2 2 2 2-2z'/%3E%3Cpath class='a' d='M110 15c-3 0-5 2-5 5s2 5 5 5 5-2 5-5-2-5-5-5zm0 8c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3z'/%3E%3Cpath class='a' d='M150 25h6v2h-6z'/%3E%3Cpath class='a' d='M20 60l3-5h-6z'/%3E%3Cpath class='a' d='M60 50c0-2.8-2.2-5-5-5s-5 2.2-5 5 2.2 5 5 5 5-2.2 5-5zm-8 0c0-1.7 1.3-3 3-3s3 1.3 3 3-1.3 3-3 3-3-1.3-3-3z'/%3E%3Cpath class='a' d='M100 60h-2v-6h2v2h4v2h-4z'/%3E%3Cpath class='a' d='M140 55c-1.7 0-3 1.3-3 3s1.3 3 3 3 3-1.3 3-3-1.3-3-3-3z'/%3E%3Cpath class='a' d='M175 45l-3 3 3 3 3-3z'/%3E%3Cpath class='a' d='M25 100l5-3-5-3v2h-4v2h4z'/%3E%3Cpath class='a' d='M65 95h8v2h-8z'/%3E%3Cpath class='a' d='M120 90c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z'/%3E%3Cpath class='a' d='M160 100l-6-4v8z'/%3E%3Cpath class='a' d='M35 140c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5zm0 8c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3z'/%3E%3Cpath class='a' d='M80 135h2v8h-2z'/%3E%3Cpath class='a' d='M130 140l4 4-4 4'/%3E%3Cpath class='a' d='M170 130c-3.3 0-6 2.7-6 6s2.7 6 6 6 6-2.7 6-6-2.7-6-6-6zm0 10c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4z'/%3E%3Cpath class='a' d='M15 175l4-7h-8z'/%3E%3Cpath class='a' d='M85 170c-2 0-3.5 1.5-3.5 3.5s1.5 3.5 3.5 3.5 3.5-1.5 3.5-3.5-1.5-3.5-3.5-3.5z'/%3E%3Cpath class='a' d='M140 180h8v2h-8z'/%3E%3Cpath class='a' d='M180 175l-3 5h6z'/%3E%3C/svg%3E")`,
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cdefs%3E%3Cstyle%3E.a%7Bfill:${isDark ? '%23ffffff' : '%23000000'};fill-opacity:0.02%7D%3C/style%3E%3C/defs%3E%3Cpath class='a' d='M30 10c-2 0-4 2-4 4s2 4 4 4 4-2 4-4-2-4-4-4zm0 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z'/%3E%3Cpath class='a' d='M70 30l-4-4-4 4 4 4zm-4-2l-2 2 2 2 2-2z'/%3E%3Cpath class='a' d='M110 15c-3 0-5 2-5 5s2 5 5 5 5-2 5-5-2-5-5-5zm0 8c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3z'/%3E%3Cpath class='a' d='M150 25h6v2h-6z'/%3E%3Cpath class='a' d='M20 60l3-5h-6z'/%3E%3Cpath class='a' d='M60 50c0-2.8-2.2-5-5-5s-5 2.2-5 5 2.2 5 5 5 5-2.2 5-5zm-8 0c0-1.7 1.3-3 3-3s3 1.3 3 3-1.3 3-3 3-3-1.3-3-3z'/%3E%3Cpath class='a' d='M100 60h-2v-6h2v2h4v2h-4z'/%3E%3Cpath class='a' d='M140 55c-1.7 0-3 1.3-3 3s1.3 3 3 3 3-1.3 3-3-1.3-3-3-3z'/%3E%3Cpath class='a' d='M175 45l-3 3 3 3 3-3z'/%3E%3Cpath class='a' d='M25 100l5-3-5-3v2h-4v2h4z'/%3E%3Cpath class='a' d='M65 95h8v2h-8z'/%3E%3Cpath class='a' d='M120 90c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z'/%3E%3Cpath class='a' d='M160 100l-6-4v8z'/%3E%3Cpath class='a' d='M35 140c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5zm0 8c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3z'/%3E%3Cpath class='a' d='M80 135h2v8h-2z'/%3E%3Cpath class='a' d='M130 140l4 4-4 4'/%3E%3Cpath class='a' d='M170 130c-3.3 0-6 2.7-6 6s2.7 6 6 6 6-2.7 6-6-2.7-6-6-6zm0 10c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4z'/%3E%3Cpath class='a' d='M15 175l4-7h-8z'/%3E%3Cpath class='a' d='M85 170c-2 0-3.5 1.5-3.5 3.5s1.5 3.5 3.5 3.5 3.5-1.5 3.5-3.5-1.5-3.5-3.5-3.5z'/%3E%3Cpath class='a' d='M140 180h8v2h-8z'/%3E%3Cpath class='a' d='M180 175l-3 5h6z'/%3E%3C/svg%3E")`,
   };
 
   return (
@@ -779,20 +790,20 @@ const PublicChat = () => {
           </div>
         </div>
         <div className="flex items-center gap-5">
-          <Search size={20} style={{ color: headerText, opacity: 0.85 }} />
-          <MoreVertical size={20} style={{ color: headerText, opacity: 0.85 }} />
+          <Search size={22} style={{ color: headerText, opacity: isDark ? 0.85 : 0.9 }} />
+          <MoreVertical size={22} style={{ color: headerText, opacity: isDark ? 0.85 : 0.9 }} />
         </div>
       </header>
 
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto px-[3%] sm:px-[6%] py-2" style={wallpaperStyle}>
         <div className="flex justify-center mb-3 mt-1">
-          <span className="text-[12.5px] px-3 py-1 rounded-lg shadow-sm"
-            style={{ backgroundColor: "#182229", color: "#8696a0" }}>Hoje</span>
+          <span className="text-[12.5px] px-3 py-1 rounded-lg shadow-sm font-medium"
+            style={{ backgroundColor: isDark ? "#182229" : "#ffffff", color: secondaryText }}>Hoje</span>
         </div>
         <div className="flex justify-center mb-4">
-          <span className="text-[11.5px] text-center px-4 py-1.5 rounded-lg max-w-[85%] leading-snug"
-            style={{ backgroundColor: "#182229e6", color: "#8696a0" }}>
+          <span className="text-[11.5px] text-center px-4 py-1.5 rounded-lg max-w-[85%] leading-snug shadow-sm"
+            style={{ backgroundColor: isDark ? "#182229e6" : "#fff9c6", color: isDark ? secondaryText : "#54656f" }}>
             🔒 As mensagens são protegidas com criptografia de ponta a ponta.
           </span>
         </div>
@@ -832,7 +843,7 @@ const PublicChat = () => {
                   )}
 
                   <div
-                    className={`px-[9px] pt-[6px] pb-[8px] text-[14.2px] leading-[19px] shadow-sm ${msg.role === "user"
+                    className={`px-[11px] pt-[7px] pb-[8px] text-[16px] leading-[21px] shadow-[0_1px_0.5px_rgba(0,0,0,0.13)] ${msg.role === "user"
                       ? "rounded-tl-lg rounded-bl-lg rounded-br-lg"
                       : "rounded-tr-lg rounded-br-lg rounded-bl-lg"
                       }`}
@@ -1042,12 +1053,18 @@ const PublicChat = () => {
         </div>
       )}
 
-      {/* WhatsApp Input Bar */}
+      {/* Refined WhatsApp Input Bar */}
       {leadCreated && (
-        <div className="flex items-center gap-2 px-2 py-[8px]" style={{ backgroundColor: inputBarBg }}>
-          <>
-            <button className="w-10 h-10 flex items-center justify-center shrink-0 rounded-full"
-              style={{ color: `${aiBubbleText}80` }}><Smile size={24} /></button>
+        <div className="flex items-end gap-2 px-2 py-[10px] pb-4 shrink-0" style={{ backgroundColor: chatBg }}>
+          <div className="flex-1 flex items-end gap-2 px-3 py-1.5 rounded-3xl shadow-sm min-h-[48px]"
+            style={{ backgroundColor: inputBg }}>
+            <button
+              className="w-10 h-10 flex items-center justify-center shrink-0 rounded-full"
+              style={{ color: secondaryText }}
+            >
+              <Smile size={24} className="opacity-80" />
+            </button>
+
             <input
               ref={fileInputRef}
               type="file"
@@ -1055,29 +1072,58 @@ const PublicChat = () => {
               className="hidden"
               onChange={handleFileSelect}
             />
+
+            <textarea
+              ref={inputRef as any}
+              value={input}
+              onChange={(e) => {
+                setInput(e.target.value);
+                // Simple auto-resize logic
+                e.target.style.height = "auto";
+                e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  sendMessage();
+                }
+              }}
+              placeholder="Mensagem"
+              className="flex-1 bg-transparent border-none focus:ring-0 text-[17px] py-[10px] resize-none overflow-y-auto max-h-[120px] placeholder:text-slate-500"
+              rows={1}
+              style={{ color: aiBubbleText }}
+            />
+
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="w-10 h-10 flex items-center justify-center shrink-0 rounded-full hover:bg-white/5 transition-colors"
-              style={{ color: `${aiBubbleText}80` }}
+              className="w-10 h-10 flex items-center justify-center shrink-0 rounded-full"
+              style={{ color: secondaryText }}
             >
-              <Paperclip size={22} className="rotate-45" />
+              <Paperclip size={22} className="rotate-45 opacity-80" />
             </button>
-            <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex-1 flex items-center">
-              <input ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)}
-                placeholder="Mensagem" disabled={isLoading}
-                className="w-full rounded-lg px-4 py-[10px] text-[15px] outline-none border-none shadow-sm"
-                style={{ backgroundColor: inputBg, color: getContrastColor(inputBg) }} />
-            </form>
-            <button
-              onClick={() => sendMessage()}
-              disabled={isLoading || (!input.trim() && pendingFiles.length === 0)}
-              className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${input.trim() || pendingFiles.length > 0 ? "opacity-100" : "opacity-40"
-                }`}
-            >
-              {isLoading ? <Loader2 size={22} className="animate-spin" style={{ color: `${aiBubbleText}80` }} />
-                : <Send size={20} style={{ color: accentColor }} />}
-            </button>
-          </>
+
+            {!input.trim() && (
+              <button className="w-10 h-10 flex items-center justify-center shrink-0 rounded-full"
+                style={{ color: secondaryText }}>
+                <Camera size={24} className="opacity-80" />
+              </button>
+            )}
+          </div>
+
+          <button
+            onClick={sendMessage}
+            disabled={isLoading || (!input.trim() && pendingFiles.length === 0)}
+            className={`w-[48px] h-[48px] rounded-full flex items-center justify-center shrink-0 transition-all shadow-md active:scale-90 ${isLoading ? "opacity-70" : "opacity-100"}`}
+            style={{ backgroundColor: accentColor }}
+          >
+            {isLoading ? (
+              <Loader2 size={24} className="animate-spin text-white" />
+            ) : input.trim() || pendingFiles.length > 0 ? (
+              <Send size={22} className="text-white ml-0.5" />
+            ) : (
+              <Mic size={24} className="text-white" />
+            )}
+          </button>
         </div>
       )}
     </div>

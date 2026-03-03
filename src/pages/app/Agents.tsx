@@ -41,6 +41,7 @@ interface Agent {
   chat_theme_config?: any;
   openrouter_model?: string;
   vision_model?: string;
+  chat_appearance_mode?: "light" | "dark" | "auto";
   follow_up_enabled?: boolean;
   follow_up_config?: { id: number; delay_hours: number; message: string; }[];
   widget_trigger_seconds?: number;
@@ -536,6 +537,34 @@ const Agents = () => {
                         />
                       </div>
                     </div>
+
+                    <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-white/5">
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <Sparkles size={16} className="text-primary" /> Estilo & Aparência
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label className="text-xs font-bold text-slate-500 dark:text-white/50 uppercase tracking-widest ml-1 flex items-center gap-2">
+                            Modo de Aparência (WhatsApp) <Eye size={12} className="opacity-50" />
+                          </Label>
+                          <Select
+                            value={editAgent.chat_appearance_mode || "auto"}
+                            onValueChange={(val) => setEditAgent({ ...editAgent, chat_appearance_mode: val as any })}
+                          >
+                            <SelectTrigger className="w-full bg-white dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-xl focus:ring-primary/50 focus:border-primary/50 h-10">
+                              <SelectValue placeholder="Escolha o tema..." />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white dark:bg-[#0a0f16] border-slate-200 dark:border-white/10 rounded-xl shadow-2xl">
+                              <SelectItem value="auto">Automático (Detectar Sistema)</SelectItem>
+                              <SelectItem value="light">Modo Claro (WhatsApp Tradicional)</SelectItem>
+                              <SelectItem value="dark">Modo Escuro (WhatsApp Dark)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <p className="text-[10px] text-slate-500 italic ml-1">Força o estilo visual do chat independente da cor de tema escolhida.</p>
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-white/5">
                       <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                         <DollarSign size={16} className="text-green-500" /> Inteligência de ROI
