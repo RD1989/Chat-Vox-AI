@@ -606,20 +606,28 @@ const Index = () => {
             className="max-w-5xl mx-auto overflow-x-auto pb-4">
             <div className="grid grid-cols-4 gap-4 min-w-[700px]">
               {[
-                { title: "Novos", count: 12, color: "bg-blue-500", leads: [
-                  { name: "João Silva", tag: "Quente", tagColor: "text-destructive bg-destructive/10" },
-                  { name: "Maria Santos", tag: "Orgânico", tagColor: "text-primary bg-primary/10" },
-                ]},
-                { title: "Qualificados", count: 8, color: "bg-amber-500", leads: [
-                  { name: "Pedro Costa", tag: "High Ticket", tagColor: "text-warning bg-warning/10" },
-                ]},
-                { title: "Em Atendimento", count: 5, color: "bg-emerald-500", leads: [
-                  { name: "Ana Souza", tag: "Live Chat", tagColor: "text-info bg-info/10" },
-                  { name: "Carlos Lima", tag: "Follow-up", tagColor: "text-muted-foreground bg-secondary" },
-                ]},
-                { title: "Vendas", count: 23, color: "bg-primary", leads: [
-                  { name: "Fernanda Alves", tag: "Convertido", tagColor: "text-primary bg-primary/10" },
-                ]},
+                {
+                  title: "Novos", count: 12, color: "bg-blue-500", leads: [
+                    { name: "João Silva", tag: "Quente", tagColor: "text-destructive bg-destructive/10" },
+                    { name: "Maria Santos", tag: "Orgânico", tagColor: "text-primary bg-primary/10" },
+                  ]
+                },
+                {
+                  title: "Qualificados", count: 8, color: "bg-amber-500", leads: [
+                    { name: "Pedro Costa", tag: "High Ticket", tagColor: "text-warning bg-warning/10" },
+                  ]
+                },
+                {
+                  title: "Em Atendimento", count: 5, color: "bg-emerald-500", leads: [
+                    { name: "Ana Souza", tag: "Live Chat", tagColor: "text-info bg-info/10" },
+                    { name: "Carlos Lima", tag: "Follow-up", tagColor: "text-muted-foreground bg-secondary" },
+                  ]
+                },
+                {
+                  title: "Vendas", count: 23, color: "bg-primary", leads: [
+                    { name: "Fernanda Alves", tag: "Convertido", tagColor: "text-primary bg-primary/10" },
+                  ]
+                },
               ].map((col) => (
                 <div key={col.title} className="bg-card border border-border rounded-2xl p-4">
                   <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border">
@@ -751,22 +759,20 @@ const Index = () => {
             <div className="inline-flex items-center bg-secondary border border-border rounded-full p-1">
               <button
                 onClick={() => setBilling("quarterly")}
-                className={`relative text-[13px] font-medium px-5 py-2 rounded-full transition-all ${
-                  billing === "quarterly"
+                className={`relative text-[13px] font-medium px-5 py-2 rounded-full transition-all ${billing === "quarterly"
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
-                }`}
+                  }`}
               >
                 Trimestral
                 <span className={`ml-1 text-[10px] font-bold ${billing === "quarterly" ? "text-primary-foreground/80" : "text-emerald-500"}`}>(Recomendado)</span>
               </button>
               <button
                 onClick={() => setBilling("monthly")}
-                className={`text-[13px] font-medium px-5 py-2 rounded-full transition-all ${
-                  billing === "monthly"
+                className={`text-[13px] font-medium px-5 py-2 rounded-full transition-all ${billing === "monthly"
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
-                }`}
+                  }`}
               >
                 Mensal
               </button>
@@ -848,6 +854,84 @@ const Index = () => {
               <Button variant="outline" className="w-full h-11 text-sm font-semibold rounded-xl" onClick={() => navigate("/signup")}>
                 Falar com Vendas
               </Button>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════ ABOUT THE AUTHOR ═══════════════ */}
+      <section className="py-20 lg:py-28 relative overflow-hidden bg-secondary/10">
+        <div className="container mx-auto px-6 relative">
+          <div className="max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+            {/* Author Image with decoration */}
+            <motion.div
+              initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
+              className="relative w-[280px] sm:w-[320px] lg:w-[400px] shrink-0"
+            >
+              <div className="absolute -inset-4 bg-primary/20 blur-3xl rounded-full opacity-50 pointer-events-none" />
+              <div className="relative aspect-square rounded-3xl overflow-hidden border-2 border-primary/20 shadow-2xl">
+                <img
+                  src="/author.png"
+                  alt="O Idealizador"
+                  className="w-full h-full object-cover"
+                />
+                {/* Decorative overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
+              </div>
+
+              {/* Floating Badge */}
+              <div className="absolute -bottom-6 -right-6 bg-card border border-primary/30 p-4 rounded-2xl shadow-xl backdrop-blur-md">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Rocket size={20} className="text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-[14px] font-bold text-foreground">10+ Anos</p>
+                    <p className="text-[11px] text-muted-foreground">de Experiência</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Content / Storytelling */}
+            <motion.div
+              initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1}
+              className="flex-1"
+            >
+              <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-[11px] font-bold px-4 py-1.5 rounded-full mb-6 text-center lg:text-left">
+                <Users size={12} />
+                O CÉREBRO POR TRÁS DA ESTRATÉGIA
+              </div>
+
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground tracking-tight mb-8 text-center lg:text-left">
+                De programador a especialista em
+                <span className="text-primary block">Conversão Digital</span>
+              </h2>
+
+              <div className="space-y-6 text-muted-foreground text-[16px] leading-relaxed text-center lg:text-left">
+                <p>
+                  Com mais de <strong>10 anos de experiência</strong> como desenvolvedor e especialista em sistemas web, acompanhei de perto a evolução do mercado digital e as dores de quem tenta escalar vendas todos os dias.
+                </p>
+                <p>
+                  A sacada para o <strong>Chat Vox AI</strong> surgiu de uma dor real: o excesso de bloqueios e banimentos do WhatsApp que travam o faturamento de milhares de negócios. Como profissional de marketing digital, eu via operações inteiras pararem por causa de um chip bloqueado.
+                </p>
+                <p>
+                  Eu sabia que precisávamos de uma solução que unisse a <strong>familiaridade do WhatsApp</strong> com a <strong>segurança de uma plataforma própria</strong>. Foi assim que desenvolvi um sistema que não apenas automatiza conversas, mas protege sua operação, permitindo escala real sem o medo constante de perder seus números.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mt-10">
+                <div className="p-4 rounded-2xl bg-primary/[0.03] border border-primary/10 text-center lg:text-left">
+                  <CheckCircle2 size={18} className="text-primary mx-auto lg:mx-0 mb-2" />
+                  <p className="text-sm font-bold text-foreground">Sistemas Web</p>
+                  <p className="text-[12px] text-muted-foreground">Arquitetura Escalável</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-primary/[0.03] border border-primary/10 text-center lg:text-left">
+                  <TrendingUp size={18} className="text-primary mx-auto lg:mx-0 mb-2" />
+                  <p className="text-sm font-bold text-foreground">Marketing Digital</p>
+                  <p className="text-[12px] text-muted-foreground">Foco em ROI e Escala</p>
+                </div>
+              </div>
             </motion.div>
           </div>
         </div>
