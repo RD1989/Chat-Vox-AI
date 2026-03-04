@@ -294,7 +294,7 @@ const PublicChat = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: userId, lead_id: newLeadId, event_type: "new_lead" }),
-      }).catch(() => {});
+      }).catch(() => { });
     }
   };
 
@@ -392,145 +392,153 @@ const PublicChat = () => {
     setIsLoading(true);
     setIsTyping(true);
 
-    // Build message content - multimodal if images present
-    const buildContent = (content: string, imgs?: string[]) => {
-      if (imgs && imgs.length > 0) {
-        const parts: any[] = [];
-        if (content) parts.push({ type: "text", text: content });
-        for (const url of imgs) {
-          parts.push({ type: "image_url", image_url: { url } });
-        }
-        return parts;
-      }
-      return content;
-    };
-
-    const allMessages = [...messages.filter(m => m.id !== "welcome").map(m => ({
-      role: m.role,
-      content: buildContent(m.content, m.imageUrls),
-    })), { role: "user" as const, content: text }];
-
-    // Override last message if we have images for current send
-    if (imageUrls && imageUrls.length > 0) {
-      allMessages[allMessages.length - 1].content = buildContent(text, imageUrls);
-    }
-
-    const assistantId = `assistant-${Date.now()}`;
-    streamContentRef.current = "";
-
     try {
-      const resp = await fetch(CHAT_URL, {
+      // 1. Fetch API Keys and Knowledge Base from Supabase (Frontend)
+      const { data: settings } = await supabase
+        .from("system_settings")
+        .select("key, value")
+        .in("key", ["openrouter_api_key", "openrouter_model"]);
+
+      const apiKey = settings?.find((s) => s.key === "openrouter_api_key")?.value;
+      const model = settings?.find((s) => s.key === "openrouter_model")?.value || "google/gemini-2.0-flash-001";
+
+      if (!apiKey) throw new Error("API Key not configured");
+
+      // Fetch Knowledge Base
+      let knowledgeQuery = supabase
+        .from("vox_knowledge")
+        .select("title, content, category")
+        .eq("user_id", userId)
+        .eq("is_active", true);
+
+      if (agentId) {
+        knowledgeQuery = knowledgeQuery.or(`agent_id.eq.${agentId},agent_id.is.null`);
+      }
+      const { data: knowledgeEntries } = await knowledgeQuery;
+
+      // Fetch System Prompt
+      let systemPrompt = "Você é um assistente de IA amigável.";
+      if (agentId) {
+        const { data: agentData } = await supabase.from("vox_agents").select("system_prompt").eq("id", agentId).single();
+        if (agentData?.system_prompt) systemPrompt = agentData.system_prompt;
+      } else {
+        const { data: voxSettings } = await supabase.from("vox_settings").select("system_prompt").eq("user_id", userId).single();
+        if (voxSettings?.system_prompt) systemPrompt = voxSettings.system_prompt;
+      }
+
+      // Build context
+      let knowledgeContext = "";
+      if (knowledgeEntries && knowledgeEntries.length > 0) {
+        knowledgeContext = "\n\nBASE DE CONHECIMENTO:\n" +
+          knowledgeEntries.map((e: any) => `[${e.category?.toUpperCase()}] ${e.title}:\n${e.content}`).join("\n\n");
+      }
+
+      const fullSystemPrompt = systemPrompt + knowledgeContext + "\n\nResponda sempre em português brasileiro de forma natural.";
+
+      // 2. Build History
+      const history = messages
+        .filter(m => m.id !== "welcome")
+        .map(m => {
+          if (m.imageUrls && m.imageUrls.length > 0) {
+            const content: any[] = [{ type: "text", text: m.content }];
+            m.imageUrls.forEach(url => content.push({ type: "image_url", image_url: { url } }));
+            return { role: m.role, content };
+          }
+          return { role: m.role, content: m.content };
+        });
+
+      const currentContent: any = imageUrls && imageUrls.length > 0
+        ? [{ type: "text", text }, ...imageUrls.map(url => ({ type: "image_url", image_url: { url } }))]
+        : text;
+
+      history.push({ role: "user", content: currentContent });
+
+      // 3. Call OpenRouter Direct (Frontend Fallback)
+      const assistantId = `assistant-${Date.now()}`;
+      setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: "", timestamp: new Date() }]);
+      setIsTyping(false);
+
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: allMessages, user_id: userId, lead_id: leadId, agent_id: agentId }),
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": window.location.origin,
+          "X-Title": "ChatVox Public",
+        },
+        body: JSON.stringify({
+          model: model,
+          messages: [{ role: "system", content: fullSystemPrompt }, ...history],
+          stream: true,
+        }),
       });
 
-      if (!resp.ok) {
-        if (resp.status === 429) throw new Error("rate_limit");
-        throw new Error("Failed to start stream");
-      }
-      if (!resp.body) throw new Error("Failed to start stream");
+      if (!response.ok) throw new Error("OpenRouter API error");
 
-      const reader = resp.body.getReader();
+      const reader = response.body?.getReader();
       const decoder = new TextDecoder();
-      let textBuffer = "";
-      let rafPending = false;
-      const assistantTimestamp = new Date();
-      const interactiveElements: InteractiveElement[] = [];
+      let fullText = "";
 
-      setIsTyping(false);
-      playIncomingSound();
-      notifyNewMessage();
-      setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: "", timestamp: assistantTimestamp }]);
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-      const flushToState = () => {
-        const current = streamContentRef.current;
-        setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: current } : m));
-        rafPending = false;
-      };
+          const chunk = decoder.decode(value);
+          const lines = chunk.split("\n");
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        textBuffer += decoder.decode(value, { stream: true });
-
-        let newlineIndex: number;
-        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
-          let line = textBuffer.slice(0, newlineIndex);
-          textBuffer = textBuffer.slice(newlineIndex + 1);
-
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (line.startsWith(":") || line.trim() === "") continue;
-          if (!line.startsWith("data: ")) continue;
-
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") break;
-
-          try {
-            const parsed = JSON.parse(jsonStr);
-
-            if (parsed.type === "interactive") {
-              interactiveElements.push({
-                type: parsed.interactive_type,
-                data: parsed.data,
-              });
-              continue;
+          for (const line of lines) {
+            if (line.trim().startsWith("data: ")) {
+              const dataStr = line.replace("data: ", "").trim();
+              if (dataStr === "[DONE]") continue;
+              try {
+                const json = JSON.parse(dataStr);
+                const delta = json.choices?.[0]?.delta?.content;
+                if (delta) {
+                  fullText += delta;
+                  setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: fullText } : m));
+                }
+              } catch (e) { /* partial json */ }
             }
-
-            const content = parsed.choices?.[0]?.delta?.content;
-            if (content) {
-              streamContentRef.current += content;
-              if (!rafPending) {
-                rafPending = true;
-                requestAnimationFrame(flushToState);
-              }
-            }
-          } catch {
-            textBuffer = line + "\n" + textBuffer;
-            break;
           }
         }
       }
 
-      // Final flush
-      flushToState();
+      // 4. Save to Database (background)
+      if (leadId) {
+        // Save user message
+        await supabase.from("vox_messages").insert({
+          user_id: userId,
+          lead_id: leadId,
+          role: "user",
+          content: text,
+          message_type: imageUrls && imageUrls.length > 0 ? "image" : "text",
+          metadata: imageUrls && imageUrls.length > 0 ? { image_urls: imageUrls } : null,
+        });
 
-      // Add interactive elements as separate messages
-      if (interactiveElements.length > 0) {
-        setTimeout(() => {
-          setMessages(prev => {
-            const newMsgs = [...prev];
-            for (const ie of interactiveElements) {
-              const interactiveMsg: Message = {
-                id: `interactive-${Date.now()}-${Math.random()}`,
-                role: "assistant",
-                content: ie.data.message || "",
-                timestamp: new Date(),
-                interactive: ie,
-              };
-              newMsgs.push(interactiveMsg);
-            }
-            return newMsgs;
-          });
-        }, 300);
+        // Save assistant message
+        await supabase.from("vox_messages").insert({
+          user_id: userId,
+          lead_id: leadId,
+          role: "assistant",
+          content: fullText,
+          message_type: "text",
+        });
       }
 
-      // Generate TTS if voice is enabled
-      if (config.voice_enabled && streamContentRef.current.trim()) {
-        const shouldGenerateAudio = Math.random() * 100 < config.voice_response_pct;
+      // Generate TTS if voice enabled
+      if (config.voice_enabled && fullText.trim()) {
+        const shouldGenerateAudio = (Math.random() * 100) < config.voice_response_pct;
         if (shouldGenerateAudio) {
-          generateTTS(streamContentRef.current, assistantId);
+          generateTTS(fullText, assistantId);
         }
       }
+
     } catch (e: any) {
       console.error("Chat error:", e);
-      setIsTyping(false);
-      const errorMsg = e?.message === "rate_limit"
-        ? "Você enviou muitas mensagens. Aguarde um momento e tente novamente."
-        : "Desculpe, ocorreu um erro. Tente novamente.";
       setMessages(prev => [
         ...prev,
-        { id: `error-${Date.now()}`, role: "assistant", content: errorMsg, timestamp: new Date() },
+        { id: `error-${Date.now()}`, role: "assistant", content: "Erro ao processar mensagem. Verifique a chave API.", timestamp: new Date() },
       ]);
     } finally {
       setIsLoading(false);
@@ -715,11 +723,10 @@ const PublicChat = () => {
                 )}
 
                 <div
-                  className={`px-[9px] pt-[6px] pb-[8px] text-[14.2px] leading-[19px] shadow-sm ${
-                    msg.role === "user"
+                  className={`px-[9px] pt-[6px] pb-[8px] text-[14.2px] leading-[19px] shadow-sm ${msg.role === "user"
                       ? "rounded-tl-lg rounded-bl-lg rounded-br-lg"
                       : "rounded-tr-lg rounded-br-lg rounded-bl-lg"
-                  }`}
+                    }`}
                   style={
                     msg.role === "user"
                       ? { backgroundColor: userBubbleBg, color: userBubbleText }
