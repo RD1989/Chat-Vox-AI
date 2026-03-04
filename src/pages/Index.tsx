@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,30 +21,22 @@ import {
   Columns3,
   Headphones,
   Rocket,
-  Play,
-  Star,
   TrendingUp,
   MousePointerClick,
-  ArrowUpRight,
   Tag,
   GripVertical,
+  PlayCircle
 } from "lucide-react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import ChatPreview from "@/components/landing/ChatPreview";
-import { useRef } from "react";
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
+  hidden: { opacity: 0, y: 30 },
   visible: (i: number = 0) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.08, duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] as const },
+    transition: { delay: i * 0.1, duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98] },
   }),
-};
-
-const staggerContainer = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.06 } },
 };
 
 const platforms = [
@@ -94,18 +86,18 @@ const features = [
   },
   {
     icon: Smartphone,
-    title: "Funciona em qualquer dispositivo",
-    description: "Chat responsivo que funciona perfeitamente no celular, tablet e desktop.",
+    title: "Mobile First",
+    description: "Chat responsivo que funciona perfeitamente no celular, onde 90% dos seus leads estão.",
   },
   {
     icon: Palette,
     title: "Personalização total",
-    description: "Customize nome do agente, avatar, mensagens e comportamento da IA para sua marca.",
+    description: "Customize nome do agente, avatar, cores e comportamento da IA para sua marca.",
   },
   {
     icon: Lock,
-    title: "Dados seguros",
-    description: "Seus dados e conversas protegidos com criptografia e infraestrutura enterprise.",
+    title: "Infraestrutura Segura",
+    description: "Seus dados protegidos. Construído para suportar picos de tráfego de grandes lançamentos.",
   },
 ];
 
@@ -115,69 +107,77 @@ const premiumFeatures = [
     badge: "Novo",
     title: "Notificações Push",
     description: "Receba alertas instantâneos no navegador quando um lead quente é qualificado. Nunca perca uma oportunidade — mesmo longe do painel.",
-    color: "from-blue-500/20 to-blue-600/5",
+    gradient: "from-blue-500/20 to-transparent",
+    border: "group-hover:border-blue-500/50",
+    iconColor: "text-blue-400"
   },
   {
     icon: Columns3,
     badge: "Pipeline",
-    title: "Kanban com Tags",
-    description: "Gerencie seus leads com pipeline visual drag-and-drop. Tags automáticas geradas pela IA organizam por temperatura, interesse e urgência.",
-    color: "from-amber-500/20 to-amber-600/5",
+    title: "Kanban Inteligente",
+    description: "Gerencie seus leads com pipeline visual drag-and-drop. Tags automáticas da IA organizam por temperatura, interesse e urgência.",
+    gradient: "from-amber-500/20 to-transparent",
+    border: "group-hover:border-amber-500/50",
+    iconColor: "text-amber-400"
   },
   {
     icon: Headphones,
     badge: "Live Chat",
     title: "Transbordo Humano",
-    description: "Quando a IA não resolve, o lead é transferido automaticamente para um atendente humano no painel. Zero lead perdido.",
-    color: "from-emerald-500/20 to-emerald-600/5",
+    description: "Quando a IA não resolve ou o lead pede, a conversa é transferida automaticamente para o painel. Assuma o controle na hora do fechamento.",
+    gradient: "from-emerald-500/20 to-transparent",
+    border: "group-hover:border-emerald-500/50",
+    iconColor: "text-emerald-400"
   },
   {
     icon: Rocket,
     badge: "Onboarding",
-    title: "Onboarding Guiado",
-    description: "Configure tudo em 3 passos com um wizard intuitivo. Barra de progresso, dicas contextuais e confetti ao finalizar. Setup em 5 minutos.",
-    color: "from-purple-500/20 to-purple-600/5",
+    title: "Setup em 5 Minutos",
+    description: "Configure tudo em 3 passos com nosso wizard guiado pela IA. Basta dizer o que você vende e a IA cria as instruções perfeitamente.",
+    gradient: "from-purple-500/20 to-transparent",
+    border: "group-hover:border-purple-500/50",
+    iconColor: "text-purple-400"
   },
 ];
 
 const steps = [
-  { number: "01", title: "Crie sua conta", description: "Cadastre-se gratuitamente e configure seu produto em minutos." },
-  { number: "02", title: "Personalize a IA", description: "Defina o tom, avatar e mensagens do seu agente virtual." },
-  { number: "03", title: "Compartilhe o link", description: "Coloque no tráfego pago, redes sociais ou onde quiser." },
-  { number: "04", title: "Converta no automático", description: "A IA qualifica e direciona leads quentes para compra." },
+  { number: "01", title: "Crie sua conta", description: "Acesso imediato ao painel. Sem cartão de crédito." },
+  { number: "02", title: "Treine a IA em minutos", description: "Basta colar o link da sua página de vendas ou um PDF." },
+  { number: "03", title: "Compartilhe seu Link", description: "Use na bio do Instagram, tráfego pago ou onde quiser." },
+  { number: "04", title: "Venda no automático", description: "A IA qualifica os leads e envia o link de checkout na hora certa." },
 ];
 
 const stats = [
-  { value: "10K+", label: "Leads capturados" },
-  { value: "500+", label: "Chats ativos" },
-  { value: "70%", label: "Taxa de conversão" },
-  { value: "24/7", label: "Disponibilidade" },
+  { value: "10K+", label: "Leads Capturados" },
+  { value: "500+", label: "IA's Ativas" },
+  { value: "70%", label: "Taxa de Conversão" },
+  { value: "R$ 2M+", label: "Em Vendas Geradas" },
 ];
 
 const testimonials = [
   {
     metric: "+216%",
     metricLabel: "em vendas",
-    text: "Eu respondia lead por lead no WhatsApp e perdia 60% deles. Com o ChatVox, minha IA responde na hora e já converte direto. Saí de R$12k pra R$38k/mês.",
+    text: "Mudei do WhatsApp pro ChatVox e minha vida mudou. Não me preocupo mais com bloqueios de chip e a IA vende melhor que minha equipe antiga.",
     name: "Ricardo M.",
-    role: "Infoprodutor • Mentoria",
-    photo: "/testimonials/ricardo.jpg",
+    role: "Produtor PPL",
+    photo: "https://i.pravatar.cc/150?u=a042581f4e29026024d",
   },
   {
-    metric: "+189%",
-    metricLabel: "em receita",
-    text: "Vendia no x1 pelo WhatsApp e vivia com o celular na mão. Agora o chat IA faz o atendimento e eu só acompanho as vendas caindo na conta.",
+    metric: "12x",
+    metricLabel: "mais leads",
+    text: "Eu estava perdendo muito dinheiro com leads frios. A IA do Chat Vox qualifica todo mundo instantaneamente e só me passa quem quer comprar o High Ticket.",
     name: "Camila T.",
-    role: "Infoprodutora • Curso Online",
-    photo: "/testimonials/camila.jpg",
+    role: "Mentora de Negócios",
+    photo: "https://i.pravatar.cc/150?u=a042581f4e29026704d",
   },
   {
     metric: "+70%",
-    metricLabel: "em conversão",
-    text: "Meu funil mandava 200 leads/dia e eu só conseguia atender 30. Com o ChatVox atendo todos no automático e minha conversão subiu 70%.",
+    metricLabel: "conversão",
+    text: "O chat carrega rápido, parece o WhatsApp e a IA tem uma naturalidade absurda. Tive meu melhor lançamento mês passado usando o ChatVox como frente.",
     name: "Thiago A.",
-    role: "Infoprodutor • High Ticket",
-    photo: "/testimonials/thiago.jpg",
+    role: "Estrategista Digital",
+    photo: "https://i.pravatar.cc/150?u=a04258114e29026702d",
   },
 ];
 
@@ -186,722 +186,449 @@ const Index = () => {
   const [billing, setBilling] = useState<"monthly" | "quarterly">("quarterly");
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
-  const heroScale = useTransform(scrollYProgress, [0, 0.5], [1, 0.96]);
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
+  const heroScale = useTransform(scrollYProgress, [0, 0.6], [1, 0.95]);
+  const heroY = useTransform(scrollYProgress, [0, 0.6], [0, 50]);
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
-      {/* Header */}
-      <header className="border-b border-border bg-background/80 backdrop-blur-xl sticky top-0 z-50">
-        <div className="container mx-auto flex items-center justify-between h-14 px-6">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
-              <Zap size={14} className="text-primary-foreground" />
+    <div className="min-h-screen bg-[#050505] selection:bg-primary/30 selection:text-primary-foreground overflow-x-hidden text-slate-300">
+      
+      {/* ═══════════════ HEADER ═══════════════ */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#050505]/60 backdrop-blur-xl border-b border-white/5">
+        <div className="container mx-auto flex items-center justify-between h-16 px-6 lg:px-12">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center shadow-lg shadow-primary/20">
+              <Zap size={16} className="text-white" />
             </div>
-            <span className="text-sm font-bold tracking-tight text-foreground">ChatVox</span>
+            <span className="text-[15px] font-bold tracking-tight text-white">ChatVox</span>
           </div>
-          <nav className="hidden md:flex items-center gap-1">
-            <button onClick={() => navigate("/pricing")} className="text-[13px] text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5">
-              Preços
-            </button>
+          <nav className="hidden md:flex items-center gap-6">
+            <a href="#solucao" className="text-[13px] font-medium text-slate-400 hover:text-white transition-colors">Solução</a>
+            <a href="#recursos" className="text-[13px] font-medium text-slate-400 hover:text-white transition-colors">Recursos</a>
+            <a href="#depoimentos" className="text-[13px] font-medium text-slate-400 hover:text-white transition-colors">Resultados</a>
+            <a href="#planos" className="text-[13px] font-medium text-slate-400 hover:text-white transition-colors">Planos</a>
           </nav>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="text-[13px] h-8" onClick={() => navigate("/login")}>
-              Entrar
-            </Button>
-            <Button size="sm" className="text-[13px] h-8 px-4 rounded-lg" onClick={() => navigate("/signup")}>
-              Aumente suas vendas
-              <ArrowRight size={12} className="ml-1" />
+          <div className="flex items-center gap-3">
+            <button onClick={() => navigate("/login")} className="text-[13px] font-medium text-slate-300 hover:text-white transition-colors">
+              Login
+            </button>
+            <Button size="sm" onClick={() => navigate("/signup")} className="h-9 px-4 rounded-lg bg-white text-black hover:bg-slate-200 font-semibold text-[13px] transition-all hidden sm:flex">
+              Criar Conta
+              <ArrowRight size={14} className="ml-1.5" />
             </Button>
           </div>
         </div>
       </header>
 
       {/* ═══════════════ HERO ═══════════════ */}
-      <section ref={heroRef} className="relative overflow-hidden">
-        {/* Gradient orbs */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-radial from-primary/8 via-transparent to-transparent pointer-events-none" />
-        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-primary/[0.04] blur-3xl pointer-events-none" />
-        <div className="absolute -top-40 -left-40 w-[400px] h-[400px] rounded-full bg-primary/[0.03] blur-3xl pointer-events-none" />
+      <section ref={heroRef} className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden flex items-center justify-center min-h-[90vh]">
+        {/* Deep Space Background Effects */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/10 rounded-full blur-[120px] opacity-50 pointer-events-none" />
+        <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-indigo-500/10 rounded-full blur-[100px] opacity-30 pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] opacity-30 pointer-events-none" />
+        
+        {/* Subtle Grid Lines */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
 
-        <motion.div style={{ opacity: heroOpacity, scale: heroScale }} className="container mx-auto px-6 pt-20 sm:pt-28 pb-8 text-center relative">
-          <motion.div
-            initial="hidden" animate="visible" variants={fadeUp} custom={0}
-            className="inline-flex items-center gap-2 border border-primary/20 bg-primary/[0.06] text-primary text-[12px] font-semibold px-4 py-1.5 rounded-full mb-8"
-          >
-            <Sparkles size={13} />
-            Chat IA que vende no automático
+        <motion.div style={{ opacity: heroOpacity, scale: heroScale, y: heroY }} className="container mx-auto px-6 relative z-10 text-center">
+          
+          <motion.div initial="hidden" animate="visible" variants={fadeUp} custom={0} className="inline-flex items-center justify-center mb-8 relative group cursor-pointer">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/30 to-indigo-500/30 rounded-full blur-md opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="relative inline-flex items-center gap-2 bg-[#111]/80 backdrop-blur-md border border-white/10 text-slate-300 text-[12px] font-medium px-4 py-1.5 rounded-full overflow-hidden">
+               <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+               Novo: IA atualizada para versão 3.1 com Raciocínio Premium
+               <ChevronRight size={12} className="text-slate-500 ml-1 group-hover:translate-x-0.5 transition-transform" />
+            </div>
           </motion.div>
 
-          <motion.h1
-            initial="hidden" animate="visible" variants={fadeUp} custom={1}
-            className="text-4xl sm:text-5xl lg:text-6xl xl:text-[4.2rem] font-extrabold text-foreground leading-[1.08] max-w-4xl mx-auto tracking-tight"
-          >
-            Seu funil manda lead mas o seu
-            <br className="hidden sm:block" />
-            atendimento{" "}
-            <span className="text-primary relative">
-              não aguenta escala
-              <svg className="absolute -bottom-1 left-0 w-full" viewBox="0 0 300 12" fill="none"><path d="M2 8C50 2 100 2 150 6C200 10 250 4 298 8" stroke="hsl(var(--primary))" strokeWidth="3" strokeLinecap="round" opacity="0.3" /></svg>
+          <motion.h1 initial="hidden" animate="visible" variants={fadeUp} custom={1} className="text-4xl sm:text-5xl lg:text-[5rem] font-bold text-white tracking-[-0.04em] leading-[1.05] max-w-5xl mx-auto drop-shadow-sm">
+            O fim da sua dependência do <br className="hidden md:block"/>
+            <span className="relative whitespace-nowrap text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500">
+              WhatsApp para vender
             </span>
           </motion.h1>
 
-          <motion.p
-            initial="hidden" animate="visible" variants={fadeUp} custom={2}
-            className="text-muted-foreground mt-6 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed"
-          >
-            Crie um chat inteligente que conversa como uma pessoa real, entende seu produto e convence seus leads a comprar — 24 horas por dia, 7 dias por semana.
+          <motion.p initial="hidden" animate="visible" variants={fadeUp} custom={2} className="text-lg sm:text-xl text-slate-400 mt-8 max-w-2xl mx-auto leading-relaxed font-light">
+            Crie um agente virtual inteligente que conversa, qualifica e vende para seus leads <strong className="text-white font-medium">24h por dia</strong>. Escala infinita, zero risco de bloqueio, taxa de conversão surreal.
           </motion.p>
 
-          <motion.div
-            initial="hidden" animate="visible" variants={fadeUp} custom={3}
-            className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-9"
-          >
-            <Button size="lg" onClick={() => navigate("/signup")} className="h-12 px-8 text-sm font-semibold rounded-xl shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-shadow">
-              Criar meu Chat IA
-              <ArrowRight size={16} className="ml-2" />
+          <motion.div initial="hidden" animate="visible" variants={fadeUp} custom={3} className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
+            <Button size="lg" onClick={() => navigate("/signup")} className="h-14 px-8 text-[15px] font-semibold rounded-xl bg-white text-black hover:bg-slate-200 shadow-[0_0_40px_rgba(255,255,255,0.15)] hover:shadow-[0_0_60px_rgba(255,255,255,0.25)] transition-all duration-300 w-full sm:w-auto">
+              Testar Gratuitamente
+              <ArrowRight size={18} className="ml-2 opacity-70" />
             </Button>
-            <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <CheckCircle2 size={14} className="text-primary" />
-              Escala garantida
-            </span>
+            <Button variant="outline" size="lg" className="h-14 px-8 text-[15px] font-medium rounded-xl border-white/10 text-white hover:bg-white/5 bg-[#111]/50 backdrop-blur-sm w-full sm:w-auto">
+              <PlayCircle size={18} className="mr-2 text-primary" />
+              Ver Demonstração
+            </Button>
           </motion.div>
 
-          <motion.div
-            initial="hidden" animate="visible" variants={fadeUp} custom={4}
-            className="flex items-center justify-center gap-6 mt-8 text-[12px] text-muted-foreground"
-          >
-            {[
-              { icon: Shield, label: "SSL Seguro" },
-              { icon: Clock, label: "Setup em 5 min" },
-              { icon: Bot, label: "IA avançada" },
-            ].map((item) => (
-              <span key={item.label} className="flex items-center gap-1.5">
-                <item.icon size={13} className="text-primary/70" />
-                {item.label}
-              </span>
-            ))}
+          <motion.div initial="hidden" animate="visible" variants={fadeUp} custom={4} className="mt-12 flex items-center justify-center gap-6 text-[12px] text-slate-500 font-medium tracking-wide uppercase">
+            <span className="flex items-center gap-1.5"><CheckCircle2 size={14} className="text-primary/70" /> Sem Cartão de Crédito</span>
+            <span className="flex items-center gap-1.5 hidden sm:flex"><CheckCircle2 size={14} className="text-primary/70" /> Setup em 2 Minutos</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 size={14} className="text-primary/70" /> Cancele quando quiser</span>
           </motion.div>
+
         </motion.div>
       </section>
 
-      {/* ═══════════════ INTEGRATIONS MARQUEE ═══════════════ */}
-      <section className="py-14 overflow-hidden border-y border-border bg-secondary/30">
-        <div className="container mx-auto px-6 text-center mb-8">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
-            <p className="text-[11px] font-semibold text-primary uppercase tracking-[0.2em] mb-2">Integrações</p>
-            <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
-              Conectado com as maiores plataformas de{" "}
-              <span className="text-primary">infoprodutos</span>
-            </h2>
-            <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
-              Rastreie suas vendas automaticamente. Configure o webhook e veja cada venda em tempo real.
-            </p>
-          </motion.div>
-        </div>
-
-        {/* Infinite scroll logos */}
-        <div className="relative">
-          <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-background to-transparent z-10" />
-          <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-background to-transparent z-10" />
-          <div className="flex animate-marquee-slow gap-6">
-            {[...platforms, ...platforms].map((p, i) => (
-              <div
-                key={`${p.name}-${i}`}
-                className="flex-shrink-0 flex items-center gap-2.5 px-6 py-3 bg-card border border-border rounded-xl hover:border-primary/30 hover:shadow-md transition-all cursor-default"
-              >
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs"
-                  style={{ backgroundColor: p.color }}
-                >
-                  {p.icon}
-                </div>
-                <span className="text-sm font-semibold text-foreground">{p.name}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════ PROBLEM VS SOLUTION ═══════════════ */}
-      <section className="py-20 lg:py-28">
+      {/* ═══════════════ LOGO CLOUD ═══════════════ */}
+      <section className="py-12 border-y border-white/5 bg-[#0a0a0a]">
         <div className="container mx-auto px-6">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center mb-14">
-            <p className="text-[11px] font-semibold text-destructive/80 uppercase tracking-[0.2em] mb-2">O problema que ninguém fala</p>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground tracking-tight">
-              Pare de depender do WhatsApp para{" "}
-              <span className="text-primary">vender</span>
-            </h2>
-            <p className="text-muted-foreground mt-4 max-w-xl mx-auto text-[15px]">
-              Enquanto você depende do WhatsApp, está limitado a vender apenas quando está online. E pior: a qualquer momento, sua conta pode ser <strong className="text-foreground">bloqueada</strong>.
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-4xl mx-auto">
-            {/* WhatsApp column */}
-            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
-              className="border border-border rounded-2xl p-7 bg-card relative overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-destructive/30" />
-              <div className="flex items-center gap-2 mb-1.5">
-                <XCircle size={16} className="text-destructive" />
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">WhatsApp Manual</p>
-              </div>
-              <p className="text-[13px] text-muted-foreground mb-6">O jeito antigo de vender</p>
-              <ul className="space-y-3">
-                {whatsappProblems.map((p) => (
-                  <li key={p} className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
-                    <XCircle size={15} className="text-destructive/60 mt-0.5 shrink-0" />
-                    {p}
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
-
-            {/* ChatVox column */}
-            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1}
-              className="border-2 border-primary/30 rounded-2xl p-7 bg-primary/[0.02] relative overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-primary" />
-              <div className="flex items-center gap-2 mb-1.5">
-                <Sparkles size={16} className="text-primary" />
-                <p className="text-xs font-bold text-primary uppercase tracking-wider">A solução</p>
-              </div>
-              <p className="text-[13px] font-medium text-foreground mb-6">ChatVox IA — Escale sem limites</p>
-              <ul className="space-y-3">
-                {voxSolutions.map((s) => (
-                  <li key={s} className="flex items-start gap-2.5 text-[14px] text-foreground">
-                    <CheckCircle2 size={15} className="text-primary mt-0.5 shrink-0" />
-                    {s}
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
+          <p className="text-center text-[11px] font-semibold text-slate-500 uppercase tracking-[0.3em] mb-8">
+            PERFEITO PARA PRODUTORES DESTAS PLATAFORMAS
+          </p>
+          <div className="flex flex-wrap justify-center gap-x-12 gap-y-8 opacity-60 grayscale hover:grayscale-0 transition-all duration-700">
+             {platforms.map(p => (
+               <div key={p.name} className="flex items-center gap-2 group cursor-default">
+                  <div className="w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold text-white transition-transform group-hover:scale-110" style={{ backgroundColor: p.color }}>{p.icon}</div>
+                  <span className="font-semibold text-lg text-slate-300 group-hover:text-white transition-colors">{p.name}</span>
+               </div>
+             ))}
           </div>
-
-          {/* Bottom CTA */}
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={2}
-            className="text-center mt-10">
-            <p className="text-sm text-muted-foreground mb-4">
-              Chega de perder vendas por depender do WhatsApp
-            </p>
-            <Button size="lg" onClick={() => navigate("/signup")} className="h-11 px-8 text-sm font-semibold rounded-xl">
-              Quero escalar minhas vendas
-              <ArrowRight size={14} className="ml-2" />
-            </Button>
-          </motion.div>
         </div>
       </section>
 
-      {/* ═══════════════ FEATURES GRID ═══════════════ */}
-      <section className="border-y border-border bg-secondary/30 py-20 lg:py-28">
+      {/* ═══════════════ METRICS BANNER ═══════════════ */}
+      <section className="py-20 bg-[#050505]">
         <div className="container mx-auto px-6">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center mb-14">
-            <p className="text-[11px] font-semibold text-primary uppercase tracking-[0.2em] mb-2">Recursos</p>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground tracking-tight">
-              Tudo que você precisa para{" "}
-              <span className="text-primary">vender mais</span>
-            </h2>
-          </motion.div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
-            {features.map((f, i) => (
-              <motion.div
-                key={f.title}
-                initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}
-                className="border border-border rounded-2xl p-6 bg-card hover:border-primary/30 hover:shadow-lg transition-all duration-300 group"
-              >
-                <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                  <f.icon size={20} className="text-primary" />
-                </div>
-                <h3 className="text-[15px] font-bold text-foreground mb-2">{f.title}</h3>
-                <p className="text-[14px] text-muted-foreground leading-relaxed">{f.description}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════ PREMIUM FEATURES (NOVIDADES) ═══════════════ */}
-      <section className="py-20 lg:py-28 relative overflow-hidden">
-        {/* Decorative background */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] rounded-full bg-primary/[0.03] blur-3xl pointer-events-none" />
-
-        <div className="container mx-auto px-6 relative">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center mb-6">
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-[11px] font-bold px-4 py-1.5 rounded-full mb-4">
-              <Sparkles size={12} />
-              FUNCIONALIDADES PREMIUM
-            </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground tracking-tight">
-              Ferramentas que seus{" "}
-              <span className="text-primary">concorrentes</span>
-              <br className="hidden sm:block" />
-              não têm
-            </h2>
-            <p className="text-muted-foreground mt-4 max-w-lg mx-auto text-[15px]">
-              Recursos exclusivos que colocam o ChatVox anos à frente de qualquer ferramenta do mercado.
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-5xl mx-auto mt-14">
-            {premiumFeatures.map((f, i) => (
-              <motion.div
-                key={f.title}
-                initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}
-                className="relative border border-border rounded-2xl p-8 bg-card hover:border-primary/40 transition-all duration-300 group overflow-hidden"
-              >
-                {/* Gradient background */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${f.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-
-                <div className="relative">
-                  <div className="flex items-center gap-3 mb-5">
-                    <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                      <f.icon size={22} className="text-primary" />
-                    </div>
-                    <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary bg-primary/10 px-3 py-1 rounded-full">
-                      {f.badge}
-                    </span>
-                  </div>
-
-                  <h3 className="text-xl font-bold text-foreground mb-3">{f.title}</h3>
-                  <p className="text-[14px] text-muted-foreground leading-relaxed">{f.description}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════ HOW IT WORKS ═══════════════ */}
-      <section className="border-y border-border bg-secondary/20 py-20 lg:py-28">
-        <div className="container mx-auto px-6">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center mb-6">
-            <p className="text-[11px] font-semibold text-primary uppercase tracking-[0.2em] mb-2">Como funciona</p>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground tracking-tight">
-              Seu vendedor IA no{" "}
-              <span className="text-primary">bolso dos seus clientes</span>
-            </h2>
-            <p className="text-muted-foreground mt-4 max-w-xl mx-auto text-[15px]">
-              O ChatVox cria uma experiência de chat idêntica ao WhatsApp. Seu lead abre o link, conversa com a IA e é guiado até a compra — tudo no automático.
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-5xl mx-auto mt-14 items-center">
-            {/* Steps */}
-            <div className="space-y-1">
-              {steps.map((step, i) => (
-                <motion.div
-                  key={step.number}
-                  initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}
-                  className="flex items-start gap-5 p-5 rounded-2xl hover:bg-card hover:border hover:border-border transition-all group"
-                >
-                  <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                    <span className="font-mono text-sm font-bold text-primary group-hover:text-primary-foreground">{step.number}</span>
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-foreground mb-1">{step.title}</h3>
-                    <p className="text-[14px] text-muted-foreground leading-relaxed">{step.description}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Chat Preview */}
-            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={2}>
-              <ChatPreview />
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════ DASHBOARD PREVIEW ═══════════════ */}
-      <section className="py-20 lg:py-28">
-        <div className="container mx-auto px-6">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center mb-14">
-            <p className="text-[11px] font-semibold text-primary uppercase tracking-[0.2em] mb-2">Painel de Controle</p>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground tracking-tight">
-              Acompanhe tudo em{" "}
-              <span className="text-primary">tempo real</span>
-            </h2>
-            <p className="text-muted-foreground mt-4 max-w-lg mx-auto text-[15px]">
-              Dashboard completa com métricas de leads, conversas ativas e performance do seu chat IA.
-            </p>
-          </motion.div>
-
-          {/* Mock Dashboard */}
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}
-            className="max-w-5xl mx-auto border border-border rounded-2xl bg-card overflow-hidden shadow-2xl shadow-foreground/5">
-            {/* Dashboard header bar */}
-            <div className="border-b border-border px-6 py-3 flex items-center gap-3">
-              <div className="flex gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-destructive/60" />
-                <div className="w-3 h-3 rounded-full bg-warning/60" />
-                <div className="w-3 h-3 rounded-full bg-success/60" />
-              </div>
-              <div className="flex-1 flex justify-center">
-                <div className="bg-secondary rounded-lg px-4 py-1 text-[11px] text-muted-foreground font-mono">
-                  chatvox.app/dashboard
-                </div>
-              </div>
-            </div>
-
-            {/* Dashboard content */}
-            <div className="p-6 sm:p-8">
-              {/* Stat cards */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-                {[
-                  { label: "Total de Leads", value: "1.248", change: "+12%", icon: Users },
-                  { label: "Conversas Ativas", value: "38", change: "+5%", icon: MessageSquare },
-                  { label: "Taxa de Conversão", value: "34%", change: "+8%", icon: TrendingUp },
-                  { label: "Mensagens Hoje", value: "892", change: "+22%", icon: MousePointerClick },
-                ].map((stat) => (
-                  <div key={stat.label} className="bg-secondary/50 border border-border rounded-xl p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{stat.label}</p>
-                      <stat.icon size={14} className="text-muted-foreground/50" />
-                    </div>
-                    <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-                    <span className="text-[11px] font-semibold text-primary">{stat.change}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Chart placeholder */}
-              <div className="bg-secondary/30 border border-border rounded-xl p-6 h-44 flex items-end gap-2">
-                {[40, 65, 45, 80, 55, 90, 70, 85, 60, 95, 75, 88].map((h, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ height: 0 }}
-                    whileInView={{ height: `${h}%` }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.05, duration: 0.6, ease: "easeOut" }}
-                    className="flex-1 bg-primary/20 rounded-t-md hover:bg-primary/40 transition-colors relative group"
-                  >
-                    <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] text-primary font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-                      {h}%
-                    </div>
+           <div className="bg-[#111] border border-white/5 rounded-3xl p-8 sm:p-12 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-indigo-500/10 opacity-50" />
+              <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-8 divide-x divide-white/5">
+                {stats.map((stat, i) => (
+                  <motion.div key={stat.label} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i} className="text-center px-4">
+                    <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-2">{stat.value}</p>
+                    <p className="text-[12px] sm:text-[13px] text-slate-400 font-medium uppercase tracking-wider">{stat.label}</p>
                   </motion.div>
                 ))}
               </div>
-            </div>
-          </motion.div>
+           </div>
         </div>
       </section>
 
-      {/* ═══════════════ KANBAN PREVIEW ═══════════════ */}
-      <section className="border-y border-border bg-secondary/20 py-20 lg:py-28">
-        <div className="container mx-auto px-6">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center mb-14">
-            <p className="text-[11px] font-semibold text-primary uppercase tracking-[0.2em] mb-2">CRM Pipeline</p>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground tracking-tight">
-              Gerencie leads com{" "}
-              <span className="text-primary">visão completa</span>
+      {/* ═══════════════ PROBLEM X SOLUTION ═══════════════ */}
+      <section id="solucao" className="py-24 relative">
+        <div className="container mx-auto px-6 relative z-10">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center mb-16 max-w-3xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight mb-6">
+              Vender pelo WhatsApp é a <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-rose-500">pior escolha</span> para escalar seu negócio.
             </h2>
-            <p className="text-muted-foreground mt-4 max-w-lg mx-auto text-[15px]">
-              Pipeline Kanban com drag-and-drop, tags automáticas da IA e transbordo humano integrado.
+            <p className="text-lg text-slate-400">
+              Ou você sofre com bloqueios constantes, ou paga milhares de reais em plataformas complexas que no fim, exigem atendentes humanos.
             </p>
           </motion.div>
 
-          {/* Mock Kanban */}
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}
-            className="max-w-5xl mx-auto overflow-x-auto pb-4">
-            <div className="grid grid-cols-4 gap-4 min-w-[700px]">
-              {[
-                { title: "Novos", count: 12, color: "bg-blue-500", leads: [
-                  { name: "João Silva", tag: "Quente", tagColor: "text-destructive bg-destructive/10" },
-                  { name: "Maria Santos", tag: "Orgânico", tagColor: "text-primary bg-primary/10" },
-                ]},
-                { title: "Qualificados", count: 8, color: "bg-amber-500", leads: [
-                  { name: "Pedro Costa", tag: "High Ticket", tagColor: "text-warning bg-warning/10" },
-                ]},
-                { title: "Em Atendimento", count: 5, color: "bg-emerald-500", leads: [
-                  { name: "Ana Souza", tag: "Live Chat", tagColor: "text-info bg-info/10" },
-                  { name: "Carlos Lima", tag: "Follow-up", tagColor: "text-muted-foreground bg-secondary" },
-                ]},
-                { title: "Vendas", count: 23, color: "bg-primary", leads: [
-                  { name: "Fernanda Alves", tag: "Convertido", tagColor: "text-primary bg-primary/10" },
-                ]},
-              ].map((col) => (
-                <div key={col.title} className="bg-card border border-border rounded-2xl p-4">
-                  <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border">
-                    <div className={`w-2.5 h-2.5 rounded-full ${col.color}`} />
-                    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{col.title}</span>
-                    <span className="ml-auto text-xs font-bold text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">{col.count}</span>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
+            {/* The Old Way */}
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="bg-[#0a0a0a] border border-red-500/20 rounded-3xl p-8 sm:p-10 relative group overflow-hidden">
+               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500/50 to-rose-500/50" />
+               <div className="absolute inset-0 bg-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+               <div className="relative z-10">
+                 <div className="flex items-center gap-3 mb-8">
+                   <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+                     <XCircle size={20} className="text-red-400" />
+                   </div>
+                   <h3 className="text-xl font-semibold text-white">WhatsApp Manual</h3>
+                 </div>
+                 <ul className="space-y-4">
+                   {whatsappProblems.map((p, i) => (
+                     <li key={i} className="flex items-start gap-3">
+                       <XCircle size={18} className="text-red-400/70 shrink-0 mt-0.5" />
+                       <span className="text-[15px] text-slate-400">{p}</span>
+                     </li>
+                   ))}
+                 </ul>
+               </div>
+            </motion.div>
+
+            {/* The New Way */}
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1} className="bg-gradient-to-b from-[#111] to-[#0a0a0a] border border-primary/30 rounded-3xl p-8 sm:p-10 relative group overflow-hidden shadow-2xl shadow-primary/10">
+               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-indigo-500" />
+               <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+               <div className="relative z-10">
+                 <div className="flex items-center gap-3 mb-8">
+                   <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 shadow-[0_0_15px_rgba(var(--primary),0.5)]">
+                     <Sparkles size={20} className="text-primary" />
+                   </div>
+                   <h3 className="text-xl font-semibold text-white">Ecossistema ChatVox</h3>
+                 </div>
+                 <ul className="space-y-4">
+                   {voxSolutions.map((s, i) => (
+                     <li key={i} className="flex items-start gap-3">
+                       <CheckCircle2 size={18} className="text-primary/90 shrink-0 mt-0.5" />
+                       <span className="text-[15px] text-slate-300 font-medium">{s}</span>
+                     </li>
+                   ))}
+                 </ul>
+               </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════ AUTHOR / FOUNDER SECTION ═══════════════ */}
+      <section className="py-24 border-y border-white/5 relative overflow-hidden bg-[#0a0a0a]">
+        {/* Glow behind author */}
+        <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[100px] pointer-events-none opacity-50" />
+        
+        <div className="container mx-auto px-6 relative z-10">
+          <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20 max-w-6xl mx-auto">
+            {/* Image Side */}
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="w-full lg:w-1/2">
+              <div className="relative aspect-square max-w-md mx-auto">
+                 <div className="absolute inset-0 bg-gradient-to-tr from-primary/30 to-purple-500/30 rounded-3xl transform rotate-3 scale-105 blur-xl opacity-60" />
+                 <img 
+                   src="/lovable-uploads/2dc67b4d-be6a-4d43-ac66-b9abf8eb7dc7.png" 
+                   alt="RD - Criador do ChatVox" 
+                   className="relative w-full h-full object-cover rounded-3xl border border-white/10 shadow-2xl"
+                 />
+                 <div className="absolute -bottom-6 -right-6 bg-[#111] border border-white/10 p-5 rounded-2xl shadow-xl backdrop-blur-xl">
+                   <div className="flex gap-1 mb-2">
+                     <Star size={14} className="fill-yellow-500 text-yellow-500" />
+                     <Star size={14} className="fill-yellow-500 text-yellow-500" />
+                     <Star size={14} className="fill-yellow-500 text-yellow-500" />
+                     <Star size={14} className="fill-yellow-500 text-yellow-500" />
+                     <Star size={14} className="fill-yellow-500 text-yellow-500" />
+                   </div>
+                   <p className="text-white font-bold text-lg">"O Fim dos Bloqueios"</p>
+                   <p className="text-slate-400 text-[11px] uppercase tracking-wider mt-1">Visão do Fundador</p>
+                 </div>
+              </div>
+            </motion.div>
+
+            {/* Text Side */}
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1} className="w-full lg:w-1/2 pt-8 lg:pt-0">
+               <p className="text-primary font-bold tracking-widest text-[11px] uppercase mb-3">Conheça o Criador</p>
+               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6 leading-[1.1]">
+                 Construído por quem vive o <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-indigo-400">campo de batalha</span> diariamente.
+               </h2>
+               <div className="space-y-4 text-slate-400 text-[15px] leading-relaxed mb-8">
+                 <p>
+                   "Nós perdemos centenas de milhares de reais com bloqueios no WhatsApp e leads frios aguardando resposta humana. Depois de usar dezenas de ferramentas caras e ineficientes do mercado, decidi criar a solução definitiva."
+                 </p>
+                 <p>
+                   O ChatVox não é apenas um chatbot divertido. É uma máquina de vendas de alta conversão, desenhada especificamente para produtores digitais escalarem suas operações de tráfego direto para x1 de forma 100% autônoma e à prova de bloqueios de Meta.
+                 </p>
+               </div>
+               
+               <div className="flex items-center gap-4">
+                 <div className="hidden sm:block w-12 h-px bg-white/20" />
+                 <div>
+                   <p className="text-white font-bold text-lg">RD</p>
+                   <p className="text-slate-500 text-sm">CEO & Fundador, ChatVox</p>
+                 </div>
+               </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════ PREMIUM FEATURES ═══════════════ */}
+      <section id="recursos" className="py-24 relative overflow-hidden">
+        <div className="container mx-auto px-6 relative z-10">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center mb-16 max-w-3xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight mb-6">
+              Ecossistema <span className="text-primary">Premium</span>
+            </h2>
+            <p className="text-lg text-slate-400">
+              Muito além de um chat. Uma plataforma completa de conversão e CRM construída para operações milionárias.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+            {premiumFeatures.map((f, i) => (
+              <motion.div key={f.title} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i} 
+                className={`bg-[#0a0a0a] border border-white/5 ${f.border} rounded-3xl p-8 transition-colors duration-500 relative group overflow-hidden`}>
+                <div className={`absolute inset-0 bg-gradient-to-br ${f.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-700`} />
+                <div className="relative z-10">
+                  <div className="flex justify-between items-start mb-6">
+                    <div className={`w-12 h-12 rounded-xl bg-[#111] border border-white/5 flex items-center justify-center shadow-lg ${f.iconColor}`}>
+                      <f.icon size={22} />
+                    </div>
+                    {f.badge && (
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-300 bg-white/5 border border-white/10 px-3 py-1 rounded-full">
+                        {f.badge}
+                      </span>
+                    )}
                   </div>
-                  <div className="space-y-2.5">
-                    {col.leads.map((lead) => (
-                      <div key={lead.name} className="bg-secondary/50 border border-border rounded-xl p-3.5 cursor-grab hover:shadow-md transition-all group">
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <GripVertical size={12} className="text-muted-foreground/30 group-hover:text-muted-foreground transition-colors" />
-                          <p className="text-sm font-semibold text-foreground">{lead.name}</p>
-                        </div>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${lead.tagColor}`}>
-                          <Tag size={8} className="inline mr-1" />
-                          {lead.tag}
-                        </span>
+                  <h3 className="text-xl font-bold text-white mb-3">{f.title}</h3>
+                  <p className="text-slate-400 text-[14px] leading-relaxed">{f.description}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════ DASHBOARD PREVIEW & CHAT PREVIEW ═══════════════ */}
+      <section className="py-24 border-y border-white/5 bg-[#080808] relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none" />
+        
+        <div className="container mx-auto px-6 relative z-10">
+           <div className="flex flex-col lg:flex-row gap-12 items-center lg:items-stretch max-w-6xl mx-auto">
+              
+              {/* Dashboard Side */}
+              <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="w-full lg:w-[60%] flex flex-col">
+                <div className="mb-10 text-center lg:text-left">
+                  <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Controle total na <br/><span className="text-primary">Ponta dos Dedos</span></h2>
+                  <p className="text-slate-400 text-lg">Analise conversões, acompanhe o funil no CRM Kanban e assuma conversas quentes no Live Chat.</p>
+                </div>
+                
+                <div className="bg-[#111] border border-white/10 rounded-2xl p-6 shadow-2xl flex-1 relative overflow-hidden group">
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] to-transparent z-10 pointer-events-none" />
+                  
+                  {/* Fake UI */}
+                  <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/5">
+                    <div className="flex gap-4">
+                      <div className="w-24 h-2 rounded bg-white/10" />
+                      <div className="w-16 h-2 rounded bg-white/5" />
+                      <div className="w-20 h-2 rounded bg-white/5" />
+                    </div>
+                    <div className="w-8 h-8 rounded-full bg-primary/20" />
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-4 mb-6">
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="bg-white/5 rounded-xl p-4 border border-white/5">
+                        <div className="w-8 h-8 rounded-lg bg-white/10 mb-3" />
+                        <div className="w-16 h-4 rounded bg-white/20 mb-2" />
+                        <div className="w-10 h-2 rounded bg-white/10" />
                       </div>
                     ))}
                   </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-      </section>
 
-      {/* ═══════════════ TESTIMONIALS ═══════════════ */}
-      <section className="py-20 lg:py-28">
-        <div className="container mx-auto px-6">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center mb-14">
-            <p className="text-[11px] font-semibold text-primary uppercase tracking-[0.2em] mb-2">Resultados Reais</p>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground tracking-tight">
-              Empresas que escalaram vendas com o{" "}
-              <span className="text-primary">ChatVox</span>
-            </h2>
-            <p className="text-muted-foreground mt-4 max-w-lg mx-auto text-[15px]">
-              Nossos clientes aumentam as conversões em até 70% com o chat IA — sem equipe de vendas, sem complicação.
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-5xl mx-auto">
-            {testimonials.map((t, i) => (
-              <motion.div
-                key={t.name}
-                initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}
-                className="border border-border rounded-2xl p-7 bg-card hover:border-primary/30 hover:shadow-lg transition-all group"
-              >
-                {/* Metric */}
-                <div className="mb-5">
-                  <span className="text-3xl font-extrabold text-primary">{t.metric}</span>
-                  <span className="text-sm text-muted-foreground ml-2">{t.metricLabel}</span>
-                </div>
-
-                {/* Quote */}
-                <p className="text-[14px] text-muted-foreground leading-relaxed mb-6 italic">
-                  "{t.text}"
-                </p>
-
-                {/* Author */}
-                <div className="flex items-center gap-3 pt-5 border-t border-border">
-                  <img
-                    src={t.photo}
-                    alt={t.name}
-                    className="w-11 h-11 rounded-full object-cover border-2 border-primary/20"
-                  />
-                  <div>
-                    <p className="text-sm font-bold text-foreground">{t.name}</p>
-                    <p className="text-[11px] text-muted-foreground">{t.role}</p>
+                  <div className="bg-[#151515] rounded-xl border border-white/5 p-4 flex gap-4 h-full">
+                     <div className="w-1/3 space-y-3">
+                       <div className="w-full h-8 rounded bg-white/10" />
+                       <div className="w-full h-16 rounded bg-white/5" />
+                       <div className="w-full h-16 rounded bg-white/5" />
+                     </div>
+                     <div className="w-2/3 flex flex-col">
+                       <div className="flex-1 bg-white/[0.02] rounded-lg mb-3 border border-white/5 p-3 flex flex-col justify-end gap-2">
+                         <div className="w-3/4 h-6 rounded-lg rounded-tl-none bg-white/10" />
+                         <div className="w-1/2 h-6 rounded-lg rounded-tr-none bg-primary/20 self-end" />
+                       </div>
+                       <div className="h-10 rounded bg-white/5 border border-white/5" />
+                     </div>
                   </div>
                 </div>
               </motion.div>
-            ))}
-          </div>
 
-          {/* Social proof strip */}
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}
-            className="max-w-3xl mx-auto mt-14 text-center">
-            <div className="inline-flex items-center gap-4 bg-primary/[0.06] border border-primary/20 rounded-2xl px-8 py-5">
-              <div className="text-center">
-                <p className="text-3xl font-extrabold text-primary">+70%</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">de aumento médio nas conversões</p>
-              </div>
-              <div className="w-px h-10 bg-border" />
-              <p className="text-[12px] text-muted-foreground max-w-[200px]">
-                Dados reais de clientes ChatVox nos últimos 6 meses
-              </p>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ═══════════════ STATS STRIP ═══════════════ */}
-      <section className="border-y border-border bg-primary/[0.03]">
-        <div className="container mx-auto px-6">
-          <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-border">
-            {stats.map((s, i) => (
-              <motion.div
-                key={s.label}
-                initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}
-                className="py-10 text-center"
-              >
-                <p className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">{s.value}</p>
-                <p className="text-[12px] text-muted-foreground mt-1.5 font-medium">{s.label}</p>
+              {/* Chat Side */}
+              <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1} className="w-full lg:w-[40%]">
+                 <div className="h-full w-full max-w-[400px] mx-auto scale-95 lg:scale-100 transform origin-top shadow-[0_0_80px_rgba(var(--primary),0.15)] rounded-[40px] border-[8px] border-[#1a1a1a] bg-black relative">
+                   {/* Phone notch */}
+                   <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-[#1a1a1a] rounded-b-2xl z-20" />
+                   <div className="overflow-hidden rounded-[32px] h-[700px] relative bg-background">
+                     <ChatPreview />
+                   </div>
+                 </div>
               </motion.div>
-            ))}
-          </div>
+
+           </div>
         </div>
       </section>
+
 
       {/* ═══════════════ PRICING ═══════════════ */}
-      <section className="py-20 lg:py-28">
+      <section id="planos" className="py-24 bg-[#0a0a0a]">
         <div className="container mx-auto px-6">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center mb-4">
-            <p className="text-[11px] font-semibold text-primary uppercase tracking-[0.2em] mb-2">Planos</p>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground tracking-tight">
-              Escolha o plano ideal para o seu{" "}
-              <span className="text-primary">negócio</span>
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center mb-16">
+            <p className="text-[11px] font-semibold text-primary uppercase tracking-[0.3em] mb-4">Investimento</p>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight mb-4">
+              Preços simples, sem surpresas.
             </h2>
+            <p className="text-slate-400 max-w-xl mx-auto">Custo de software muito menor do que o salário de um atendente humano que dorme à noite.</p>
           </motion.div>
-          <motion.p initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1}
-            className="text-muted-foreground text-center text-[15px] mb-8 max-w-md mx-auto">
-            Comece a vender no automático com IA. Cancele quando quiser.
-          </motion.p>
 
-          {/* Billing Toggle */}
-          <div className="flex justify-center mb-14">
-            <div className="inline-flex items-center bg-secondary border border-border rounded-full p-1">
-              <button
-                onClick={() => setBilling("quarterly")}
-                className={`relative text-[13px] font-medium px-5 py-2 rounded-full transition-all ${
-                  billing === "quarterly"
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Trimestral
-                <span className={`ml-1 text-[10px] font-bold ${billing === "quarterly" ? "text-primary-foreground/80" : "text-emerald-500"}`}>(Recomendado)</span>
-              </button>
-              <button
-                onClick={() => setBilling("monthly")}
-                className={`text-[13px] font-medium px-5 py-2 rounded-full transition-all ${
-                  billing === "monthly"
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Mensal
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {/* Starter */}
-            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
-              className="border border-border rounded-2xl p-7 bg-card flex flex-col">
-              <h3 className="text-base font-bold text-foreground">Starter</h3>
-              <p className="text-[13px] text-muted-foreground mt-0.5 mb-6">Ideal para testar</p>
-              <div className="mb-1">
-                <span className="text-4xl font-extrabold text-foreground">{billing === "monthly" ? "R$97,90" : "R$234,90"}</span>
-                <span className="text-muted-foreground text-sm">{billing === "monthly" ? "/mês" : "/tri"}</span>
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="bg-[#111] border border-white/10 rounded-3xl p-8 flex flex-col">
+              <h3 className="text-xl font-bold text-white mb-2">Starter</h3>
+              <p className="text-slate-400 text-sm mb-6">Para quem está começando a escalar.</p>
+              <div className="mb-6 flex items-baseline gap-1">
+                <span className="text-4xl font-extrabold text-white">R$ 97</span>
+                <span className="text-slate-500 font-medium">/mês</span>
               </div>
-              {billing === "quarterly" && <p className="text-[11px] text-muted-foreground mb-5">equivale a R$78,30/mês</p>}
-              {billing === "monthly" && <div className="mb-5" />}
-              <ul className="space-y-2.5 mb-8 flex-1">
-                {["300 leads/mês", "1 agente IA", "CRM básico", "Dashboard de métricas", "Suporte por email"].map((item) => (
-                  <li key={item} className="flex items-center gap-2.5 text-[14px] text-muted-foreground">
-                    <CheckCircle2 size={15} className="text-primary shrink-0" />
-                    {item}
+              <ul className="space-y-4 mb-8 flex-1">
+                {["500 Leads /mês", "1 Agente IA", "Histórico de 30 dias", "Suporte Padrão"].map((i) => (
+                  <li key={i} className="flex items-center gap-3 text-[14px] text-slate-300">
+                    <CheckCircle2 size={16} className="text-primary shrink-0" /> {i}
                   </li>
                 ))}
               </ul>
-              <Button variant="outline" className="w-full h-11 text-sm font-semibold rounded-xl" onClick={() => navigate("/signup")}>
-                Começar Grátis
-              </Button>
+              <Button onClick={() => navigate("/signup")} className="w-full bg-white text-black hover:bg-slate-200 h-12 rounded-xl text-sm font-semibold">Assinar Starter</Button>
             </motion.div>
 
             {/* Pro */}
-            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1}
-              className="border-2 border-primary rounded-2xl p-7 bg-card flex flex-col relative shadow-lg shadow-primary/10">
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-[11px] font-bold px-4 py-1 rounded-full flex items-center gap-1">
-                🔥 Mais escolhido
-              </span>
-              <h3 className="text-base font-bold text-foreground">Pro</h3>
-              <p className="text-[13px] text-muted-foreground mt-0.5 mb-6">Para escalar vendas</p>
-              <div className="mb-1">
-                <span className="text-4xl font-extrabold text-foreground">{billing === "monthly" ? "R$197,90" : "R$474,90"}</span>
-                <span className="text-muted-foreground text-sm">{billing === "monthly" ? "/mês" : "/tri"}</span>
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1} className="bg-gradient-to-b from-[#1a1a1a] to-[#0a0a0a] border border-primary/40 rounded-3xl p-8 flex flex-col relative transform md:-translate-y-4 shadow-2xl shadow-primary/10">
+              <div className="absolute top-0 inset-x-0 flex justify-center -translate-y-1/2">
+                <span className="bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">Mais Escolhido</span>
               </div>
-              {billing === "quarterly" && <p className="text-[11px] text-muted-foreground mb-5">equivale a R$158,30/mês</p>}
-              {billing === "monthly" && <div className="mb-5" />}
-              <ul className="space-y-2.5 mb-8 flex-1">
-                {["2.000 leads/mês", "3 agentes IA", "CRM completo", "Métricas avançadas", "Pixels Meta & TikTok", "Transbordo humano", "Suporte prioritário"].map((item) => (
-                  <li key={item} className="flex items-center gap-2.5 text-[14px] text-foreground">
-                    <CheckCircle2 size={15} className="text-primary shrink-0" />
-                    {item}
+              <h3 className="text-xl font-bold text-white mb-2 text-primary">Pro 🚀</h3>
+              <p className="text-slate-400 text-sm mb-6">Para produtos em operação constante.</p>
+              <div className="mb-6 flex items-baseline gap-1">
+                <span className="text-4xl font-extrabold text-white">R$ 197</span>
+                <span className="text-slate-500 font-medium">/mês</span>
+              </div>
+              <ul className="space-y-4 mb-8 flex-1">
+                {["2.000 Leads /mês", "3 Agentes IA (Múltiplos produtos)", "Remover Branding", "CRM Kanban Avançado", "Suporte Prioritário"].map((i) => (
+                  <li key={i} className="flex items-center gap-3 text-[14px] text-slate-200 font-medium">
+                    <CheckCircle2 size={16} className="text-primary shrink-0" /> {i}
                   </li>
                 ))}
               </ul>
-              <Button className="w-full h-11 text-sm font-semibold rounded-xl" onClick={() => navigate("/signup")}>
-                Começar Agora
-                <ArrowRight size={14} className="ml-1" />
-              </Button>
+              <Button onClick={() => navigate("/signup")} className="w-full bg-primary hover:bg-primary/90 text-white h-12 rounded-xl text-[15px] font-bold shadow-[0_0_20px_rgba(var(--primary),0.3)]">Inicie o Plano Pro</Button>
             </motion.div>
 
             {/* Scale */}
-            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={2}
-              className="border border-border rounded-2xl p-7 bg-card flex flex-col">
-              <h3 className="text-base font-bold text-foreground">Scale</h3>
-              <p className="text-[13px] text-muted-foreground mt-0.5 mb-6">Alto volume</p>
-              <div className="mb-1">
-                <span className="text-4xl font-extrabold text-foreground">{billing === "monthly" ? "R$397,90" : "R$954,90"}</span>
-                <span className="text-muted-foreground text-sm">{billing === "monthly" ? "/mês" : "/tri"}</span>
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={2} className="bg-[#111] border border-white/10 rounded-3xl p-8 flex flex-col">
+              <h3 className="text-xl font-bold text-white mb-2">Scale Black</h3>
+              <p className="text-slate-400 text-sm mb-6">Para players grandes e agências.</p>
+              <div className="mb-6 flex items-baseline gap-1">
+                <span className="text-4xl font-extrabold text-white">R$ 497</span>
+                <span className="text-slate-500 font-medium">/mês</span>
               </div>
-              {billing === "quarterly" && <p className="text-[11px] text-muted-foreground mb-5">equivale a R$318,30/mês</p>}
-              {billing === "monthly" && <div className="mb-5" />}
-              <ul className="space-y-2.5 mb-8 flex-1">
-                {["Leads ilimitados", "Agentes ilimitados", "CRM + API", "Relatórios exportáveis", "White-label", "Notificações push", "Suporte VIP"].map((item) => (
-                  <li key={item} className="flex items-center gap-2.5 text-[14px] text-muted-foreground">
-                    <CheckCircle2 size={15} className="text-primary shrink-0" />
-                    {item}
+              <ul className="space-y-4 mb-8 flex-1">
+                {["Leads Ilimitados", "Agentes Ilimitados", "Integração via API", "Webhooks Avancados", "Gerenciador de Contas Dedicado"].map((i) => (
+                  <li key={i} className="flex items-center gap-3 text-[14px] text-slate-300">
+                    <CheckCircle2 size={16} className="text-white shrink-0" /> {i}
                   </li>
                 ))}
               </ul>
-              <Button variant="outline" className="w-full h-11 text-sm font-semibold rounded-xl" onClick={() => navigate("/signup")}>
-                Falar com Vendas
-              </Button>
+              <Button onClick={() => navigate("/signup")} variant="outline" className="w-full bg-transparent border-white/20 text-white hover:bg-white/5 h-12 rounded-xl text-sm font-semibold">Assinar Scale</Button>
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* ═══════════════ FINAL CTA ═══════════════ */}
-      <section className="relative py-20 lg:py-28 overflow-hidden">
-        {/* Background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.06] via-primary/[0.03] to-background" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-radial from-primary/10 to-transparent pointer-events-none" />
-
-        <div className="container mx-auto px-6 relative text-center">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground tracking-tight mb-4">
-              Pronto para vender no{" "}
-              <span className="text-primary">automático</span>?
-            </h2>
-            <p className="text-muted-foreground mb-8 max-w-lg mx-auto text-[15px]">
-              Crie seu chat IA agora e comece a converter visitantes em clientes — sem precisar de equipe.
-            </p>
-            <Button size="lg" onClick={() => navigate("/signup")} className="h-13 px-10 text-base font-bold rounded-xl shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/30 transition-all">
-              Aumente suas vendas
-              <ArrowRight size={16} className="ml-2" />
-            </Button>
-            <p className="text-[12px] text-muted-foreground mt-5 flex items-center justify-center gap-4">
-              <span className="flex items-center gap-1"><Shield size={11} /> Sem cartão</span>
-              <span className="flex items-center gap-1"><Clock size={11} /> Setup em 5 min</span>
-              <span className="flex items-center gap-1"><CheckCircle2 size={11} /> Cancele quando quiser</span>
-            </p>
-          </motion.div>
+      {/* ═══════════════ FINAL FOOTER CTA ═══════════════ */}
+      <section className="py-24 relative overflow-hidden">
+        <div className="absolute inset-0 bg-primary/20" />
+        <div className="absolute inset-0 bg-[#050505] [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black_80%)]" />
+        <div className="container mx-auto px-6 relative z-10 text-center">
+          <h2 className="text-3xl sm:text-5xl font-bold text-white mb-6">
+            Pronto para colocar sua operação <br/>no <span className="text-primary">piloto automático</span>?
+          </h2>
+          <p className="text-slate-400 mb-10 max-w-xl mx-auto">Junte-se a centenas de produtores que pararam de sofrer com atendimentos manuais e bloqueios no WhatsApp.</p>
+          <Button size="lg" onClick={() => navigate("/signup")} className="h-14 px-10 text-[15px] font-bold rounded-xl bg-white text-black hover:bg-slate-200 hover:scale-105 transition-all">
+            Criar Minha Máquina de Vendas
+          </Button>
         </div>
       </section>
 
-      {/* ═══════════════ FOOTER ═══════════════ */}
-      <footer className="border-t border-border py-8 bg-secondary/20">
-        <div className="container mx-auto px-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center">
-                <Zap size={11} className="text-primary-foreground" />
-              </div>
-              <span className="text-sm font-bold text-foreground">ChatVox</span>
-            </div>
-            <span className="text-[12px] text-muted-foreground">
-              © 2026 ChatVox. Todos os direitos reservados. Feito no Brasil 🇧🇷
-            </span>
-            <div className="flex items-center gap-4">
-              <button onClick={() => navigate("/privacidade")} className="text-[12px] text-muted-foreground hover:text-foreground transition-colors">
-                Privacidade
-              </button>
-              <button onClick={() => navigate("/exclusao-dados")} className="text-[12px] text-muted-foreground hover:text-foreground transition-colors">
-                Exclusão de Dados
-              </button>
-            </div>
+      {/* FOOTER */}
+      <footer className="bg-[#050505] py-12 border-t border-white/5">
+        <div className="container mx-auto px-6 text-center">
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <Zap size={14} className="text-primary" />
+            <span className="font-bold text-white text-lg">ChatVox</span>
+          </div>
+          <p className="text-slate-500 text-sm mb-4">© 2026 ChatVox IA. Todos os direitos reservados.</p>
+          <div className="flex justify-center gap-6 text-sm text-slate-400">
+            <a href="/privacidade" className="hover:text-white transition-colors">Privacidade</a>
+            <a href="/termos" className="hover:text-white transition-colors">Termos de Uso</a>
           </div>
         </div>
       </footer>
