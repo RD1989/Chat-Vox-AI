@@ -279,13 +279,22 @@ const Index = () => {
           <p className="text-center text-[11px] font-semibold text-slate-500 uppercase tracking-[0.3em] mb-8">
             PERFEITO PARA PRODUTORES DESTAS PLATAFORMAS
           </p>
-          <div className="flex flex-wrap justify-center gap-x-12 gap-y-8 opacity-60 grayscale hover:grayscale-0 transition-all duration-700">
-            {platforms.map(p => (
-              <div key={p.name} className="flex items-center gap-2 group cursor-default">
-                <div className="w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold text-white transition-transform group-hover:scale-110" style={{ backgroundColor: p.color }}>{p.icon}</div>
-                <span className="font-semibold text-lg text-slate-300 group-hover:text-white transition-colors">{p.name}</span>
-              </div>
-            ))}
+          <div className="relative flex overflow-hidden w-full py-2">
+            <div className="flex animate-marquee-slow whitespace-nowrap min-w-full justify-around gap-12">
+              {platforms.map(p => (
+                <div key={p.name} className="flex items-center gap-2 group cursor-default mx-4">
+                  <div className="w-8 h-8 rounded flex items-center justify-center text-[12px] font-bold text-white transition-transform group-hover:scale-110 flex-shrink-0" style={{ backgroundColor: p.color }}>{p.icon}</div>
+                  <span className="font-semibold text-lg text-slate-300 group-hover:text-white transition-colors">{p.name}</span>
+                </div>
+              ))}
+              {/* Duplicate array for seamless infinite marquee loop */}
+              {platforms.map(p => (
+                <div key={`${p.name}-dup`} className="flex items-center gap-2 group cursor-default mx-4">
+                  <div className="w-8 h-8 rounded flex items-center justify-center text-[12px] font-bold text-white transition-transform group-hover:scale-110 flex-shrink-0" style={{ backgroundColor: p.color }}>{p.icon}</div>
+                  <span className="font-semibold text-lg text-slate-300 group-hover:text-white transition-colors">{p.name}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -379,8 +388,8 @@ const Index = () => {
               <div className="relative aspect-square max-w-md mx-auto">
                 <div className="absolute inset-0 bg-gradient-to-tr from-primary/30 to-purple-500/30 rounded-3xl transform rotate-3 scale-105 blur-xl opacity-60" />
                 <img
-                  src="/lovable-uploads/2dc67b4d-be6a-4d43-ac66-b9abf8eb7dc7.png"
-                  alt="RD - Criador do ChatVox"
+                  src="/rodrigo_gomes.png"
+                  alt="Rodrigo Gomes - Criador do ChatVox"
                   className="relative w-full h-full object-cover rounded-3xl border border-white/10 shadow-2xl"
                 />
                 <div className="absolute -bottom-6 -right-6 bg-[#111] border border-white/10 p-5 rounded-2xl shadow-xl backdrop-blur-xl">
@@ -405,18 +414,18 @@ const Index = () => {
               </h2>
               <div className="space-y-4 text-slate-400 text-[15px] leading-relaxed mb-8">
                 <p>
-                  "Nós perdemos centenas de milhares de reais com bloqueios no WhatsApp e leads frios aguardando resposta humana. Depois de usar dezenas de ferramentas caras e ineficientes do mercado, decidi criar a solução definitiva."
+                  "Como desenvolvedor há mais de 10 anos, cheguei a um ponto onde não aguentava mais as operações travarem. Nós perdemos muito tempo e dinheiro com o enorme número de bloqueios de contas de WhatsApp em lançamentos e perpétuos."
                 </p>
                 <p>
-                  O ChatVox não é apenas um chatbot divertido. É uma máquina de vendas de alta conversão, desenhada especificamente para produtores digitais escalarem suas operações de tráfego direto para x1 de forma 100% autônoma e à prova de bloqueios de Meta.
+                  Foi aí que tive essa grande sacada. O ChatVox nasceu não apenas como um chatbot bacana, mas sim como a solução definitiva e independente para escalar as vendas e qualificação do seu x1.
                 </p>
               </div>
 
               <div className="flex items-center gap-4">
                 <div className="hidden sm:block w-12 h-px bg-white/20" />
                 <div>
-                  <p className="text-white font-bold text-lg">RD</p>
-                  <p className="text-slate-500 text-sm">CEO & Fundador, ChatVox</p>
+                  <p className="text-white font-bold text-lg">Rodrigo Gomes</p>
+                  <p className="text-slate-500 text-sm">Desenvolvedor & Fundador, ChatVox</p>
                 </div>
               </div>
             </motion.div>
@@ -490,13 +499,21 @@ const Index = () => {
                 </div>
 
                 <div className="grid grid-cols-3 gap-4 mb-6">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="bg-white/5 rounded-xl p-4 border border-white/5">
-                      <div className="w-8 h-8 rounded-lg bg-white/10 mb-3" />
-                      <div className="w-16 h-4 rounded bg-white/20 mb-2" />
-                      <div className="w-10 h-2 rounded bg-white/10" />
-                    </div>
-                  ))}
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/5 relative overflow-hidden group">
+                    <div className="absolute inset-x-0 bottom-0 h-1 bg-emerald-500 shadow-[0_0_10px_#10b981]" />
+                    <div className="text-slate-400 text-[11px] font-medium mb-1">Conversão</div>
+                    <div className="text-white font-bold text-xl md:text-2xl">72%</div>
+                  </div>
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/5 relative overflow-hidden group">
+                    <div className="absolute inset-x-0 bottom-0 h-1 bg-amber-500" />
+                    <div className="text-slate-400 text-[11px] font-medium mb-1">Leads Ativos</div>
+                    <div className="text-white font-bold text-xl md:text-2xl">4.289</div>
+                  </div>
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/5 relative overflow-hidden group">
+                    <div className="absolute inset-x-0 bottom-0 h-1 bg-purple-500" />
+                    <div className="text-slate-400 text-[11px] font-medium mb-1">Qualificados</div>
+                    <div className="text-white font-bold text-xl md:text-2xl">890</div>
+                  </div>
                 </div>
 
                 <div className="bg-[#151515] rounded-xl border border-white/5 p-4 flex gap-4 h-full">
@@ -521,7 +538,7 @@ const Index = () => {
               <div className="h-full w-full max-w-[400px] mx-auto scale-95 lg:scale-100 transform origin-top shadow-[0_0_80px_rgba(var(--primary),0.15)] rounded-[40px] border-[8px] border-[#1a1a1a] bg-black relative">
                 {/* Phone notch */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-[#1a1a1a] rounded-b-2xl z-20" />
-                <div className="overflow-hidden rounded-[32px] h-[700px] relative bg-background">
+                <div className="overflow-hidden rounded-[32px] h-[800px] relative bg-background">
                   <ChatPreview />
                 </div>
               </div>
