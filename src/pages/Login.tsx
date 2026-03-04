@@ -25,7 +25,7 @@ const Login = () => {
     setLoading(false);
 
     if (error) {
-      toast({ title: "Erro no login", description: error.message, variant: "destructive" });
+      toast({ title: "Erro no login", description: error, variant: "destructive" });
       return;
     }
 

@@ -22,7 +22,7 @@ const Signup = () => {
     setLoading(false);
 
     if (error) {
-      toast({ title: "Erro ao criar conta", description: error.message, variant: "destructive" });
+      toast({ title: "Erro ao criar conta", description: error, variant: "destructive" });
       return;
     }
 
