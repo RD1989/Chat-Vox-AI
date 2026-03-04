@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
-import { Loader2, Shield, LayoutDashboard, Users, Key, Settings, LogOut, Bell } from "lucide-react";
+import { Loader2, Shield, LayoutDashboard, Users, Key, Settings, LogOut, Bell, Database } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SidebarProvider, SidebarTrigger, Sidebar, SidebarContent, SidebarHeader, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 const navItems = [
   { label: "Visão Geral", icon: LayoutDashboard, path: "/admin" },
   { label: "Usuários", icon: Users, path: "/admin/users" },
+  { label: "Banco de Dados", icon: Database, path: "/admin/database" },
   { label: "Alertas", icon: Bell, path: "/admin/alerts" },
   { label: "Chave API", icon: Key, path: "/admin/api" },
   { label: "Configurações", icon: Settings, path: "/admin/settings" },

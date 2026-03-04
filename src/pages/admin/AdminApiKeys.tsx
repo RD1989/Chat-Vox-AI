@@ -12,6 +12,7 @@ const AdminApiKeys = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showKey, setShowKey] = useState(false);
   const [openrouterKey, setOpenrouterKey] = useState("");
   const [openrouterModel, setOpenrouterModel] = useState("google/gemini-2.0-flash-001");
 

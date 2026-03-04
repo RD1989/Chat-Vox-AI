@@ -25,6 +25,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminApiKeys from "./pages/admin/AdminApiKeys";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminAlerts from "./pages/admin/AdminAlerts";
+import AdminDatabase from "./pages/admin/AdminDatabase";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import DataDeletion from "./pages/DataDeletion";
 import CookieConsent from "./components/CookieConsent";
@@ -60,6 +61,7 @@ const App = () => (
               <Route index element={<AdminDashboard />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="api" element={<AdminApiKeys />} />
+              <Route path="database" element={<AdminDatabase />} />
               <Route path="settings" element={<AdminSettings />} />
               <Route path="alerts" element={<AdminAlerts />} />
             </Route>
