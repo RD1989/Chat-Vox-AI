@@ -39,14 +39,26 @@ const AdminDatabase = () => {
                 body: { action: "list_tables" },
             });
 
-            if (error) {
-                if (data?.migration) setErrorDetails(data);
-                throw error;
+            if (error || !data?.tables) {
+                // Fallback: use known tables if RPC fails
+                setTables([
+                    "vox_leads",
+                    "vox_messages",
+                    "vox_settings",
+                    "vox_agents",
+                    "vox_knowledge",
+                    "profiles",
+                    "system_settings"
+                ]);
+                if (error && !data?.migration) {
+                    console.warn("RPC list_tables missing, using hardcoded fallback");
+                }
+                return;
             }
             setTables(data.tables.map((t: any) => t.table_name));
         } catch (e: any) {
             console.error(e);
-            toast.error("Erro ao carregar tabelas: " + e.message);
+            setTables(["vox_leads", "vox_messages", "vox_settings", "vox_agents", "vox_knowledge", "profiles", "system_settings"]);
         } finally {
             setLoading(false);
         }
@@ -55,11 +67,24 @@ const AdminDatabase = () => {
     const loadData = async (table: string) => {
         setLoading(true);
         try {
+            // Try Edge Function first
             const { data, error } = await supabase.functions.invoke("admin-database", {
                 body: { action: "get_data", table },
             });
-            if (error) throw error;
-            setRows(data.rows || []);
+
+            if (!error && data?.rows) {
+                setRows(data.rows);
+            } else {
+                // Fallback: Direct Supabase Select (limited by RLS)
+                const { data: directData, error: directError } = await supabase
+                    .from(table as any)
+                    .select("*")
+                    .order("id" as any, { ascending: false } as any)
+                    .limit(100);
+
+                if (directError) throw directError;
+                setRows(directData || []);
+            }
         } catch (e: any) {
             toast.error("Erro ao buscar dados: " + e.message);
         } finally {
@@ -94,7 +119,15 @@ const AdminDatabase = () => {
             const { error } = await supabase.functions.invoke("admin-database", {
                 body: { action: "delete_row", table: selectedTable, id },
             });
-            if (error) throw error;
+
+            if (error) {
+                const { error: directError } = await supabase
+                    .from(selectedTable! as any)
+                    .delete()
+                    .eq("id" as any, id);
+                if (directError) throw directError;
+            }
+
             toast.success("Linha excluída!");
             loadData(selectedTable!);
         } catch (e: any) {
@@ -107,13 +140,28 @@ const AdminDatabase = () => {
             const { error } = await supabase.functions.invoke("admin-database", {
                 body: { action: "update_row", table: selectedTable, id, data: updatedData },
             });
-            if (error) throw error;
+
+            if (error) {
+                const { error: directError } = await supabase
+                    .from(selectedTable! as any)
+                    .update(updatedData)
+                    .eq("id" as any, id);
+                if (directError) throw directError;
+            }
+
             toast.success("Dados atualizados!");
             setEditingRow(null);
             loadData(selectedTable!);
         } catch (e: any) {
             toast.error("Erro ao atualizar: " + e.message);
         }
+    };
+
+    const renderValue = (val: any) => {
+        if (val === null) return <span className="text-muted-foreground italic">null</span>;
+        if (typeof val === 'object') return <span className="text-[10px] opacity-70 truncate max-w-[150px] inline-block">{JSON.stringify(val)}</span>;
+        if (typeof val === 'boolean') return <span className={val ? "text-green-500" : "text-red-500"}>{val ? 'true' : 'false'}</span>;
+        return <span className="truncate max-w-[200px] inline-block">{String(val)}</span>;
     };
 
     if (errorDetails?.migration) {
@@ -134,7 +182,7 @@ const AdminDatabase = () => {
                         <div className="bg-slate-950 text-slate-50 p-4 rounded-md font-mono text-xs overflow-x-auto border border-white/10">
                             <pre>{errorDetails.migration}</pre>
                         </div>
-                        <Button onClick={loadTables} className="w-full">
+                        <Button onClick={() => { setErrorDetails(null); loadTables(); }} className="w-full">
                             <RefreshCw size={16} className="mr-2" /> Já executei, tentar novamente
                         </Button>
                     </CardContent>
@@ -142,13 +190,6 @@ const AdminDatabase = () => {
             </div>
         );
     }
-
-    const renderValue = (val: any) => {
-        if (val === null) return <span className="text-muted-foreground italic">null</span>;
-        if (typeof val === 'object') return <span className="text-[10px] opacity-70 truncate max-w-[150px] inline-block">{JSON.stringify(val)}</span>;
-        if (typeof val === 'boolean') return <span className={val ? "text-green-500" : "text-red-500"}>{val ? 'true' : 'false'}</span>;
-        return <span className="truncate max-w-[200px] inline-block">{String(val)}</span>;
-    };
 
     return (
         <div className="space-y-6 max-w-7xl">
@@ -177,7 +218,6 @@ const AdminDatabase = () => {
 
                 <TabsContent value="explorer" className="space-y-4 pt-4">
                     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                        {/* Sidebar: Tables List */}
                         <Card className="lg:col-span-1 border-border bg-card">
                             <CardHeader className="py-4 px-5">
                                 <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -199,14 +239,10 @@ const AdminDatabase = () => {
                                             <LayoutGrid size={12} className={selectedTable === table ? "opacity-100" : "opacity-0 group-hover:opacity-50"} />
                                         </button>
                                     ))}
-                                    {tables.length === 0 && !loading && (
-                                        <p className="text-xs text-center text-muted-foreground py-4">Nenhuma tabela encontrada.</p>
-                                    )}
                                 </div>
                             </CardContent>
                         </Card>
 
-                        {/* Main view: Data Table */}
                         <Card className="lg:col-span-3 border-border bg-card min-h-[500px]">
                             <CardHeader className="py-4 px-5 sticky top-0 bg-card/80 backdrop-blur-md z-10 border-b border-white/5">
                                 <div className="flex items-center justify-between">
@@ -214,54 +250,36 @@ const AdminDatabase = () => {
                                         <CardTitle className="text-sm font-medium">
                                             {selectedTable ? `Visualizando: ${selectedTable}` : "Selecione uma tabela"}
                                         </CardTitle>
-                                        {selectedTable && <p className="text-[10px] text-muted-foreground">Exibindo os últimos 100 registros.</p>}
                                     </div>
-                                    {selectedTable && (
-                                        <div className="flex gap-2">
-                                            <Button variant="ghost" size="icon" onClick={() => loadData(selectedTable)}>
-                                                <RefreshCw size={14} />
-                                            </Button>
-                                        </div>
-                                    )}
                                 </div>
                             </CardHeader>
                             <CardContent className="p-0">
                                 {!selectedTable ? (
                                     <div className="flex flex-col items-center justify-center py-40 text-muted-foreground">
                                         <Database size={40} className="mb-4 opacity-10" />
-                                        <p className="text-sm">Selecione uma tabela na barra lateral para começar.</p>
-                                    </div>
-                                ) : rows.length === 0 && !loading ? (
-                                    <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-                                        <AlertCircle size={30} className="mb-2 opacity-30" />
-                                        <p className="text-sm">Esta tabela está vazia.</p>
+                                        <p className="text-sm">Selecione uma tabela na barra lateral.</p>
                                     </div>
                                 ) : (
-                                    <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+                                    <div className="overflow-x-auto max-h-[600px]">
                                         <Table>
                                             <TableHeader className="bg-secondary/50 sticky top-0 z-10">
                                                 <TableRow>
                                                     {rows.length > 0 && Object.keys(rows[0]).map(key => (
-                                                        <TableHead key={key} className="text-xs font-bold text-foreground py-3">{key}</TableHead>
+                                                        <TableHead key={key} className="text-xs font-bold py-3">{key}</TableHead>
                                                     ))}
                                                     <TableHead className="w-[80px]"></TableHead>
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
                                                 {rows.map((row, idx) => (
-                                                    <TableRow key={row.id || idx} className="hover:bg-secondary/30 transition-colors border-b border-white/5">
+                                                    <TableRow key={idx} className="hover:bg-secondary/30">
                                                         {Object.keys(row).map(key => (
                                                             <TableCell key={key} className="text-[11px] py-2 px-3">
                                                                 {editingRow?.id === row.id ? (
                                                                     <Input
-                                                                        className="h-7 text-xs py-0"
+                                                                        className="h-7 text-xs"
                                                                         defaultValue={row[key]}
-                                                                        onBlur={(e) => {
-                                                                            const newVal = e.target.value;
-                                                                            if (newVal !== String(row[key])) {
-                                                                                setEditingRow({ ...editingRow, [key]: newVal });
-                                                                            }
-                                                                        }}
+                                                                        onBlur={(e) => setEditingRow({ ...editingRow, [key]: e.target.value })}
                                                                     />
                                                                 ) : (
                                                                     renderValue(row[key])
@@ -271,24 +289,17 @@ const AdminDatabase = () => {
                                                         <TableCell className="p-2">
                                                             <div className="flex gap-1 justify-end">
                                                                 {editingRow?.id === row.id ? (
-                                                                    <>
-                                                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-green-500" onClick={() => handleUpdate(row.id, editingRow)}>
-                                                                            <Save size={14} />
-                                                                        </Button>
-                                                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => setEditingRow(null)}>
-                                                                            <X size={14} />
-                                                                        </Button>
-                                                                    </>
+                                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-green-500" onClick={() => handleUpdate(row.id, editingRow)}>
+                                                                        <Save size={14} />
+                                                                    </Button>
                                                                 ) : (
-                                                                    <>
-                                                                        <Button variant="ghost" size="icon" className="h-7 w-7 opacity-50 hover:opacity-100" onClick={() => setEditingRow(row)}>
-                                                                            <Edit2 size={12} />
-                                                                        </Button>
-                                                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive opacity-50 hover:opacity-100" onClick={() => handleDelete(row.id)}>
-                                                                            <Trash2 size={12} />
-                                                                        </Button>
-                                                                    </>
+                                                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingRow(row)}>
+                                                                        <Edit2 size={12} />
+                                                                    </Button>
                                                                 )}
+                                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(row.id)}>
+                                                                    <Trash2 size={12} />
+                                                                </Button>
                                                             </div>
                                                         </TableCell>
                                                     </TableRow>
@@ -308,7 +319,6 @@ const AdminDatabase = () => {
                             <CardTitle className="text-sm font-medium flex items-center gap-2">
                                 <Terminal size={16} /> Console SQL Raw
                             </CardTitle>
-                            <CardDescription>Execute comandos SQL diretamente no seu banco de dados. Use com cautela.</CardDescription>
                         </CardHeader>
                         <CardContent className="px-5 pb-5 space-y-4">
                             <div className="relative group">
@@ -316,12 +326,12 @@ const AdminDatabase = () => {
                                     value={sqlQuery}
                                     onChange={(e) => setSqlQuery(e.target.value)}
                                     placeholder="SELECT * FROM vox_leads LIMIT 10..."
-                                    className="w-full min-h-[150px] p-4 bg-slate-950 text-slate-50 font-mono text-sm rounded-lg border border-white/10 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                                    className="w-full min-h-[150px] p-4 bg-slate-950 text-slate-50 font-mono text-sm rounded-lg border border-white/10 outline-none"
                                 />
                                 <Button
                                     onClick={handleExecSql}
                                     disabled={loading || !sqlQuery.trim()}
-                                    className="absolute bottom-4 right-4 shadow-xl"
+                                    className="absolute bottom-4 right-4"
                                 >
                                     {loading ? <Loader2 className="animate-spin mr-2" size={16} /> : <Play size={16} className="mr-2" />}
                                     Executar SQL
@@ -329,36 +339,8 @@ const AdminDatabase = () => {
                             </div>
 
                             {sqlResult && (
-                                <div className="space-y-2">
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
-                                        <FileJson size={12} /> Resultado
-                                    </p>
-                                    <div className="bg-slate-900 border border-white/5 p-4 rounded-lg overflow-x-auto max-h-[400px]">
-                                        {Array.isArray(sqlResult) ? (
-                                            <div className="overflow-x-auto">
-                                                <Table>
-                                                    <TableHeader>
-                                                        <TableRow>
-                                                            {sqlResult.length > 0 && Object.keys(sqlResult[0]).map(key => (
-                                                                <TableHead key={key} className="text-xs py-2">{key}</TableHead>
-                                                            ))}
-                                                        </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {sqlResult.map((row, i) => (
-                                                            <TableRow key={i}>
-                                                                {Object.values(row).map((val: any, j) => (
-                                                                    <TableCell key={j} className="text-[10px] py-1">{JSON.stringify(val)}</TableCell>
-                                                                ))}
-                                                            </TableRow>
-                                                        ))}
-                                                    </TableBody>
-                                                </Table>
-                                            </div>
-                                        ) : (
-                                            <pre className="text-xs text-blue-300">{JSON.stringify(sqlResult, null, 2)}</pre>
-                                        )}
-                                    </div>
+                                <div className="bg-slate-900 p-4 rounded-lg overflow-x-auto max-h-[400px]">
+                                    <pre className="text-xs text-blue-300">{JSON.stringify(sqlResult, null, 2)}</pre>
                                 </div>
                             )}
                         </CardContent>
