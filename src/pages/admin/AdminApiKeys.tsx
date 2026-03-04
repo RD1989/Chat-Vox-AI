@@ -12,26 +12,21 @@ const AdminApiKeys = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [showKey, setShowKey] = useState(false);
-  const [showAudioKey, setShowAudioKey] = useState(false);
   const [openrouterKey, setOpenrouterKey] = useState("");
-  const [openrouterModel, setOpenrouterModel] = useState("qwen/qwen3.5-flash-02-23");
-  const [audioApiKey, setAudioApiKey] = useState("");
+  const [openrouterModel, setOpenrouterModel] = useState("google/gemini-2.0-flash-001");
 
   useEffect(() => {
     const load = async () => {
       const { data } = await supabase
         .from("system_settings")
         .select("key, value")
-        .in("key", ["openrouter_api_key", "openrouter_model", "audio_api_key"]);
+        .in("key", ["openrouter_api_key", "openrouter_model"]);
 
       if (data) {
         const keyRow = data.find((r) => r.key === "openrouter_api_key");
         const modelRow = data.find((r) => r.key === "openrouter_model");
         if (keyRow?.value) setOpenrouterKey(keyRow.value);
         if (modelRow?.value) setOpenrouterModel(modelRow.value);
-        const audioRow = data.find((r) => r.key === "audio_api_key");
-        if (audioRow?.value) setAudioApiKey(audioRow.value);
       }
       setLoading(false);
     };
@@ -54,13 +49,6 @@ const AdminApiKeys = () => {
         key: "openrouter_model",
         value: openrouterModel,
         description: "Modelo padrão do OpenRouter",
-        updated_at: new Date().toISOString(),
-        updated_by: user.id,
-      },
-      {
-        key: "audio_api_key",
-        value: audioApiKey,
-        description: "Chave API do OpenRouter exclusiva para áudio (TTS/STT)",
         updated_at: new Date().toISOString(),
         updated_by: user.id,
       },
@@ -97,38 +85,6 @@ const AdminApiKeys = () => {
           Configure a chave API do OpenRouter que será usada por todos os usuários do sistema.
         </p>
       </div>
-
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Key size={16} className="text-primary" />
-            <CardTitle className="text-sm">OpenRouter API — Áudio (TTS/STT)</CardTitle>
-          </div>
-          <CardDescription>
-            Chave API exclusiva para transcrição e geração de áudio via modelo{" "}
-            <code className="text-xs bg-muted px-1 rounded">openai/gpt-audio-mini</code>.
-            Pode ser a mesma chave ou uma diferente da usada para texto.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <Label className="text-xs font-medium text-muted-foreground">Chave API de Áudio</Label>
-          <div className="flex gap-2">
-            <Input
-              type={showAudioKey ? "text" : "password"}
-              value={audioApiKey}
-              onChange={(e) => setAudioApiKey(e.target.value)}
-              placeholder="sk-or-v1-..."
-            />
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setShowAudioKey(!showAudioKey)}
-            >
-              {showAudioKey ? <EyeOff size={14} /> : <Eye size={14} />}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader>
@@ -174,10 +130,10 @@ const AdminApiKeys = () => {
             <Input
               value={openrouterModel}
               onChange={(e) => setOpenrouterModel(e.target.value)}
-              placeholder="qwen/qwen3.5-flash-02-23"
+              placeholder="google/gemini-2.0-flash-001"
             />
             <p className="text-[10px] text-muted-foreground">
-              Ex: qwen/qwen3.5-flash-02-23, google/gemini-2.5-flash, openai/gpt-4o-mini
+              Ex: google/gemini-2.0-flash-001, openai/gpt-4o-mini, anthropic/claude-3-haiku
             </p>
           </div>
         </CardContent>
@@ -192,3 +148,4 @@ const AdminApiKeys = () => {
 };
 
 export default AdminApiKeys;
+

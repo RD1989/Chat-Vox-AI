@@ -119,7 +119,7 @@ serve(async (req) => {
     });
 
     if (Math.random() < 0.05) {
-      supabase.rpc("cleanup_rate_limits").then(() => {}).catch(() => {});
+      supabase.rpc("cleanup_rate_limits").then(() => { }).catch(() => { });
     }
 
     // --- Fetch Settings ---
@@ -130,8 +130,8 @@ serve(async (req) => {
       .in("key", settingsKeys);
 
     const apiKey = settings?.find((s: any) => s.key === "openrouter_api_key")?.value;
-    const model = settings?.find((s: any) => s.key === "openrouter_model")?.value || "qwen/qwen3.5-flash-02-23";
-    const visionModel = settings?.find((s: any) => s.key === "vision_model")?.value || "google/gemini-2.5-flash";
+    const model = settings?.find((s: any) => s.key === "openrouter_model")?.value || "google/gemini-2.0-flash-001";
+    const visionModel = settings?.find((s: any) => s.key === "vision_model")?.value || "google/gemini-2.0-flash-001";
 
     if (!apiKey) {
       return new Response(
@@ -328,7 +328,7 @@ REGRAS IMPORTANTES:
               if (!choice) continue;
 
               const delta = choice.delta;
-              
+
               // Handle text content
               if (delta?.content) {
                 fullContent += delta.content;
@@ -363,7 +363,7 @@ REGRAS IMPORTANTES:
                 fullContent += delta.content;
                 await writer.write(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: delta.content } }] })}\n\n`));
               }
-            } catch {}
+            } catch { }
           }
         }
 
@@ -414,7 +414,7 @@ REGRAS IMPORTANTES:
             const msgCount = count || 0;
             let score = Math.min(msgCount * 10, 60);
             const fullConvo = messages.map((m: any) => m.content).join(" ").toLowerCase();
-            
+
             const buySignals = ["preço", "valor", "quanto custa", "agendar", "comprar", "contratar", "orçamento", "disponível", "quando posso", "como funciona"];
             for (const signal of buySignals) {
               if (fullConvo.includes(signal)) score += 8;
