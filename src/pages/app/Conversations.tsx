@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useApi } from "@/hooks/useApi";
 import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +37,7 @@ interface Message {
 
 const Conversations = () => {
   const { user } = useAuth();
+  const { request } = useApi();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -49,60 +50,22 @@ const Conversations = () => {
 
   const fetchLeads = useCallback(async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from("vox_leads")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("updated_at", { ascending: false });
+    const { data } = await request<any[]>(`leads?user_id=${user.id}`);
     if (data) setLeads(data as unknown as Lead[]);
     setLoading(false);
-  }, [user]);
-
-  useEffect(() => { fetchLeads(); }, [fetchLeads]);
-
-  useEffect(() => {
-    if (!user) return;
-    const channel = supabase
-      .channel("conv_leads")
-      .on("postgres_changes", { event: "*", schema: "public", table: "vox_leads", filter: `user_id=eq.${user.id}` }, () => fetchLeads())
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [user, fetchLeads]);
-
-  const fetchMessages = useCallback(async (leadId: string) => {
-    if (!user) return;
-    setMessagesLoading(true);
-    const { data } = await supabase
-      .from("vox_messages")
-      .select("*")
-      .eq("lead_id", leadId)
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: true });
-    if (data) setMessages(data as unknown as Message[]);
-    setMessagesLoading(false);
-  }, [user]);
-
-  useEffect(() => {
-    if (!user || !selectedLead) return;
-    const channel = supabase
-      .channel(`conv_msgs_${selectedLead.id}`)
-      .on("postgres_changes", {
-        event: "INSERT", schema: "public", table: "vox_messages",
-        filter: `lead_id=eq.${selectedLead.id}`,
-      }, (payload) => {
-        const newMsg = payload.new as unknown as Message;
-        setMessages((prev) => {
-          if (prev.find(m => m.id === newMsg.id)) return prev;
-          return [...prev, newMsg];
-        });
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [user, selectedLead]);
+  }, [user, request]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const fetchMessages = useCallback(async (leadId: string) => {
+    if (!user) return;
+    setMessagesLoading(true);
+    const { data } = await request<any[]>(`messages?lead_id=${leadId}`);
+    if (data) setMessages(data as unknown as Message[]);
+    setMessagesLoading(false);
+  }, [user, request]);
 
   const selectLead = (lead: Lead) => {
     setSelectedLead(lead);
@@ -114,23 +77,37 @@ const Conversations = () => {
     if (!humanMessage.trim() || !selectedLead || !user) return;
     setSendingHuman(true);
 
-    await supabase.from("vox_messages").insert({
-      user_id: user.id,
-      lead_id: selectedLead.id,
-      role: "assistant",
-      content: humanMessage.trim(),
-      message_type: "human",
-    } as any);
+    const { data: newMsg, error } = await request("messages", {
+      method: "POST",
+      body: JSON.stringify({
+        user_id: user.id,
+        lead_id: selectedLead.id,
+        role: "assistant",
+        content: humanMessage.trim(),
+        message_type: "human",
+      })
+    });
 
-    // Mark handoff as resolved, update status
-    await supabase.from("vox_leads").update({
-      handoff_requested: false,
-      status: "em_atendimento",
-    } as any).eq("id", selectedLead.id);
+    if (!error) {
+      // Mark handoff as resolved, update status
+      await request(`leads?id=${selectedLead.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          handoff_requested: false,
+          status: "em_atendimento",
+        })
+      });
 
-    setHumanMessage("");
+      if (newMsg) {
+        setMessages(prev => [...prev, newMsg]);
+      }
+
+      setHumanMessage("");
+      toast({ title: "Mensagem enviada ao lead" });
+    } else {
+      toast({ title: "Erro ao enviar", variant: "destructive" });
+    }
     setSendingHuman(false);
-    toast({ title: "Mensagem enviada ao lead" });
   };
 
   const filteredLeads = leads.filter((l) =>
@@ -185,9 +162,8 @@ const Conversations = () => {
                   <button
                     key={lead.id}
                     onClick={() => selectLead(lead)}
-                    className={`w-full text-left px-4 py-3 hover:bg-accent/30 transition-colors ${
-                      selectedLead?.id === lead.id ? "bg-accent/50" : ""
-                    } ${lead.handoff_requested ? "bg-warning/5" : ""}`}
+                    className={`w-full text-left px-4 py-3 hover:bg-accent/30 transition-colors ${selectedLead?.id === lead.id ? "bg-accent/50" : ""
+                      } ${lead.handoff_requested ? "bg-warning/5" : ""}`}
                   >
                     <div className="flex items-center gap-3">
                       <div className="relative">
@@ -292,9 +268,8 @@ const Conversations = () => {
                         >
                           <div className="flex items-end gap-2 max-w-[80%]">
                             {msg.role === "assistant" && (
-                              <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mb-1 ${
-                                msg.message_type === "human" ? "bg-warning/10" : "bg-primary/10"
-                              }`}>
+                              <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mb-1 ${msg.message_type === "human" ? "bg-warning/10" : "bg-primary/10"
+                                }`}>
                                 {msg.message_type === "human" ? (
                                   <Headphones size={12} className="text-warning" />
                                 ) : (
@@ -303,13 +278,12 @@ const Conversations = () => {
                               </div>
                             )}
                             <div
-                              className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                                msg.role === "user"
-                                  ? "bg-primary text-primary-foreground rounded-br-md"
-                                  : msg.message_type === "human"
-                                    ? "bg-warning/10 text-foreground rounded-bl-md border border-warning/20"
-                                    : "bg-accent text-foreground rounded-bl-md"
-                              }`}
+                              className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${msg.role === "user"
+                                ? "bg-primary text-primary-foreground rounded-br-md"
+                                : msg.message_type === "human"
+                                  ? "bg-warning/10 text-foreground rounded-bl-md border border-warning/20"
+                                  : "bg-accent text-foreground rounded-bl-md"
+                                }`}
                             >
                               {msg.message_type === "human" && (
                                 <p className="text-[9px] font-bold text-warning mb-1 flex items-center gap-1">
@@ -317,9 +291,8 @@ const Conversations = () => {
                                 </p>
                               )}
                               <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-                              <p className={`text-[9px] mt-1 ${
-                                msg.role === "user" ? "text-primary-foreground/50" : "text-muted-foreground"
-                              }`}>
+                              <p className={`text-[9px] mt-1 ${msg.role === "user" ? "text-primary-foreground/50" : "text-muted-foreground"
+                                }`}>
                                 {format(new Date(msg.created_at), "HH:mm", { locale: ptBR })}
                               </p>
                             </div>

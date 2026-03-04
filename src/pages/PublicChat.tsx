@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { useApi } from "@/hooks/useApi";
 import { Send, Bot, Loader2, Check, CheckCheck, Smile, Paperclip, Mic, MoreVertical, Search, ArrowLeft, X, Image as ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import AudioRecorder from "@/components/chat/AudioRecorder";
@@ -127,8 +127,8 @@ const formatTime = (date: Date) => {
 };
 
 const PublicChat = () => {
-  const { userId } = useParams<{ userId: string }>();
-  const agentId = new URLSearchParams(window.location.search).get("agent");
+  const { userId, agentId } = useParams();
+  const { request } = useApi();
   const { notifyNewMessage } = useBackgroundNotification();
   const [config, setConfig] = useState<VoxConfig>({
     ai_name: "ChatVox",
@@ -175,23 +175,14 @@ const PublicChat = () => {
     const load = async () => {
       // If agent_id is provided, load agent-specific config
       if (agentId) {
-        const { data: agentData } = await supabase
-          .from("vox_agents")
-          .select("*")
-          .eq("id", agentId)
-          .maybeSingle();
+        const { data: agentData } = await request<any>(`agents?id=${agentId}`);
 
         if (agentData) {
-          const a = agentData as any;
+          const a = agentData;
 
           // Fetch global settings as fallback for identity
-          const { data: globalSettings } = await supabase
-            .from("vox_settings")
-            .select("ai_name, ai_avatar_url")
-            .eq("user_id", userId)
-            .maybeSingle();
-
-          const g = globalSettings as any;
+          const { data: globalSettings } = await request<any>(`settings?user_id=${userId}`);
+          const g = globalSettings;
 
           setConfig({
             ai_name: a.name || g?.ai_name || "ChatVox",
@@ -217,14 +208,10 @@ const PublicChat = () => {
       }
 
       // Fallback to vox_settings
-      const { data } = await supabase
-        .from("vox_settings")
-        .select("*")
-        .eq("user_id", userId)
-        .maybeSingle();
+      const { data } = await request<any>(`settings?user_id=${userId}`);
 
       if (data) {
-        const d = data as any;
+        const d = data;
         setConfig({
           ai_name: d.ai_name || "ChatVox",
           ai_avatar_url: d.ai_avatar_url || "",
@@ -255,7 +242,7 @@ const PublicChat = () => {
       }, 500);
     };
     load();
-  }, [userId, agentId]);
+  }, [userId, agentId, request]);
 
   const createLead = async (name: string) => {
     if (!userId) return;
@@ -276,21 +263,24 @@ const PublicChat = () => {
       }
     } catch { /* silently ignore geo errors */ }
 
-    const { data, error } = await supabase.from("vox_leads").insert({
-      user_id: userId,
-      name,
-      status: "novo",
-      source: "chat",
-      city: geoCity,
-      region: geoRegion,
-      ip_address: geoIp,
-      utm_source: params.get("utm_source") || null,
-      utm_medium: params.get("utm_medium") || null,
-      utm_campaign: params.get("utm_campaign") || null,
-    } as any).select().single();
+    const { data: resData, error } = await request<any>("leads", {
+      method: "POST",
+      body: JSON.stringify({
+        user_id: userId,
+        agent_id: agentId,
+        name,
+        source: "chat",
+        city: geoCity,
+        region: geoRegion,
+        ip_address: geoIp,
+        utm_source: params.get("utm_source") || null,
+        utm_medium: params.get("utm_medium") || null,
+        utm_campaign: params.get("utm_campaign") || null,
+      }),
+    });
 
-    if (data && !error) {
-      const newLeadId = (data as any).id;
+    if (resData && !error) {
+      const newLeadId = resData.id;
       setLeadId(newLeadId);
       setLeadCreated(true);
       setShowNamePrompt(false);
@@ -365,13 +355,17 @@ const PublicChat = () => {
     for (const { file } of files) {
       const ext = file.name.split('.').pop() || 'jpg';
       const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const { error } = await supabase.storage
-        .from("chat-attachments")
-        .upload(path, file, { contentType: file.type });
-      if (!error) {
-        const { data: urlData } = supabase.storage
-          .from("chat-attachments")
-          .getPublicUrl(path);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("user_id", userId || "");
+
+      const resp = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost/api"}/upload.php`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (resp.ok) {
+        const urlData = await resp.json();
         urls.push(urlData.publicUrl);
       }
     }
@@ -404,11 +398,8 @@ const PublicChat = () => {
     setIsTyping(true);
 
     try {
-      // 1. Fetch API Keys and Knowledge Base from Supabase (Frontend)
-      const { data: settings } = await supabase
-        .from("system_settings")
-        .select("key, value")
-        .in("key", ["openrouter_api_key", "openrouter_model"]);
+      // 1. Fetch API Keys and Knowledge Base from PHP API
+      const { data: settings } = await request<any[]>("system_settings");
 
       const apiKey = settings?.find((s) => s.key === "openrouter_api_key")?.value;
       const model = settings?.find((s) => s.key === "openrouter_model")?.value || "google/gemini-2.0-flash-001";
@@ -416,26 +407,17 @@ const PublicChat = () => {
       if (!apiKey) throw new Error("API Key not configured");
 
       // Fetch Knowledge Base
-      let knowledgeQuery = supabase
-        .from("vox_knowledge")
-        .select("title, content, category")
-        .eq("user_id", userId)
-        .eq("is_active", true);
-
-      if (agentId) {
-        knowledgeQuery = knowledgeQuery.or(`agent_id.eq.${agentId},agent_id.is.null`);
-      }
-      const { data: knowledgeEntries } = await knowledgeQuery;
+      const { data: knowledgeEntries } = await request<any[]>(`knowledge?user_id=${userId}${agentId ? `&agent_id=${agentId}` : ""}`);
 
       // Fetch Brain Config (structured fields + system_prompt)
       const brainFields = "system_prompt, ai_persona, ai_tone, ai_objective, ai_restrictions, ai_cta, ai_qualification_question";
       let brain: any = {};
       if (agentId) {
-        const { data: agentData } = await supabase.from("vox_agents").select(brainFields).eq("id", agentId).single();
+        const { data: agentData } = await request<any>(`agents?id=${agentId}&fields=${brainFields}`);
         if (agentData) brain = agentData;
       }
       // Always fetch global settings as fallback
-      const { data: globalBrain } = await supabase.from("vox_settings").select(brainFields).eq("user_id", userId).single();
+      const { data: globalBrain } = await request<any>(`settings?user_id=${userId}&fields=${brainFields}`);
 
       // Merge: agent-specific overrides global (field by field)
       const gb = globalBrain || {};
@@ -561,22 +543,30 @@ const PublicChat = () => {
       // 4. Save to Database (background)
       if (leadId) {
         // Save user message
-        await supabase.from("vox_messages").insert({
-          user_id: userId,
-          lead_id: leadId,
-          role: "user",
-          content: text,
-          message_type: imageUrls && imageUrls.length > 0 ? "image" : "text",
-          metadata: imageUrls && imageUrls.length > 0 ? { image_urls: imageUrls } : null,
+        await request("messages", {
+          method: "POST",
+          body: JSON.stringify({
+            user_id: userId,
+            lead_id: leadId,
+            agent_id: agentId,
+            role: "user",
+            content: text,
+            message_type: imageUrls && imageUrls.length > 0 ? "image" : "text",
+            metadata: imageUrls && imageUrls.length > 0 ? { image_urls: imageUrls } : null,
+          }),
         });
 
         // Save assistant message
-        await supabase.from("vox_messages").insert({
-          user_id: userId,
-          lead_id: leadId,
-          role: "assistant",
-          content: fullText,
-          message_type: "text",
+        await request("messages", {
+          method: "POST",
+          body: JSON.stringify({
+            user_id: userId,
+            lead_id: leadId,
+            agent_id: agentId,
+            role: "assistant",
+            content: fullText,
+            message_type: "text",
+          }),
         });
       }
 

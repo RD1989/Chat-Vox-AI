@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useApi } from "@/hooks/useApi";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,6 +65,7 @@ interface VoxForm {
 
 const VoxSettings = () => {
   const { user } = useAuth();
+  const { request } = useApi();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [chatThemeMode, setChatThemeMode] = useState<"whatsapp" | "template" | "custom">("whatsapp");
@@ -126,50 +127,45 @@ const VoxSettings = () => {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const { data } = await supabase
-        .from("vox_settings")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
+      const { data } = await request<any>(`settings?user_id=${user.id}`);
       if (data) {
-        const d = data as any;
         setForm((prev) => {
           const updated = { ...prev };
           for (const key of Object.keys(prev)) {
-            if (d[key] !== undefined && d[key] !== null) {
-              updated[key] = d[key];
+            if (data[key] !== undefined && data[key] !== null) {
+              updated[key] = data[key];
             }
           }
           return updated;
         });
         // Restore theme mode & config
-        if (d.chat_theme) setChatThemeMode(d.chat_theme as any);
-        if (d.chat_theme_config && typeof d.chat_theme_config === "object" && d.chat_theme_config.name) {
-          setChatThemeConfig(d.chat_theme_config as ChatTheme);
+        if (data.chat_theme) setChatThemeMode(data.chat_theme as any);
+        if (data.chat_theme_config) {
+          const cfg = typeof data.chat_theme_config === "string" ? JSON.parse(data.chat_theme_config) : data.chat_theme_config;
+          setChatThemeConfig(cfg);
         }
       }
       setLoading(false);
     };
     load();
-  }, [user]);
+  }, [user, request]);
 
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
-
-    const { error } = await supabase
-      .from("vox_settings")
-      .upsert(
-        { user_id: user.id, ...form, chat_theme: chatThemeMode, chat_theme_config: chatThemeConfig, updated_at: new Date().toISOString() } as any,
-        { onConflict: "user_id" }
-      );
-
+    const { error } = await request(`settings?user_id=${user.id}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        ...form,
+        chat_theme: chatThemeMode,
+        chat_theme_config: chatThemeConfig,
+      })
+    });
     setSaving(false);
-    if (error) {
-      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+    if (!error) {
+      toast({ title: "Configurações salvas!" });
     } else {
-      toast({ title: "Configurações salvas com sucesso!" });
+      toast({ title: "Erro ao salvar", variant: "destructive" });
     }
   };
 
@@ -312,8 +308,8 @@ const VoxSettings = () => {
                       type="button"
                       onClick={() => update("ai_tone", tone)}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all capitalize ${form.ai_tone === tone
-                          ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                          : "bg-background text-muted-foreground border-border hover:border-primary/40"
+                        ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                        : "bg-background text-muted-foreground border-border hover:border-primary/40"
                         }`}
                     >
                       {tone}

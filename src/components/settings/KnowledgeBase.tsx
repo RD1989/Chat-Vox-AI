@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useApi } from "@/hooks/useApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,6 +26,7 @@ interface KnowledgeBaseProps {
 const CATEGORIES = ["geral", "serviços", "preços", "horários", "FAQ", "políticas"];
 
 export const KnowledgeBase = ({ userId }: KnowledgeBaseProps) => {
+  const { request } = useApi();
   const [entries, setEntries] = useState<KnowledgeEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -34,18 +35,14 @@ export const KnowledgeBase = ({ userId }: KnowledgeBaseProps) => {
   const [form, setForm] = useState({ title: "", content: "", category: "geral" });
 
   const fetchEntries = async () => {
-    const { data } = await supabase
-      .from("vox_knowledge" as any)
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
-    if (data) setEntries(data as unknown as KnowledgeEntry[]);
+    const { data } = await request<KnowledgeEntry[]>(`knowledge?user_id=${userId}`);
+    if (data) setEntries(data);
     setLoading(false);
   };
 
   useEffect(() => {
     fetchEntries();
-  }, [userId]);
+  }, [userId, request]);
 
   const handleSave = async () => {
     if (!form.title.trim() || !form.content.trim()) {
@@ -55,21 +52,22 @@ export const KnowledgeBase = ({ userId }: KnowledgeBaseProps) => {
     setSaving(true);
 
     if (editingId) {
-      const { error } = await supabase
-        .from("vox_knowledge" as any)
-        .update({ title: form.title, content: form.content, category: form.category, updated_at: new Date().toISOString() } as any)
-        .eq("id", editingId);
+      const { error } = await request(`knowledge?id=${editingId}`, {
+        method: "PUT",
+        body: JSON.stringify(form)
+      });
       if (error) {
         toast({ title: "Erro ao atualizar", variant: "destructive" });
       } else {
         toast({ title: "Entrada atualizada!" });
       }
     } else {
-      const { error } = await supabase
-        .from("vox_knowledge" as any)
-        .insert({ user_id: userId, title: form.title, content: form.content, category: form.category } as any);
+      const { error } = await request("knowledge", {
+        method: "POST",
+        body: JSON.stringify({ user_id: userId, ...form })
+      });
       if (error) {
-        toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+        toast({ title: "Erro ao salvar", description: error, variant: "destructive" });
       } else {
         toast({ title: "Entrada adicionada!" });
       }
@@ -83,15 +81,17 @@ export const KnowledgeBase = ({ userId }: KnowledgeBaseProps) => {
   };
 
   const toggleActive = async (id: string, current: boolean) => {
-    await supabase
-      .from("vox_knowledge" as any)
-      .update({ is_active: !current } as any)
-      .eq("id", id);
+    await request(`knowledge?id=${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ is_active: !current })
+    });
     setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, is_active: !current } : e)));
   };
 
   const deleteEntry = async (id: string) => {
-    await supabase.from("vox_knowledge" as any).delete().eq("id", id);
+    await request(`knowledge?id=${id}`, {
+      method: "DELETE"
+    });
     setEntries((prev) => prev.filter((e) => e.id !== id));
     toast({ title: "Entrada removida" });
   };

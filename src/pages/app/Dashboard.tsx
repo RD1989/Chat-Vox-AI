@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useApi } from "@/hooks/useApi";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2, Users, UserCheck, MapPin, TrendingUp, MessageSquare, Target, BarChart3, MousePointerClick } from "lucide-react";
 import { format, subDays, startOfDay } from "date-fns";
@@ -43,6 +43,7 @@ interface DashboardStats {
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { request } = useApi();
   const plan = usePlanLimits();
   const [stats, setStats] = useState<DashboardStats>({
     totalLeads: 0, qualified: 0, topCity: "—", conversionRate: "0%",
@@ -56,26 +57,25 @@ const Dashboard = () => {
     if (!user) return;
 
     const fetchStats = async () => {
-      const [{ data: leads }, { count: msgCount }, { data: interactiveMsgs }, { data: allMessages }] = await Promise.all([
-        supabase.from("vox_leads").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-        supabase.from("vox_messages").select("*", { count: "exact", head: true }).eq("user_id", user.id),
-        supabase.from("vox_messages").select("id", { count: "exact" }).eq("user_id", user.id).eq("message_type", "interactive"),
-        supabase.from("vox_messages").select("lead_id").eq("user_id", user.id),
-      ]);
+      const { data: resData } = await request<any>(`stats?user_id=${user.id}`);
 
-      if (leads) {
-        const qualified = leads.filter((l) => l.qualified);
-        const cities = leads.map((l) => l.city).filter(Boolean);
+      if (resData && resData.leads) {
+        const leads = resData.leads;
+        const msgCount = resData.totalMessages;
+        const interactiveMsgsCount = resData.interactiveMessages;
+
+        const qualified = leads.filter((l: any) => l.qualified);
+        const cities = leads.map((l: any) => l.city).filter(Boolean);
         const cityCount: Record<string, number> = {};
-        cities.forEach((c) => { cityCount[c!] = (cityCount[c!] || 0) + 1; });
+        cities.forEach((c: any) => { cityCount[c!] = (cityCount[c!] || 0) + 1; });
         const topCity = Object.entries(cityCount).sort((a, b) => b[1] - a[1])[0]?.[0] || "—";
 
-        const scores = leads.map(l => l.qualification_score || 0).filter(s => s > 0);
-        const avgScore = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+        const scores = leads.map((l: any) => l.qualification_score || 0).filter((s: any) => s > 0);
+        const avgScore = scores.length ? Math.round(scores.reduce((a: any, b: any) => a + b, 0) / scores.length) : 0;
 
         // Geo data by state
         const stateCount: Record<string, number> = {};
-        leads.forEach((l) => {
+        leads.forEach((l: any) => {
           const region = l.region || "Desconhecido";
           stateCount[region] = (stateCount[region] || 0) + 1;
         });
@@ -86,7 +86,7 @@ const Dashboard = () => {
 
         // City data
         const cityStateCount: Record<string, { city: string; state: string; count: number }> = {};
-        leads.forEach((l) => {
+        leads.forEach((l: any) => {
           const city = l.city || "Desconhecida";
           const state = l.region || "—";
           const key = `${city}-${state}`;
@@ -100,7 +100,7 @@ const Dashboard = () => {
         for (let i = 6; i >= 0; i--) {
           const day = startOfDay(subDays(new Date(), i));
           const nextDay = startOfDay(subDays(new Date(), i - 1));
-          const count = leads.filter(l => {
+          const count = leads.filter((l: any) => {
             const d = new Date(l.created_at);
             return d >= day && d < nextDay;
           }).length;
@@ -108,13 +108,8 @@ const Dashboard = () => {
         }
 
         // --- UTM ROI Data ---
-        const msgsByLead: Record<string, number> = {};
-        (allMessages || []).forEach((m) => {
-          msgsByLead[m.lead_id] = (msgsByLead[m.lead_id] || 0) + 1;
-        });
-
-        const utmGroups: Record<string, typeof leads> = {};
-        leads.forEach((l) => {
+        const utmGroups: Record<string, any[]> = {};
+        leads.forEach((l: any) => {
           const src = l.utm_source || l.source || null;
           if (src) {
             if (!utmGroups[src]) utmGroups[src] = [];
@@ -138,16 +133,13 @@ const Dashboard = () => {
           .sort((a, b) => b.totalLeads - a.totalLeads)
           .slice(0, 10);
 
-        // --- Engagement by Source ---
+        // --- Engagement by Source (Simplified for now without full msg breakdown) ---
         const engagementData = Object.entries(utmGroups)
           .map(([source, groupLeads]) => {
-            const totalMsgs = groupLeads.reduce((sum, l) => sum + (msgsByLead[l.id] || 0), 0);
-            const avgMsgs = groupLeads.length ? Math.round((totalMsgs / groupLeads.length) * 10) / 10 : 0;
             const groupScores = groupLeads.map(l => l.qualification_score || 0).filter(s => s > 0);
             const avg = groupScores.length ? Math.round(groupScores.reduce((a, b) => a + b, 0) / groupScores.length) : 0;
-            return { source, avgMessages: avgMsgs, avgScore: avg };
+            return { source, avgMessages: 0, avgScore: avg };
           })
-          .sort((a, b) => b.avgMessages - a.avgMessages)
           .slice(0, 8);
 
         const avgMsgsPerLead = leads.length > 0 && msgCount
@@ -161,9 +153,9 @@ const Dashboard = () => {
           conversionRate: leads.length ? `${Math.round((qualified.length / leads.length) * 100)}%` : "0%",
           totalMessages: msgCount || 0,
           avgScore,
-          interactiveMessages: interactiveMsgs?.length || 0,
+          interactiveMessages: interactiveMsgsCount || 0,
           avgMessagesPerLead: avgMsgsPerLead,
-          recentLeads: leads.slice(0, 8) as any,
+          recentLeads: leads.slice(0, 8),
           chartData,
           geoData,
           cityData,
@@ -175,14 +167,7 @@ const Dashboard = () => {
     };
 
     fetchStats();
-
-    const channel = supabase
-      .channel("vox_leads_realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "vox_leads", filter: `user_id=eq.${user.id}` }, () => fetchStats())
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [user]);
+  }, [user, request]);
 
   const statCards = [
     { label: "Total de Leads", value: stats.totalLeads, icon: Users, description: "Leads capturados pelo chat" },

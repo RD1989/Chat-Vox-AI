@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useApi } from "@/hooks/useApi";
 import { useAuth } from "@/hooks/useAuth";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,7 @@ interface Agent {
 
 const Agents = () => {
   const { user } = useAuth();
+  const { request } = useApi();
   const planInfo = usePlanLimits();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,14 +50,10 @@ const Agents = () => {
 
   const fetchAgents = useCallback(async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from("vox_agents")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at");
-    if (data) setAgents(data as unknown as Agent[]);
+    const { data } = await request<Agent[]>("agents");
+    if (data) setAgents(data);
     setLoading(false);
-  }, [user]);
+  }, [user, request]);
 
   useEffect(() => { fetchAgents(); }, [fetchAgents]);
 
@@ -66,17 +63,16 @@ const Agents = () => {
   const handleCreate = async () => {
     if (!user || !canCreate) return;
     setCreating(true);
-    const { data, error } = await supabase
-      .from("vox_agents")
-      .insert({ user_id: user.id, name: `Agente ${agents.length + 1}` } as any)
-      .select()
-      .single();
+    const { data, error } = await request<Agent>("agents", {
+      method: "POST",
+      body: JSON.stringify({ user_id: user.id, name: `Agente ${agents.length + 1}` })
+    });
     setCreating(false);
     if (error) {
-      toast({ title: "Erro ao criar agente", description: error.message, variant: "destructive" });
+      toast({ title: "Erro ao criar agente", description: error, variant: "destructive" });
     } else if (data) {
-      setAgents(prev => [...prev, data as unknown as Agent]);
-      setEditAgent(data as unknown as Agent);
+      setAgents(prev => [...prev, data]);
+      setEditAgent(data);
       toast({ title: "Agente criado!" });
     }
   };
@@ -84,23 +80,10 @@ const Agents = () => {
   const handleSave = async () => {
     if (!editAgent) return;
     setSaving(true);
-    const { error } = await supabase
-      .from("vox_agents")
-      .update({
-        name: editAgent.name,
-        system_prompt: editAgent.system_prompt,
-        welcome_message: editAgent.welcome_message,
-        primary_color: editAgent.primary_color,
-        is_active: editAgent.is_active,
-        ai_avatar_url: editAgent.ai_avatar_url,
-        ai_persona: editAgent.ai_persona,
-        ai_tone: editAgent.ai_tone,
-        ai_objective: editAgent.ai_objective,
-        ai_restrictions: editAgent.ai_restrictions,
-        ai_cta: editAgent.ai_cta,
-        ai_qualification_question: editAgent.ai_qualification_question,
-      } as any)
-      .eq("id", editAgent.id);
+    const { error } = await request(`agents?id=${editAgent.id}`, {
+      method: "PUT",
+      body: JSON.stringify(editAgent)
+    });
     setSaving(false);
     if (error) {
       toast({ title: "Erro ao salvar", variant: "destructive" });
@@ -113,7 +96,9 @@ const Agents = () => {
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    const { error } = await supabase.from("vox_agents").delete().eq("id", deleteTarget.id);
+    const { error } = await request(`agents?id=${deleteTarget.id}`, {
+      method: "DELETE"
+    });
     if (error) {
       toast({ title: "Erro ao excluir", variant: "destructive" });
     } else {
@@ -125,7 +110,10 @@ const Agents = () => {
 
   const toggleActive = async (agent: Agent) => {
     const newVal = !agent.is_active;
-    await supabase.from("vox_agents").update({ is_active: newVal } as any).eq("id", agent.id);
+    await request(`agents?id=${agent.id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ is_active: newVal })
+    });
     setAgents(prev => prev.map(a => a.id === agent.id ? { ...a, is_active: newVal } : a));
   };
 
@@ -346,8 +334,8 @@ const Agents = () => {
                         type="button"
                         onClick={() => setEditAgent({ ...editAgent, ai_tone: tone })}
                         className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all capitalize ${editAgent.ai_tone === tone
-                            ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                            : "bg-background text-muted-foreground border-border hover:border-primary/40"
+                          ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                          : "bg-background text-muted-foreground border-border hover:border-primary/40"
                           }`}
                       >
                         {tone}

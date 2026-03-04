@@ -1,44 +1,59 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import type { User } from "@supabase/supabase-js";
+import { useApi } from "./useApi";
 
 export const useAuth = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { request } = useApi();
+
+  const getSession = async () => {
+    const token = localStorage.getItem("vox_session_token");
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    const { data, error } = await request<any>(`me?token=${token}`);
+    if (data && !error) {
+      setUser(data);
+    } else {
+      localStorage.removeItem("vox_session_token");
+      setUser(null);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+    getSession();
+  }, [request]);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    localStorage.removeItem("vox_session_token");
+    setUser(null);
     navigate("/login");
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error };
+    const { data, error } = await request<any>("login", {
+      method: "POST",
+      body: JSON.stringify({ email, password })
+    });
+
+    if (data && data.session) {
+      localStorage.setItem("vox_session_token", data.session.access_token);
+      setUser(data.user);
+      return { error: null };
+    }
+
+    return { error: error || "Falha no login" };
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: fullName } },
+    const { error } = await request("signup", {
+      method: "POST",
+      body: JSON.stringify({ email, password, full_name: fullName })
     });
     return { error };
   };

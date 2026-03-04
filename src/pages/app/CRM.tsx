@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useApi } from "@/hooks/useApi";
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, MessageCircle, Trash2, Tag, Plus, X } from "lucide-react";
@@ -47,40 +47,40 @@ const getTagColor = (tag: string) => TAG_COLORS[tag] || "bg-secondary text-secon
 
 const CRM = () => {
   const { user } = useAuth();
+  const { request } = useApi();
   const [leads, setLeads] = useState<VoxLead[]>([]);
   const [loading, setLoading] = useState(true);
   const [draggedId, setDraggedId] = useState<string | null>(null);
 
   const fetchLeads = useCallback(async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from("vox_leads")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-    if (data) setLeads(data as unknown as VoxLead[]);
+    const { data } = await request<any[]>(`leads?user_id=${user.id}`);
+    if (data) {
+      // Parse tags JSON string to array if necessary
+      const parsed = data.map(l => ({
+        ...l,
+        tags: typeof l.tags === "string" ? JSON.parse(l.tags) : (l.tags || [])
+      }));
+      setLeads(parsed as unknown as VoxLead[]);
+    }
     setLoading(false);
-  }, [user]);
+  }, [user, request]);
 
   useEffect(() => { fetchLeads(); }, [fetchLeads]);
 
-  useEffect(() => {
-    if (!user) return;
-    const channel = supabase
-      .channel("crm_leads")
-      .on("postgres_changes", { event: "*", schema: "public", table: "vox_leads", filter: `user_id=eq.${user.id}` }, () => fetchLeads())
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [user, fetchLeads]);
-
   const updateStatus = async (id: string, status: string) => {
-    const { error } = await supabase.from("vox_leads").update({ status } as any).eq("id", id);
+    const { error } = await request(`leads?id=${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status })
+    });
     if (error) { toast({ title: "Erro ao mover lead", variant: "destructive" }); return; }
     setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, status } : l)));
   };
 
   const deleteLead = async (id: string) => {
-    const { error } = await supabase.from("vox_leads").delete().eq("id", id);
+    const { error } = await request(`leads?id=${id}`, {
+      method: "DELETE"
+    });
     if (error) { toast({ title: "Erro ao excluir", variant: "destructive" }); return; }
     setLeads((prev) => prev.filter((l) => l.id !== id));
     toast({ title: "Lead removido" });
@@ -90,7 +90,10 @@ const CRM = () => {
     const lead = leads.find((l) => l.id === leadId);
     if (!lead || lead.tags?.includes(tag)) return;
     const newTags = [...(lead.tags || []), tag];
-    await supabase.from("vox_leads").update({ tags: newTags } as any).eq("id", leadId);
+    await request(`leads?id=${leadId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ tags: newTags })
+    });
     setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, tags: newTags } : l)));
   };
 
@@ -98,7 +101,10 @@ const CRM = () => {
     const lead = leads.find((l) => l.id === leadId);
     if (!lead) return;
     const newTags = (lead.tags || []).filter((t) => t !== tag);
-    await supabase.from("vox_leads").update({ tags: newTags } as any).eq("id", leadId);
+    await request(`leads?id=${leadId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ tags: newTags })
+    });
     setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, tags: newTags } : l)));
   };
 
