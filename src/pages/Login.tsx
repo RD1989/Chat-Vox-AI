@@ -6,6 +6,10 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { ArrowRight, Loader2, Zap } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
+
+// E-mail(s) que têm acesso de Super Admin
+const SUPER_ADMIN_EMAILS = ["admin@chatvox.com.br"];
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -24,11 +28,22 @@ const Login = () => {
       toast({ title: "Erro no login", description: error.message, variant: "destructive" });
       return;
     }
-    navigate("/app");
+
+    // Redireciona super admin para o painel administrativo
+    if (SUPER_ADMIN_EMAILS.includes(email.toLowerCase().trim())) {
+      navigate("/admin");
+    } else {
+      navigate("/app");
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 relative">
+      {/* Botão de tema no canto superior direito */}
+      <div className="absolute top-4 right-4">
+        <ThemeToggle size="sm" />
+      </div>
+
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-2.5 mb-10 justify-center">
           <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">

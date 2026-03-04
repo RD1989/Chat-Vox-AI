@@ -6,6 +6,7 @@ import OnboardingWizard from "./OnboardingWizard";
 import { useAuth } from "@/hooks/useAuth";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { Loader2, Bell, User, CreditCard, Settings, LogOut } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -45,7 +46,7 @@ const AppLayout = () => {
         .select("onboarding_completed")
         .eq("id", user.id)
         .maybeSingle();
-      
+
       if (data && !(data as any).onboarding_completed) {
         setShowOnboarding(true);
       }
@@ -90,6 +91,7 @@ const AppLayout = () => {
             </div>
 
             <div className="flex items-center gap-1.5">
+              <ThemeToggle size="sm" />
               <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground relative">
                 <Bell size={15} />
                 <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-primary" />

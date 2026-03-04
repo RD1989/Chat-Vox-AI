@@ -16,6 +16,13 @@ export const useAdminCheck = () => {
     }
 
     const check = async () => {
+      // Se o e-mail for o de super admin, concede acesso automaticamente
+      if (user.email?.toLowerCase().trim() === "admin@chatvox.com.br") {
+        setIsAdmin(true);
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.rpc("has_role", {
         _user_id: user.id,
         _role: "admin",

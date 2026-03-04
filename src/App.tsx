@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "./components/ThemeProvider";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -31,42 +32,45 @@ import CookieConsent from "./components/CookieConsent";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/chat/:userId" element={<PublicChat />} />
-          <Route path="/privacidade" element={<PrivacyPolicy />} />
-          <Route path="/exclusao-dados" element={<DataDeletion />} />
-          <Route path="/app" element={<AppLayout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="crm" element={<CRM />} />
-            <Route path="conversations" element={<Conversations />} />
-            <Route path="analytics" element={<Analytics />} />
-            <Route path="agents" element={<Agents />} />
-            <Route path="settings" element={<VoxSettings />} />
-          </Route>
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<AdminDashboard />} />
-            <Route path="users" element={<AdminUsers />} />
-            <Route path="api" element={<AdminApiKeys />} />
-            <Route path="settings" element={<AdminSettings />} />
-            <Route path="alerts" element={<AdminAlerts />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <CookieConsent />
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/chat/:userId" element={<PublicChat />} />
+            <Route path="/privacidade" element={<PrivacyPolicy />} />
+            <Route path="/exclusao-dados" element={<DataDeletion />} />
+            <Route path="/app" element={<AppLayout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="crm" element={<CRM />} />
+              <Route path="conversations" element={<Conversations />} />
+              <Route path="analytics" element={<Analytics />} />
+              <Route path="agents" element={<Agents />} />
+              <Route path="settings" element={<VoxSettings />} />
+            </Route>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="api" element={<AdminApiKeys />} />
+              <Route path="settings" element={<AdminSettings />} />
+              <Route path="alerts" element={<AdminAlerts />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <CookieConsent />
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ThemeProvider>
 );
 
 export default App;
+

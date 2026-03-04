@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { Loader2, Shield, LayoutDashboard, Users, Key, Settings, LogOut, Bell } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { SidebarProvider, SidebarTrigger, Sidebar, SidebarContent, SidebarHeader, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -97,6 +98,9 @@ const AdminLayout = () => {
           <header className="h-14 border-b border-border flex items-center px-4 bg-card sticky top-0 z-30">
             <SidebarTrigger />
             <span className="ml-3 text-xs font-semibold text-destructive uppercase tracking-widest">Área do Administrador</span>
+            <div className="ml-auto">
+              <ThemeToggle size="sm" />
+            </div>
           </header>
           <div className="flex-1 p-6 overflow-auto">
             <Outlet />
