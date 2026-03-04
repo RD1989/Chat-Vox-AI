@@ -180,11 +180,22 @@ const PublicChat = () => {
           .select("*")
           .eq("id", agentId)
           .maybeSingle();
+
         if (agentData) {
           const a = agentData as any;
+
+          // Fetch global settings as fallback for identity
+          const { data: globalSettings } = await supabase
+            .from("vox_settings")
+            .select("ai_name, ai_avatar_url")
+            .eq("user_id", userId)
+            .maybeSingle();
+
+          const g = globalSettings as any;
+
           setConfig({
-            ai_name: a.name || "ChatVox",
-            ai_avatar_url: a.ai_avatar_url || "",
+            ai_name: a.name || g?.ai_name || "ChatVox",
+            ai_avatar_url: a.ai_avatar_url || g?.ai_avatar_url || "",
             primary_color: a.primary_color || "#6366f1",
             welcome_message: a.welcome_message || "Olá! Como posso ajudar você hoje?",
             chat_theme: a.chat_theme || "whatsapp",
@@ -416,24 +427,67 @@ const PublicChat = () => {
       }
       const { data: knowledgeEntries } = await knowledgeQuery;
 
-      // Fetch System Prompt
-      let systemPrompt = "Você é um assistente de IA amigável.";
+      // Fetch Brain Config (structured fields + system_prompt)
+      const brainFields = "system_prompt, ai_persona, ai_tone, ai_objective, ai_restrictions, ai_cta, ai_qualification_question";
+      let brain: any = {};
       if (agentId) {
-        const { data: agentData } = await supabase.from("vox_agents").select("system_prompt").eq("id", agentId).single();
-        if (agentData?.system_prompt) systemPrompt = agentData.system_prompt;
+        const { data: agentData } = await supabase.from("vox_agents").select(brainFields).eq("id", agentId).single();
+        if (agentData) brain = agentData;
+      }
+      // Always fetch global settings as fallback
+      const { data: globalBrain } = await supabase.from("vox_settings").select(brainFields).eq("user_id", userId).single();
+
+      // Merge: agent-specific overrides global (field by field)
+      const gb = globalBrain || {};
+      const persona = brain.ai_persona || (gb as any).ai_persona || "";
+      const tone = brain.ai_tone || (gb as any).ai_tone || "profissional";
+      const objective = brain.ai_objective || (gb as any).ai_objective || "";
+      const restrictions = brain.ai_restrictions || (gb as any).ai_restrictions || "";
+      const cta = brain.ai_cta || (gb as any).ai_cta || "";
+      const qualQuestion = brain.ai_qualification_question || (gb as any).ai_qualification_question || "";
+      const customPrompt = brain.system_prompt || (gb as any).system_prompt || "";
+
+      // Build professional system prompt
+      const promptParts: string[] = [];
+
+      if (persona) {
+        promptParts.push(`PERSONA:\n${persona}`);
       } else {
-        const { data: voxSettings } = await supabase.from("vox_settings").select("system_prompt").eq("user_id", userId).single();
-        if (voxSettings?.system_prompt) systemPrompt = voxSettings.system_prompt;
+        promptParts.push("Você é um assistente de IA amigável e profissional.");
       }
 
-      // Build context
+      promptParts.push(`TOM DE VOZ: Responda sempre de forma ${tone}.`);
+
+      if (objective) {
+        promptParts.push(`OBJETIVO PRINCIPAL:\n${objective}`);
+      }
+
+      if (cta) {
+        promptParts.push(`CHAMADA PARA AÇÃO (CTA):\n${cta}`);
+      }
+
+      if (qualQuestion) {
+        promptParts.push(`PERGUNTA DE QUALIFICAÇÃO:\nDurante a conversa, faça naturalmente a seguinte pergunta para qualificar o lead: "${qualQuestion}"`);
+      }
+
+      if (restrictions) {
+        promptParts.push(`RESTRIÇÕES IMPORTANTES:\n${restrictions}`);
+      }
+
+      if (customPrompt) {
+        promptParts.push(`INSTRUÇÕES ADICIONAIS:\n${customPrompt}`);
+      }
+
+      // Build knowledge context
       let knowledgeContext = "";
       if (knowledgeEntries && knowledgeEntries.length > 0) {
         knowledgeContext = "\n\nBASE DE CONHECIMENTO:\n" +
           knowledgeEntries.map((e: any) => `[${e.category?.toUpperCase()}] ${e.title}:\n${e.content}`).join("\n\n");
       }
 
-      const fullSystemPrompt = systemPrompt + knowledgeContext + "\n\nResponda sempre em português brasileiro de forma natural.";
+      promptParts.push("Responda sempre em português brasileiro de forma natural e humanizada.");
+
+      const fullSystemPrompt = promptParts.join("\n\n") + knowledgeContext;
 
       // 2. Build History
       const history = messages
@@ -724,8 +778,8 @@ const PublicChat = () => {
 
                 <div
                   className={`px-[9px] pt-[6px] pb-[8px] text-[14.2px] leading-[19px] shadow-sm ${msg.role === "user"
-                      ? "rounded-tl-lg rounded-bl-lg rounded-br-lg"
-                      : "rounded-tr-lg rounded-br-lg rounded-bl-lg"
+                    ? "rounded-tl-lg rounded-bl-lg rounded-br-lg"
+                    : "rounded-tr-lg rounded-br-lg rounded-bl-lg"
                     }`}
                   style={
                     msg.role === "user"

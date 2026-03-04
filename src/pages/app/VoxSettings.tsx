@@ -13,6 +13,7 @@ import {
   Loader2, Save, Copy, ExternalLink, Palette, Bot, Code2,
   Facebook, BarChart3, ShoppingBag, Megaphone, Target,
   Webhook, Braces, MessageSquareCode, Sparkles, Bell, BookOpen, Volume2,
+  Brain, MessageCircle, ShieldAlert, Zap, UserCheck,
 } from "lucide-react";
 import VoiceSettings from "@/components/settings/VoiceSettings";
 import { ChatThemeSelector, type ChatTheme } from "@/components/settings/ChatThemeSelector";
@@ -42,6 +43,12 @@ interface VoxForm {
   primary_color: string;
   welcome_message: string;
   system_prompt: string;
+  ai_persona: string;
+  ai_tone: string;
+  ai_objective: string;
+  ai_restrictions: string;
+  ai_cta: string;
+  ai_qualification_question: string;
   webhook_url: string;
   custom_css: string;
   widget_trigger_seconds: number;
@@ -80,6 +87,12 @@ const VoxSettings = () => {
     primary_color: "#6366f1",
     welcome_message: "Olá! Como posso ajudar você hoje?",
     system_prompt: "",
+    ai_persona: "",
+    ai_tone: "profissional",
+    ai_objective: "",
+    ai_restrictions: "",
+    ai_cta: "",
+    ai_qualification_question: "",
     webhook_url: "",
     custom_css: "",
     widget_trigger_seconds: 5,
@@ -264,29 +277,151 @@ const VoxSettings = () => {
           </TabsTrigger>
         </TabsList>
 
-        {/* AI & Prompt Tab */}
+        {/* AI & Prompt Tab — Cérebro Premium */}
         <TabsContent value="ai" className="mt-6 space-y-4">
+          {/* Persona & Tom */}
           <Card>
             <CardHeader>
               <CardTitle className="text-sm flex items-center gap-2">
-                <Sparkles size={15} className="text-primary" /> Prompt da IA
+                <Brain size={15} className="text-primary" /> Persona & Tom de Voz
               </CardTitle>
               <CardDescription>
-                Personalize como sua IA se comporta. Deixe em branco para usar o prompt padrão.
+                Defina quem é sua IA e como ela se comunica. Isso define a personalidade em todas as conversas.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-xs font-semibold text-muted-foreground">System Prompt (Instruções da IA)</Label>
+                <Label className="text-xs font-semibold text-muted-foreground">Persona (Quem é a IA?)</Label>
+                <Textarea
+                  value={form.ai_persona as string}
+                  onChange={(e) => update("ai_persona", e.target.value)}
+                  rows={3}
+                  placeholder="Ex: Você é a Ana, consultora especializada em estética facial da Clínica Beleza Pura. Tem 5 anos de experiência e adora ajudar clientes a encontrar o tratamento ideal."
+                  className="text-xs"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  Dê um nome, uma história e uma especialidade para sua IA. Quanto mais detalhes, mais natural ela fica.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-muted-foreground">Tom de Voz</Label>
+                <div className="flex flex-wrap gap-2">
+                  {["profissional", "amigável", "descontraído", "formal", "persuasivo", "empático", "técnico", "divertido"].map((tone) => (
+                    <button
+                      key={tone}
+                      type="button"
+                      onClick={() => update("ai_tone", tone)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all capitalize ${form.ai_tone === tone
+                          ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                          : "bg-background text-muted-foreground border-border hover:border-primary/40"
+                        }`}
+                    >
+                      {tone}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Objetivo & CTA */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Zap size={15} className="text-primary" /> Objetivo & Conversão
+              </CardTitle>
+              <CardDescription>
+                O que sua IA deve conquistar em cada conversa? Defina o objetivo e a ação desejada.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-muted-foreground">Objetivo Principal</Label>
+                <Textarea
+                  value={form.ai_objective as string}
+                  onChange={(e) => update("ai_objective", e.target.value)}
+                  rows={3}
+                  placeholder="Ex: Qualificar o lead perguntando sobre orçamento e necessidade, e agendar uma avaliação gratuita na clínica."
+                  className="text-xs"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-muted-foreground">CTA (Chamada para Ação)</Label>
+                <Textarea
+                  value={form.ai_cta as string}
+                  onChange={(e) => update("ai_cta", e.target.value)}
+                  rows={2}
+                  placeholder="Ex: Ao final da conversa, sempre pergunte: 'Posso agendar sua avaliação gratuita para esta semana?'"
+                  className="text-xs"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  O CTA é a ação final que a IA tentará executar em cada conversa.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                  <UserCheck size={12} /> Pergunta de Qualificação
+                </Label>
+                <Textarea
+                  value={form.ai_qualification_question as string}
+                  onChange={(e) => update("ai_qualification_question", e.target.value)}
+                  rows={2}
+                  placeholder="Ex: 'Qual seu orçamento disponível para investir nesse tratamento?'"
+                  className="text-xs"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  A IA fará essa pergunta naturalmente durante a conversa para qualificar o lead.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Restrições */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <ShieldAlert size={15} className="text-destructive" /> Restrições & Limites
+              </CardTitle>
+              <CardDescription>
+                O que a IA NÃO deve fazer? Defina limites claros para evitar respostas inadequadas.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-muted-foreground">Restrições</Label>
+                <Textarea
+                  value={form.ai_restrictions as string}
+                  onChange={(e) => update("ai_restrictions", e.target.value)}
+                  rows={4}
+                  placeholder={`Ex:\n- Nunca fale mal da concorrência\n- Não invente preços que não estão na base de conhecimento\n- Não faça diagnósticos médicos\n- Se não souber, diga que vai verificar com a equipe`}
+                  className="text-xs"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* System Prompt (Avançado) */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Sparkles size={15} className="text-muted-foreground" /> System Prompt (Avançado)
+              </CardTitle>
+              <CardDescription>
+                Para usuários avançados. Se preenchido, será adicionado junto com os campos acima.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-muted-foreground">Prompt Customizado</Label>
                 <Textarea
                   value={form.system_prompt as string}
                   onChange={(e) => update("system_prompt", e.target.value)}
-                  rows={8}
-                  placeholder={`Exemplo: Você é a assistente virtual da Clínica XYZ. Seu objetivo é:\n- Tirar dúvidas sobre tratamentos\n- Qualificar o lead perguntando sobre interesse e orçamento\n- Agendar uma avaliação gratuita\n- Sempre responder de forma empática e profissional`}
+                  rows={6}
+                  placeholder="Instruções adicionais em formato livre (opcional)..."
                   className="font-mono text-xs"
                 />
                 <p className="text-[10px] text-muted-foreground">
-                  Dica: Inclua informações sobre seus serviços, preços e regras de atendimento para a IA responder melhor.
+                  Este campo é concatenado com os campos acima. Use para instruções específicas que não se encaixam nos outros campos.
                 </p>
               </div>
             </CardContent>
@@ -489,7 +624,7 @@ const VoxSettings = () => {
               <div className="bg-accent/30 rounded-lg p-3">
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Payload Exemplo</p>
                 <pre className="text-[10px] font-mono text-foreground/70 whitespace-pre-wrap">
-{`{
+                  {`{
   "event": "message.received",
   "lead": {
     "id": "uuid",

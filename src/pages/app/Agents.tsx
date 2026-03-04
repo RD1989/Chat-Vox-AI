@@ -15,9 +15,10 @@ import {
 } from "@/components/ui/dialog";
 import {
   Bot, Plus, Trash2, Copy, ExternalLink, Loader2, Save, Pencil, Power,
-  MessageSquare, Users, Sparkles, Lock,
+  MessageSquare, Users, Sparkles, Lock, Brain, Zap, ShieldAlert, UserCheck,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { AvatarUpload } from "@/components/settings/AvatarUpload";
 
 interface Agent {
   id: string;
@@ -28,6 +29,12 @@ interface Agent {
   primary_color: string;
   is_active: boolean;
   created_at: string;
+  ai_persona: string;
+  ai_tone: string;
+  ai_objective: string;
+  ai_restrictions: string;
+  ai_cta: string;
+  ai_qualification_question: string;
 }
 
 const Agents = () => {
@@ -85,6 +92,13 @@ const Agents = () => {
         welcome_message: editAgent.welcome_message,
         primary_color: editAgent.primary_color,
         is_active: editAgent.is_active,
+        ai_avatar_url: editAgent.ai_avatar_url,
+        ai_persona: editAgent.ai_persona,
+        ai_tone: editAgent.ai_tone,
+        ai_objective: editAgent.ai_objective,
+        ai_restrictions: editAgent.ai_restrictions,
+        ai_cta: editAgent.ai_cta,
+        ai_qualification_question: editAgent.ai_qualification_question,
       } as any)
       .eq("id", editAgent.id);
     setSaving(false);
@@ -205,10 +219,14 @@ const Agents = () => {
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-2.5">
                         <div
-                          className="w-9 h-9 rounded-lg flex items-center justify-center text-primary-foreground font-bold text-sm"
+                          className="w-9 h-9 rounded-lg flex items-center justify-center text-primary-foreground font-bold text-sm overflow-hidden"
                           style={{ backgroundColor: agent.primary_color }}
                         >
-                          {agent.name.charAt(0).toUpperCase()}
+                          {agent.ai_avatar_url ? (
+                            <img src={agent.ai_avatar_url} alt={agent.name} className="w-full h-full object-cover" />
+                          ) : (
+                            agent.name.charAt(0).toUpperCase()
+                          )}
                         </div>
                         <div>
                           <CardTitle className="text-sm">{agent.name}</CardTitle>
@@ -252,23 +270,36 @@ const Agents = () => {
 
       {/* Edit Dialog */}
       <Dialog open={!!editAgent} onOpenChange={(open) => !open && setEditAgent(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Bot size={18} className="text-primary" /> Configurar Agente
             </DialogTitle>
-            <DialogDescription>Personalize o comportamento e aparência deste agente.</DialogDescription>
+            <DialogDescription>Personalize o comportamento, aparência e o cérebro deste agente.</DialogDescription>
           </DialogHeader>
           {editAgent && (
             <div className="space-y-4 py-2">
-              <div className="space-y-2">
-                <Label className="text-xs font-semibold">Nome do Agente</Label>
-                <Input
-                  value={editAgent.name}
-                  onChange={e => setEditAgent({ ...editAgent, name: e.target.value })}
-                  placeholder="Ex: Vendas, Suporte, Agendamento..."
-                />
+              {/* Identidade */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">Nome do Agente</Label>
+                  <Input
+                    value={editAgent.name}
+                    onChange={e => setEditAgent({ ...editAgent, name: e.target.value })}
+                    placeholder="Ex: Vendas, Suporte, Agendamento..."
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <Label className="text-xs font-semibold">Cor</Label>
+                  <input
+                    type="color"
+                    value={editAgent.primary_color}
+                    onChange={e => setEditAgent({ ...editAgent, primary_color: e.target.value })}
+                    className="w-8 h-8 rounded border border-border cursor-pointer"
+                  />
+                </div>
               </div>
+
               <div className="space-y-2">
                 <Label className="text-xs font-semibold">Mensagem de Boas-Vindas</Label>
                 <Textarea
@@ -277,23 +308,114 @@ const Agents = () => {
                   rows={2}
                 />
               </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-semibold">System Prompt</Label>
+
+              {user && (
+                <AvatarUpload
+                  userId={user.id}
+                  currentUrl={editAgent.ai_avatar_url || ""}
+                  onUrlChange={(url) => setEditAgent({ ...editAgent, ai_avatar_url: url })}
+                />
+              )}
+
+              {/* Cérebro IA */}
+              <div className="border-t border-border pt-4 space-y-4">
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <Brain size={16} className="text-primary" /> Cérebro do Agente
+                </h3>
+                <p className="text-[11px] text-muted-foreground -mt-2">
+                  Campos vazios herdam automaticamente das Configurações Globais.
+                </p>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">Persona (Quem é este agente?)</Label>
+                  <Textarea
+                    value={editAgent.ai_persona || ""}
+                    onChange={e => setEditAgent({ ...editAgent, ai_persona: e.target.value })}
+                    rows={2}
+                    placeholder="Ex: Você é o João, especialista em vendas da empresa... (vazio = usa persona global)"
+                    className="text-xs"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">Tom de Voz</Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {["profissional", "amigável", "descontraído", "formal", "persuasivo", "empático", "técnico", "divertido"].map((tone) => (
+                      <button
+                        key={tone}
+                        type="button"
+                        onClick={() => setEditAgent({ ...editAgent, ai_tone: tone })}
+                        className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all capitalize ${editAgent.ai_tone === tone
+                            ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                            : "bg-background text-muted-foreground border-border hover:border-primary/40"
+                          }`}
+                      >
+                        {tone}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold flex items-center gap-1.5">
+                    <Zap size={12} /> Objetivo Principal
+                  </Label>
+                  <Textarea
+                    value={editAgent.ai_objective || ""}
+                    onChange={e => setEditAgent({ ...editAgent, ai_objective: e.target.value })}
+                    rows={2}
+                    placeholder="Ex: Qualificar leads e agendar demonstrações... (vazio = usa objetivo global)"
+                    className="text-xs"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">CTA (Chamada para Ação)</Label>
+                  <Textarea
+                    value={editAgent.ai_cta || ""}
+                    onChange={e => setEditAgent({ ...editAgent, ai_cta: e.target.value })}
+                    rows={2}
+                    placeholder="Ex: 'Posso agendar sua avaliação para amanhã?'"
+                    className="text-xs"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold flex items-center gap-1.5">
+                    <UserCheck size={12} /> Pergunta de Qualificação
+                  </Label>
+                  <Textarea
+                    value={editAgent.ai_qualification_question || ""}
+                    onChange={e => setEditAgent({ ...editAgent, ai_qualification_question: e.target.value })}
+                    rows={2}
+                    placeholder="Ex: 'Qual é o seu orçamento disponível?'"
+                    className="text-xs"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold flex items-center gap-1.5">
+                    <ShieldAlert size={12} className="text-destructive" /> Restrições
+                  </Label>
+                  <Textarea
+                    value={editAgent.ai_restrictions || ""}
+                    onChange={e => setEditAgent({ ...editAgent, ai_restrictions: e.target.value })}
+                    rows={3}
+                    placeholder="Ex: Nunca fale mal da concorrência, não invente preços..."
+                    className="text-xs"
+                  />
+                </div>
+              </div>
+
+              {/* System Prompt Avançado */}
+              <div className="border-t border-border pt-4 space-y-2">
+                <Label className="text-xs font-semibold text-muted-foreground">System Prompt (Avançado)</Label>
                 <Textarea
                   value={editAgent.system_prompt}
                   onChange={e => setEditAgent({ ...editAgent, system_prompt: e.target.value })}
-                  rows={6}
-                  placeholder="Instruções específicas para este agente..."
+                  rows={4}
+                  placeholder="Instruções adicionais em formato livre (opcional)..."
                   className="font-mono text-xs"
-                />
-              </div>
-              <div className="flex items-center gap-3">
-                <Label className="text-xs font-semibold">Cor</Label>
-                <input
-                  type="color"
-                  value={editAgent.primary_color}
-                  onChange={e => setEditAgent({ ...editAgent, primary_color: e.target.value })}
-                  className="w-8 h-8 rounded border border-border cursor-pointer"
                 />
               </div>
             </div>
