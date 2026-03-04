@@ -516,19 +516,9 @@ const Index = () => {
                   </div>
                 </div>
 
-                <div className="bg-[#151515] rounded-xl border border-white/5 p-4 flex gap-4 h-full">
-                  <div className="w-1/3 space-y-3">
-                    <div className="w-full h-8 rounded bg-white/10" />
-                    <div className="w-full h-16 rounded bg-white/5" />
-                    <div className="w-full h-16 rounded bg-white/5" />
-                  </div>
-                  <div className="w-2/3 flex flex-col">
-                    <div className="flex-1 bg-white/[0.02] rounded-lg mb-3 border border-white/5 p-3 flex flex-col justify-end gap-2">
-                      <div className="w-3/4 h-6 rounded-lg rounded-tl-none bg-white/10" />
-                      <div className="w-1/2 h-6 rounded-lg rounded-tr-none bg-primary/20 self-end" />
-                    </div>
-                    <div className="h-10 rounded bg-white/5 border border-white/5" />
-                  </div>
+                <div className="bg-[#151515] rounded-xl border border-white/5 flex gap-4 h-full w-full overflow-hidden p-0 relative">
+                  <div className="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-[#111] to-transparent z-10 pointer-events-none" />
+                  <img src="/kanban.jpg" alt="CRM Kanban" className="w-full h-full object-cover object-left-top opacity-90 rounded-b-xl" />
                 </div>
               </div>
             </motion.div>
