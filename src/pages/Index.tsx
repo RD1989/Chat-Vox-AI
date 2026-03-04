@@ -25,7 +25,8 @@ import {
   MousePointerClick,
   Tag,
   GripVertical,
-  PlayCircle
+  PlayCircle,
+  Star
 } from "lucide-react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import ChatPreview from "@/components/landing/ChatPreview";
@@ -192,7 +193,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-[#050505] selection:bg-primary/30 selection:text-primary-foreground overflow-x-hidden text-slate-300">
-      
+
       {/* ═══════════════ HEADER ═══════════════ */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#050505]/60 backdrop-blur-xl border-b border-white/5">
         <div className="container mx-auto flex items-center justify-between h-16 px-6 lg:px-12">
@@ -226,23 +227,23 @@ const Index = () => {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/10 rounded-full blur-[120px] opacity-50 pointer-events-none" />
         <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-indigo-500/10 rounded-full blur-[100px] opacity-30 pointer-events-none" />
         <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] opacity-30 pointer-events-none" />
-        
+
         {/* Subtle Grid Lines */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
 
         <motion.div style={{ opacity: heroOpacity, scale: heroScale, y: heroY }} className="container mx-auto px-6 relative z-10 text-center">
-          
+
           <motion.div initial="hidden" animate="visible" variants={fadeUp} custom={0} className="inline-flex items-center justify-center mb-8 relative group cursor-pointer">
             <div className="absolute inset-0 bg-gradient-to-r from-primary/30 to-indigo-500/30 rounded-full blur-md opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="relative inline-flex items-center gap-2 bg-[#111]/80 backdrop-blur-md border border-white/10 text-slate-300 text-[12px] font-medium px-4 py-1.5 rounded-full overflow-hidden">
-               <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-               Novo: IA atualizada para versão 3.1 com Raciocínio Premium
-               <ChevronRight size={12} className="text-slate-500 ml-1 group-hover:translate-x-0.5 transition-transform" />
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              Novo: IA atualizada para versão 3.1 com Raciocínio Premium
+              <ChevronRight size={12} className="text-slate-500 ml-1 group-hover:translate-x-0.5 transition-transform" />
             </div>
           </motion.div>
 
           <motion.h1 initial="hidden" animate="visible" variants={fadeUp} custom={1} className="text-4xl sm:text-5xl lg:text-[5rem] font-bold text-white tracking-[-0.04em] leading-[1.05] max-w-5xl mx-auto drop-shadow-sm">
-            O fim da sua dependência do <br className="hidden md:block"/>
+            O fim da sua dependência do <br className="hidden md:block" />
             <span className="relative whitespace-nowrap text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500">
               WhatsApp para vender
             </span>
@@ -279,12 +280,12 @@ const Index = () => {
             PERFEITO PARA PRODUTORES DESTAS PLATAFORMAS
           </p>
           <div className="flex flex-wrap justify-center gap-x-12 gap-y-8 opacity-60 grayscale hover:grayscale-0 transition-all duration-700">
-             {platforms.map(p => (
-               <div key={p.name} className="flex items-center gap-2 group cursor-default">
-                  <div className="w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold text-white transition-transform group-hover:scale-110" style={{ backgroundColor: p.color }}>{p.icon}</div>
-                  <span className="font-semibold text-lg text-slate-300 group-hover:text-white transition-colors">{p.name}</span>
-               </div>
-             ))}
+            {platforms.map(p => (
+              <div key={p.name} className="flex items-center gap-2 group cursor-default">
+                <div className="w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold text-white transition-transform group-hover:scale-110" style={{ backgroundColor: p.color }}>{p.icon}</div>
+                <span className="font-semibold text-lg text-slate-300 group-hover:text-white transition-colors">{p.name}</span>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -292,17 +293,17 @@ const Index = () => {
       {/* ═══════════════ METRICS BANNER ═══════════════ */}
       <section className="py-20 bg-[#050505]">
         <div className="container mx-auto px-6">
-           <div className="bg-[#111] border border-white/5 rounded-3xl p-8 sm:p-12 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-indigo-500/10 opacity-50" />
-              <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-8 divide-x divide-white/5">
-                {stats.map((stat, i) => (
-                  <motion.div key={stat.label} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i} className="text-center px-4">
-                    <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-2">{stat.value}</p>
-                    <p className="text-[12px] sm:text-[13px] text-slate-400 font-medium uppercase tracking-wider">{stat.label}</p>
-                  </motion.div>
-                ))}
-              </div>
-           </div>
+          <div className="bg-[#111] border border-white/5 rounded-3xl p-8 sm:p-12 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-indigo-500/10 opacity-50" />
+            <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-8 divide-x divide-white/5">
+              {stats.map((stat, i) => (
+                <motion.div key={stat.label} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i} className="text-center px-4">
+                  <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-2">{stat.value}</p>
+                  <p className="text-[12px] sm:text-[13px] text-slate-400 font-medium uppercase tracking-wider">{stat.label}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -321,46 +322,46 @@ const Index = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
             {/* The Old Way */}
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="bg-[#0a0a0a] border border-red-500/20 rounded-3xl p-8 sm:p-10 relative group overflow-hidden">
-               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500/50 to-rose-500/50" />
-               <div className="absolute inset-0 bg-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-               <div className="relative z-10">
-                 <div className="flex items-center gap-3 mb-8">
-                   <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
-                     <XCircle size={20} className="text-red-400" />
-                   </div>
-                   <h3 className="text-xl font-semibold text-white">WhatsApp Manual</h3>
-                 </div>
-                 <ul className="space-y-4">
-                   {whatsappProblems.map((p, i) => (
-                     <li key={i} className="flex items-start gap-3">
-                       <XCircle size={18} className="text-red-400/70 shrink-0 mt-0.5" />
-                       <span className="text-[15px] text-slate-400">{p}</span>
-                     </li>
-                   ))}
-                 </ul>
-               </div>
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500/50 to-rose-500/50" />
+              <div className="absolute inset-0 bg-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+                    <XCircle size={20} className="text-red-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-white">WhatsApp Manual</h3>
+                </div>
+                <ul className="space-y-4">
+                  {whatsappProblems.map((p, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <XCircle size={18} className="text-red-400/70 shrink-0 mt-0.5" />
+                      <span className="text-[15px] text-slate-400">{p}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </motion.div>
 
             {/* The New Way */}
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1} className="bg-gradient-to-b from-[#111] to-[#0a0a0a] border border-primary/30 rounded-3xl p-8 sm:p-10 relative group overflow-hidden shadow-2xl shadow-primary/10">
-               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-indigo-500" />
-               <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-               <div className="relative z-10">
-                 <div className="flex items-center gap-3 mb-8">
-                   <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 shadow-[0_0_15px_rgba(var(--primary),0.5)]">
-                     <Sparkles size={20} className="text-primary" />
-                   </div>
-                   <h3 className="text-xl font-semibold text-white">Ecossistema ChatVox</h3>
-                 </div>
-                 <ul className="space-y-4">
-                   {voxSolutions.map((s, i) => (
-                     <li key={i} className="flex items-start gap-3">
-                       <CheckCircle2 size={18} className="text-primary/90 shrink-0 mt-0.5" />
-                       <span className="text-[15px] text-slate-300 font-medium">{s}</span>
-                     </li>
-                   ))}
-                 </ul>
-               </div>
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-indigo-500" />
+              <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 shadow-[0_0_15px_rgba(var(--primary),0.5)]">
+                    <Sparkles size={20} className="text-primary" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-white">Ecossistema ChatVox</h3>
+                </div>
+                <ul className="space-y-4">
+                  {voxSolutions.map((s, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <CheckCircle2 size={18} className="text-primary/90 shrink-0 mt-0.5" />
+                      <span className="text-[15px] text-slate-300 font-medium">{s}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </motion.div>
           </div>
         </div>
@@ -370,54 +371,54 @@ const Index = () => {
       <section className="py-24 border-y border-white/5 relative overflow-hidden bg-[#0a0a0a]">
         {/* Glow behind author */}
         <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[100px] pointer-events-none opacity-50" />
-        
+
         <div className="container mx-auto px-6 relative z-10">
           <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20 max-w-6xl mx-auto">
             {/* Image Side */}
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="w-full lg:w-1/2">
               <div className="relative aspect-square max-w-md mx-auto">
-                 <div className="absolute inset-0 bg-gradient-to-tr from-primary/30 to-purple-500/30 rounded-3xl transform rotate-3 scale-105 blur-xl opacity-60" />
-                 <img 
-                   src="/lovable-uploads/2dc67b4d-be6a-4d43-ac66-b9abf8eb7dc7.png" 
-                   alt="RD - Criador do ChatVox" 
-                   className="relative w-full h-full object-cover rounded-3xl border border-white/10 shadow-2xl"
-                 />
-                 <div className="absolute -bottom-6 -right-6 bg-[#111] border border-white/10 p-5 rounded-2xl shadow-xl backdrop-blur-xl">
-                   <div className="flex gap-1 mb-2">
-                     <Star size={14} className="fill-yellow-500 text-yellow-500" />
-                     <Star size={14} className="fill-yellow-500 text-yellow-500" />
-                     <Star size={14} className="fill-yellow-500 text-yellow-500" />
-                     <Star size={14} className="fill-yellow-500 text-yellow-500" />
-                     <Star size={14} className="fill-yellow-500 text-yellow-500" />
-                   </div>
-                   <p className="text-white font-bold text-lg">"O Fim dos Bloqueios"</p>
-                   <p className="text-slate-400 text-[11px] uppercase tracking-wider mt-1">Visão do Fundador</p>
-                 </div>
+                <div className="absolute inset-0 bg-gradient-to-tr from-primary/30 to-purple-500/30 rounded-3xl transform rotate-3 scale-105 blur-xl opacity-60" />
+                <img
+                  src="/lovable-uploads/2dc67b4d-be6a-4d43-ac66-b9abf8eb7dc7.png"
+                  alt="RD - Criador do ChatVox"
+                  className="relative w-full h-full object-cover rounded-3xl border border-white/10 shadow-2xl"
+                />
+                <div className="absolute -bottom-6 -right-6 bg-[#111] border border-white/10 p-5 rounded-2xl shadow-xl backdrop-blur-xl">
+                  <div className="flex gap-1 mb-2">
+                    <Star size={14} className="fill-yellow-500 text-yellow-500" />
+                    <Star size={14} className="fill-yellow-500 text-yellow-500" />
+                    <Star size={14} className="fill-yellow-500 text-yellow-500" />
+                    <Star size={14} className="fill-yellow-500 text-yellow-500" />
+                    <Star size={14} className="fill-yellow-500 text-yellow-500" />
+                  </div>
+                  <p className="text-white font-bold text-lg">"O Fim dos Bloqueios"</p>
+                  <p className="text-slate-400 text-[11px] uppercase tracking-wider mt-1">Visão do Fundador</p>
+                </div>
               </div>
             </motion.div>
 
             {/* Text Side */}
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1} className="w-full lg:w-1/2 pt-8 lg:pt-0">
-               <p className="text-primary font-bold tracking-widest text-[11px] uppercase mb-3">Conheça o Criador</p>
-               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6 leading-[1.1]">
-                 Construído por quem vive o <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-indigo-400">campo de batalha</span> diariamente.
-               </h2>
-               <div className="space-y-4 text-slate-400 text-[15px] leading-relaxed mb-8">
-                 <p>
-                   "Nós perdemos centenas de milhares de reais com bloqueios no WhatsApp e leads frios aguardando resposta humana. Depois de usar dezenas de ferramentas caras e ineficientes do mercado, decidi criar a solução definitiva."
-                 </p>
-                 <p>
-                   O ChatVox não é apenas um chatbot divertido. É uma máquina de vendas de alta conversão, desenhada especificamente para produtores digitais escalarem suas operações de tráfego direto para x1 de forma 100% autônoma e à prova de bloqueios de Meta.
-                 </p>
-               </div>
-               
-               <div className="flex items-center gap-4">
-                 <div className="hidden sm:block w-12 h-px bg-white/20" />
-                 <div>
-                   <p className="text-white font-bold text-lg">RD</p>
-                   <p className="text-slate-500 text-sm">CEO & Fundador, ChatVox</p>
-                 </div>
-               </div>
+              <p className="text-primary font-bold tracking-widest text-[11px] uppercase mb-3">Conheça o Criador</p>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6 leading-[1.1]">
+                Construído por quem vive o <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-indigo-400">campo de batalha</span> diariamente.
+              </h2>
+              <div className="space-y-4 text-slate-400 text-[15px] leading-relaxed mb-8">
+                <p>
+                  "Nós perdemos centenas de milhares de reais com bloqueios no WhatsApp e leads frios aguardando resposta humana. Depois de usar dezenas de ferramentas caras e ineficientes do mercado, decidi criar a solução definitiva."
+                </p>
+                <p>
+                  O ChatVox não é apenas um chatbot divertido. É uma máquina de vendas de alta conversão, desenhada especificamente para produtores digitais escalarem suas operações de tráfego direto para x1 de forma 100% autônoma e à prova de bloqueios de Meta.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="hidden sm:block w-12 h-px bg-white/20" />
+                <div>
+                  <p className="text-white font-bold text-lg">RD</p>
+                  <p className="text-slate-500 text-sm">CEO & Fundador, ChatVox</p>
+                </div>
+              </div>
             </motion.div>
           </div>
         </div>
@@ -437,7 +438,7 @@ const Index = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
             {premiumFeatures.map((f, i) => (
-              <motion.div key={f.title} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i} 
+              <motion.div key={f.title} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}
                 className={`bg-[#0a0a0a] border border-white/5 ${f.border} rounded-3xl p-8 transition-colors duration-500 relative group overflow-hidden`}>
                 <div className={`absolute inset-0 bg-gradient-to-br ${f.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-700`} />
                 <div className="relative z-10">
@@ -464,69 +465,69 @@ const Index = () => {
       <section className="py-24 border-y border-white/5 bg-[#080808] relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none" />
-        
+
         <div className="container mx-auto px-6 relative z-10">
-           <div className="flex flex-col lg:flex-row gap-12 items-center lg:items-stretch max-w-6xl mx-auto">
-              
-              {/* Dashboard Side */}
-              <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="w-full lg:w-[60%] flex flex-col">
-                <div className="mb-10 text-center lg:text-left">
-                  <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Controle total na <br/><span className="text-primary">Ponta dos Dedos</span></h2>
-                  <p className="text-slate-400 text-lg">Analise conversões, acompanhe o funil no CRM Kanban e assuma conversas quentes no Live Chat.</p>
+          <div className="flex flex-col lg:flex-row gap-12 items-center lg:items-stretch max-w-6xl mx-auto">
+
+            {/* Dashboard Side */}
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="w-full lg:w-[60%] flex flex-col">
+              <div className="mb-10 text-center lg:text-left">
+                <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Controle total na <br /><span className="text-primary">Ponta dos Dedos</span></h2>
+                <p className="text-slate-400 text-lg">Analise conversões, acompanhe o funil no CRM Kanban e assuma conversas quentes no Live Chat.</p>
+              </div>
+
+              <div className="bg-[#111] border border-white/10 rounded-2xl p-6 shadow-2xl flex-1 relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] to-transparent z-10 pointer-events-none" />
+
+                {/* Fake UI */}
+                <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/5">
+                  <div className="flex gap-4">
+                    <div className="w-24 h-2 rounded bg-white/10" />
+                    <div className="w-16 h-2 rounded bg-white/5" />
+                    <div className="w-20 h-2 rounded bg-white/5" />
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-primary/20" />
                 </div>
-                
-                <div className="bg-[#111] border border-white/10 rounded-2xl p-6 shadow-2xl flex-1 relative overflow-hidden group">
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] to-transparent z-10 pointer-events-none" />
-                  
-                  {/* Fake UI */}
-                  <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/5">
-                    <div className="flex gap-4">
-                      <div className="w-24 h-2 rounded bg-white/10" />
-                      <div className="w-16 h-2 rounded bg-white/5" />
-                      <div className="w-20 h-2 rounded bg-white/5" />
+
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="bg-white/5 rounded-xl p-4 border border-white/5">
+                      <div className="w-8 h-8 rounded-lg bg-white/10 mb-3" />
+                      <div className="w-16 h-4 rounded bg-white/20 mb-2" />
+                      <div className="w-10 h-2 rounded bg-white/10" />
                     </div>
-                    <div className="w-8 h-8 rounded-full bg-primary/20" />
-                  </div>
-                  
-                  <div className="grid grid-cols-3 gap-4 mb-6">
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="bg-white/5 rounded-xl p-4 border border-white/5">
-                        <div className="w-8 h-8 rounded-lg bg-white/10 mb-3" />
-                        <div className="w-16 h-4 rounded bg-white/20 mb-2" />
-                        <div className="w-10 h-2 rounded bg-white/10" />
-                      </div>
-                    ))}
-                  </div>
+                  ))}
+                </div>
 
-                  <div className="bg-[#151515] rounded-xl border border-white/5 p-4 flex gap-4 h-full">
-                     <div className="w-1/3 space-y-3">
-                       <div className="w-full h-8 rounded bg-white/10" />
-                       <div className="w-full h-16 rounded bg-white/5" />
-                       <div className="w-full h-16 rounded bg-white/5" />
-                     </div>
-                     <div className="w-2/3 flex flex-col">
-                       <div className="flex-1 bg-white/[0.02] rounded-lg mb-3 border border-white/5 p-3 flex flex-col justify-end gap-2">
-                         <div className="w-3/4 h-6 rounded-lg rounded-tl-none bg-white/10" />
-                         <div className="w-1/2 h-6 rounded-lg rounded-tr-none bg-primary/20 self-end" />
-                       </div>
-                       <div className="h-10 rounded bg-white/5 border border-white/5" />
-                     </div>
+                <div className="bg-[#151515] rounded-xl border border-white/5 p-4 flex gap-4 h-full">
+                  <div className="w-1/3 space-y-3">
+                    <div className="w-full h-8 rounded bg-white/10" />
+                    <div className="w-full h-16 rounded bg-white/5" />
+                    <div className="w-full h-16 rounded bg-white/5" />
+                  </div>
+                  <div className="w-2/3 flex flex-col">
+                    <div className="flex-1 bg-white/[0.02] rounded-lg mb-3 border border-white/5 p-3 flex flex-col justify-end gap-2">
+                      <div className="w-3/4 h-6 rounded-lg rounded-tl-none bg-white/10" />
+                      <div className="w-1/2 h-6 rounded-lg rounded-tr-none bg-primary/20 self-end" />
+                    </div>
+                    <div className="h-10 rounded bg-white/5 border border-white/5" />
                   </div>
                 </div>
-              </motion.div>
+              </div>
+            </motion.div>
 
-              {/* Chat Side */}
-              <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1} className="w-full lg:w-[40%]">
-                 <div className="h-full w-full max-w-[400px] mx-auto scale-95 lg:scale-100 transform origin-top shadow-[0_0_80px_rgba(var(--primary),0.15)] rounded-[40px] border-[8px] border-[#1a1a1a] bg-black relative">
-                   {/* Phone notch */}
-                   <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-[#1a1a1a] rounded-b-2xl z-20" />
-                   <div className="overflow-hidden rounded-[32px] h-[700px] relative bg-background">
-                     <ChatPreview />
-                   </div>
-                 </div>
-              </motion.div>
+            {/* Chat Side */}
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1} className="w-full lg:w-[40%]">
+              <div className="h-full w-full max-w-[400px] mx-auto scale-95 lg:scale-100 transform origin-top shadow-[0_0_80px_rgba(var(--primary),0.15)] rounded-[40px] border-[8px] border-[#1a1a1a] bg-black relative">
+                {/* Phone notch */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-[#1a1a1a] rounded-b-2xl z-20" />
+                <div className="overflow-hidden rounded-[32px] h-[700px] relative bg-background">
+                  <ChatPreview />
+                </div>
+              </div>
+            </motion.div>
 
-           </div>
+          </div>
         </div>
       </section>
 
@@ -609,7 +610,7 @@ const Index = () => {
         <div className="absolute inset-0 bg-[#050505] [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black_80%)]" />
         <div className="container mx-auto px-6 relative z-10 text-center">
           <h2 className="text-3xl sm:text-5xl font-bold text-white mb-6">
-            Pronto para colocar sua operação <br/>no <span className="text-primary">piloto automático</span>?
+            Pronto para colocar sua operação <br />no <span className="text-primary">piloto automático</span>?
           </h2>
           <p className="text-slate-400 mb-10 max-w-xl mx-auto">Junte-se a centenas de produtores que pararam de sofrer com atendimentos manuais e bloqueios no WhatsApp.</p>
           <Button size="lg" onClick={() => navigate("/signup")} className="h-14 px-10 text-[15px] font-bold rounded-xl bg-white text-black hover:bg-slate-200 hover:scale-105 transition-all">
