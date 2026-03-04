@@ -534,11 +534,11 @@ const Index = () => {
             </motion.div>
 
             {/* Chat Side */}
-            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1} className="w-full lg:w-[40%]">
-              <div className="h-full w-full max-w-[400px] mx-auto scale-95 lg:scale-100 transform origin-top shadow-[0_0_80px_rgba(var(--primary),0.15)] rounded-[40px] border-[8px] border-[#1a1a1a] bg-black relative">
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1} className="w-full lg:w-[40%] flex justify-center">
+              <div className="h-full w-full max-w-[400px] shadow-[0_0_80px_rgba(var(--primary),0.15)] rounded-[40px] border-[8px] border-[#1a1a1a] bg-black relative flex flex-col">
                 {/* Phone notch */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-[#1a1a1a] rounded-b-2xl z-20" />
-                <div className="overflow-hidden rounded-[32px] h-[800px] relative bg-background">
+                <div className="flex-1 w-full relative bg-[#0b141a] rounded-[32px] overflow-hidden">
                   <ChatPreview />
                 </div>
               </div>

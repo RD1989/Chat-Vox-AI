@@ -66,7 +66,7 @@ const ChatPreview = () => {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
-      className="rounded-2xl overflow-hidden shadow-2xl border border-[#2a2a2a] max-w-md mx-auto"
+      className="rounded-[32px] sm:rounded-[32px] overflow-hidden shadow-2xl border border-[#2a2a2a] w-full h-full max-w-md mx-auto flex flex-col bg-[#0b141a]"
     >
       {/* WhatsApp Header */}
       <div className="bg-[#202c33] px-3 py-2.5 flex items-center gap-3">
@@ -101,7 +101,7 @@ const ChatPreview = () => {
       {/* Chat body - WhatsApp wallpaper */}
       <div
         ref={containerRef}
-        className="px-3 py-3 space-y-1.5 min-h-[300px] max-h-[340px] overflow-y-auto"
+        className="px-3 py-3 space-y-1.5 flex-1 overflow-y-auto"
         style={{
           backgroundColor: "#0b141a",
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
@@ -124,11 +124,10 @@ const ChatPreview = () => {
               className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`relative max-w-[80%] px-2.5 pt-1.5 pb-1 rounded-lg shadow-sm ${
-                  msg.role === "bot"
+                className={`relative max-w-[80%] px-2.5 pt-1.5 pb-1 rounded-lg shadow-sm ${msg.role === "bot"
                     ? "bg-[#202c33] rounded-tl-none ml-2"
                     : "bg-[#005c4b] rounded-tr-none mr-2"
-                }`}
+                  }`}
               >
                 {/* Tail */}
                 {msg.role === "bot" && (
