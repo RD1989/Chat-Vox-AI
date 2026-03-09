@@ -11,6 +11,12 @@ const originalSupabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHAB
 // Proxy de Compatibilidade Local
 export const supabase: any = new Proxy(originalSupabase, {
   get(target, prop) {
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    // Se NÃO for localhost (Vercel/Produção), usa o Supabase original diretamente
+    if (!isLocalhost) {
+      return (target as any)[prop];
+    }
     // Interceptar AUTH (Logout/Session)
     if (prop === 'auth') {
       return {
