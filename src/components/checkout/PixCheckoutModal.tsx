@@ -95,7 +95,11 @@ export const PixCheckoutModal = ({ isOpen, onClose, planSlug, planName, userId }
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[400px] bg-white dark:bg-[#0A0A0A] border-slate-200 dark:border-white/10 p-0 overflow-hidden">
+            <DialogContent className="sm:max-w-[400px] bg-white dark:bg-[#0A0A0A] border-slate-200 dark:border-white/10 p-0 overflow-hidden" aria-describedby="pix-checkout-desc">
+                <DialogHeader className="sr-only">
+                    <DialogTitle>Checkout Pix</DialogTitle>
+                    <DialogDescription id="pix-checkout-desc">Tela de pagamento via Pix para ativação do plano.</DialogDescription>
+                </DialogHeader>
                 <div className="bg-primary/10 p-6 flex items-center gap-4">
                     <div className="bg-primary/20 p-2 rounded-xl">
                         <Zap className="text-primary" size={24} />
