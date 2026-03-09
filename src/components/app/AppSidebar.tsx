@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Kanban, Settings, LogOut, MessageSquare,
-  Zap, Shield, CreditCard, BarChart3, Bot, Moon, Sun, ShoppingBag
+  Zap, Shield, CreditCard, BarChart3, Bot, Moon, Sun, ShoppingBag, MessageCircle
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
@@ -198,6 +198,15 @@ const AppSidebar = () => {
               </SidebarMenuButton>
             </SidebarMenuItem>
           )}
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => window.open("https://wa.me/5522996051620?text=Ol%C3%A1%2C+preciso+de+suporte+com+o+Chat+Vox!", "_blank")}
+              className="gap-3 h-10 rounded-lg px-3 text-[13px] font-medium text-emerald-700 hover:text-emerald-800 hover:bg-emerald-100 dark:text-emerald-400 dark:hover:text-emerald-300 dark:hover:bg-emerald-500/10 transition-colors"
+            >
+              <MessageCircle size={18} />
+              <span className="tracking-wide">Suporte WhatsApp</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={signOut}
