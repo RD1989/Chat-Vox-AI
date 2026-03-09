@@ -1,18 +1,19 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { 
-  ShoppingBag, 
-  Users, 
-  MessageSquare, 
-  Calendar, 
-  ArrowRight, 
-  Filter, 
+import {
+  ShoppingBag,
+  Users,
+  MessageSquare,
+  Calendar,
+  ArrowRight,
+  Filter,
   Search,
   Timer,
   CheckCircle2,
   AlertCircle,
-  Plus
+  Plus,
+  Sparkles
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -59,8 +60,8 @@ const Retargeting = () => {
     fetchRetargetingLeads();
   }, [user]);
 
-  const filteredLeads = leads.filter(l => 
-    l.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filteredLeads = leads.filter(l =>
+    l.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     l.phone?.includes(searchTerm)
   );
 
@@ -120,7 +121,7 @@ const Retargeting = () => {
       {/* Main List Section */}
       <Card className="bg-[#0A0A0A]/60 border-white/5 backdrop-blur-2xl shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
-        
+
         <CardHeader className="border-b border-white/5 bg-white/[0.02]">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
@@ -129,8 +130,8 @@ const Retargeting = () => {
             </div>
             <div className="relative w-full md:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-              <Input 
-                placeholder="Buscar por nome ou WhatsApp..." 
+              <Input
+                placeholder="Buscar por nome ou WhatsApp..."
                 className="pl-10 bg-black/40 border-white/10 rounded-xl"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -138,7 +139,7 @@ const Retargeting = () => {
             </div>
           </div>
         </CardHeader>
-        
+
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -154,7 +155,7 @@ const Retargeting = () => {
               <tbody className="divide-y divide-white/5">
                 <AnimatePresence>
                   {filteredLeads.map((lead, i) => (
-                    <motion.tr 
+                    <motion.tr
                       key={lead.id}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -164,18 +165,18 @@ const Retargeting = () => {
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm border border-primary/20">
-                            {lead.name.charAt(0)}
+                            {lead?.name ? lead.name.charAt(0).toUpperCase() : "U"}
                           </div>
                           <div>
-                            <p className="font-bold text-white group-hover:text-primary transition-colors">{lead.name}</p>
-                            <p className="text-xs text-muted-foreground">{lead.phone || "Sem telefone"}</p>
+                            <p className="font-bold text-white group-hover:text-primary transition-colors">{lead?.name || "Usuário"}</p>
+                            <p className="text-xs text-muted-foreground">{lead?.phone || "Sem telefone"}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-2">
                           <div className="w-24 h-2 bg-white/5 rounded-full overflow-hidden">
-                            <motion.div 
+                            <motion.div
                               initial={{ width: 0 }}
                               animate={{ width: `${lead.qualification_score}%` }}
                               className={`h-full ${lead.qualification_score > 80 ? 'bg-emerald-500' : 'bg-primary'}`}
@@ -191,16 +192,15 @@ const Retargeting = () => {
                         </div>
                       </td>
                       <td className="px-6 py-5">
-                        <Badge className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase ${
-                          lead.qualification_score > 80 
-                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" 
+                        <Badge className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase ${lead.qualification_score > 80
+                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                             : "bg-primary/10 text-primary border border-primary/20"
-                        }`}>
+                          }`}>
                           {lead.qualification_score > 80 ? "Alta Intenção" : "Pendente"}
                         </Badge>
                       </td>
                       <td className="px-6 py-5 text-right">
-                        <Button size="sm" className="rounded-lg bg-white text-black hover:bg-white/90 font-bold gap-2">
+                        <Button size="sm" className="rounded-lg bg-white text-black hover:bg-white/90 font-bold gap-2" onClick={() => window.open(`https://wa.me/${lead.phone?.replace(/\\D/g, '')}`, '_blank')}>
                           <MessageSquare size={14} />
                           Recuperar
                           <ArrowRight size={14} />
@@ -212,7 +212,7 @@ const Retargeting = () => {
               </tbody>
             </table>
           </div>
-          
+
           {filteredLeads.length === 0 && (
             <div className="py-20 flex flex-col items-center justify-center text-center px-4">
               <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-4 text-muted-foreground/30">
