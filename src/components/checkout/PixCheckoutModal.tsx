@@ -25,7 +25,7 @@ export const PixCheckoutModal = ({ isOpen, onClose, planSlug, planName, userId }
             const generatePix = async () => {
                 try {
                     const { data, error } = await supabase.functions.invoke("vox-payments", {
-                        body: { plan_slug: planSlug, user_id: userId }
+                        body: { method: "pix", plan_slug: planSlug, user_id: userId }
                     });
 
                     if (error) throw error;
@@ -97,14 +97,14 @@ export const PixCheckoutModal = ({ isOpen, onClose, planSlug, planName, userId }
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent
                 className="sm:max-w-[400px] bg-white dark:bg-[#0A0A0A] border-slate-200 dark:border-white/10 p-0 overflow-hidden"
-                aria-describedby="pix-checkout-description"
             >
-                <DialogHeader className="sr-only">
-                    <DialogTitle>Checkout de Pagamento Pix</DialogTitle>
-                    <DialogDescription id="pix-checkout-description">
-                        Interface para geração de QR Code e código Copia e Cola para ativação do plano selecionado.
+                <div className="sr-only">
+                    <DialogTitle>Pagamento Pix</DialogTitle>
+                    <DialogDescription>
+                        Escaneie o QR Code abaixo com o aplicativo do seu banco para concluir o pagamento.
                     </DialogDescription>
-                </DialogHeader>
+                </div>
+
                 <div className="bg-primary/10 p-6 flex items-center gap-4">
                     <div className="bg-primary/20 p-2 rounded-xl">
                         <Zap className="text-primary" size={24} />
