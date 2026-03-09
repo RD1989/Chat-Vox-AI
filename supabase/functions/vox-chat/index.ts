@@ -74,6 +74,49 @@ const INTERACTIVE_TOOLS = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "exibir_prova_social",
+      description: "Envia provas sociais, depoimentos e resultados de clientes para o lead. Use quando o lead estiver indeciso ou precisar de mais confiança para fechar.",
+      parameters: {
+        type: "object",
+        properties: {
+          message: { type: "string", description: "Mensagem persuasiva que acompanha as provas sociais" },
+        },
+        required: ["message"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "exibir_midia_produto",
+      description: "Exibe fotos ou vídeos demonstrativos do produto ou serviço. Use quando o lead pedir para ver fotos, como funciona, ou demonstrar qualidade.",
+      parameters: {
+        type: "object",
+        properties: {
+          message: { type: "string", description: "Mensagem descritiva das mídias enviadas" },
+        },
+        required: ["message"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "gerar_pagamento_pix",
+      description: "Gera um código Pix Copia e Cola e um QR Code para pagamento direto no chat. Use quando o lead decidir comprar ou pedir para pagar.",
+      parameters: {
+        type: "object",
+        properties: {
+          message: { type: "string", description: "Mensagem que acompanha o QR Code de pagamento" },
+          amount: { type: "number", description: "Valor do pagamento em Reais (opcional, usa padrão do agente se vazio)" },
+        },
+        required: ["message"],
+      },
+    },
+  },
 ];
 
 serve(async (req) => {
@@ -701,6 +744,49 @@ REGRAS IMPORTANTES:
                 updated_at: new Date().toISOString(),
               })
               .eq("id", lead_id);
+          }
+
+          // Meta CAPI (Conversão via Servidor)
+          if (vs?.meta_api_token && vs?.meta_pixel && lead_id) {
+            try {
+              const { data: leadData } = await supabase
+                .from("vox_leads")
+                .select("*")
+                .eq("id", lead_id)
+                .single();
+
+              if (leadData) {
+                // Evento de Lead (Ocorre quando capturamos nome/telefone)
+                const eventName = leadData.phone || leadData.email ? "Contact" : "Lead";
+
+                await fetch(`https://graph.facebook.com/v19.0/${vs.meta_pixel}/events?access_token=${vs.meta_api_token}`, {
+                  method: "POST",
+                  body: JSON.stringify({
+                    data: [
+                      {
+                        event_name: eventName,
+                        event_time: Math.floor(Date.now() / 1000),
+                        action_source: "chat",
+                        user_data: {
+                          client_ip_address: clientIp,
+                          client_user_agent: req.headers.get("user-agent"),
+                          ph: leadData.phone ? [leadData.phone.replace(/\D/g, "")] : undefined,
+                          em: leadData.email ? [leadData.email.toLowerCase().trim()] : undefined,
+                          fn: [leadData.name.toLowerCase().trim()],
+                        },
+                        custom_data: {
+                          agent_name: vs.name,
+                          lead_id: lead_id,
+                        }
+                      }
+                    ]
+                  }),
+                });
+                console.log(`[CAPI] Evento ${eventName} enviado para ${vs.name}`);
+              }
+            } catch (capiError) {
+              console.error("[CAPI] Erro ao enviar evento Meta:", capiError);
+            }
           }
 
           // Webhook

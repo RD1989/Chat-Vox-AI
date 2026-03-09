@@ -275,6 +275,53 @@ const Agents = () => {
     setAgents(prev => prev.map(a => a.id === agent.id ? { ...a, is_active: newVal } : a));
   };
 
+  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'product' | 'social') => {
+    const file = e.target.files?.[0];
+    if (!file || !editAgent || !user) return;
+
+    setSaving(true);
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `agent-assets/${user.id}/${editAgent.id}/${type}/${fileName}`;
+
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('agent_assets')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('agent_assets')
+        .getPublicUrl(filePath);
+
+      if (type === 'product') {
+        const product_media = [...(editAgent.product_media || []), publicUrl];
+        setEditAgent({ ...editAgent, product_media });
+      } else {
+        const social_proof_media = [...(editAgent.social_proof_media || []), publicUrl];
+        setEditAgent({ ...editAgent, social_proof_media });
+      }
+
+      toast({ title: "Mídia enviada com sucesso!" });
+    } catch (error: any) {
+      toast({ title: "Erro no upload", description: error.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const removeMedia = (url: string, type: 'product' | 'social') => {
+    if (!editAgent) return;
+    if (type === 'product') {
+      const product_media = (editAgent.product_media || []).filter(m => m !== url);
+      setEditAgent({ ...editAgent, product_media });
+    } else {
+      const social_proof_media = (editAgent.social_proof_media || []).filter(m => m !== url);
+      setEditAgent({ ...editAgent, social_proof_media });
+    }
+  };
+
   const copyLink = (agentId: string) => {
     const url = `${window.location.origin}/chat/${user?.id}?agent=${agentId}`;
     navigator.clipboard.writeText(url);
@@ -661,11 +708,36 @@ const Agents = () => {
                         <HardDrive size={20} />
                       </div>
                       <h5 className="text-[11px] font-bold text-slate-700 dark:text-white uppercase tracking-wider">Mídias do Produto</h5>
-                      <p className="text-[10px] text-slate-500 dark:text-white/40 max-w-[200px] mx-auto">Fotos e vídeos do produto que a IA pode enviar ao lead.</p>
-                      <Button size="sm" variant="outline" className="h-8 text-[10px] bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 rounded-xl mt-2 px-4 font-bold">
-                        Fazer Upload
-                      </Button>
-                      <p className="text-[9px] text-slate-400 dark:text-white/20 mt-1 italic">Nenhuma mídia adicionada.</p>
+                      <p className="text-[10px] text-slate-500 dark:text-white/40 max-w-[200px] mx-auto">Fotos e vídeos que a IA usará para demonstrar seu produto.</p>
+
+                      <div className="flex flex-wrap gap-2 mb-3 mt-2 justify-center">
+                        {editAgent.product_media?.map((url, i) => (
+                          <div key={i} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-slate-200 dark:border-white/10">
+                            <img src={url} className="w-full h-full object-cover" />
+                            <button onClick={() => removeMedia(url, 'product')} className="absolute top-0 right-0 p-1 bg-rose-500 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                              <X size={10} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="relative inline-block mt-2">
+                        <input
+                          type="file"
+                          id="product-media-upload"
+                          className="hidden"
+                          accept="image/*,video/*"
+                          onChange={(e) => handleMediaUpload(e, 'product')}
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => document.getElementById('product-media-upload')?.click()}
+                          className="h-8 text-[10px] bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 rounded-xl px-4 font-bold"
+                        >
+                          {saving ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} Fazer Upload
+                        </Button>
+                      </div>
                     </div>
 
                     <div className="p-4 border border-dashed border-slate-300 dark:border-white/10 rounded-2xl text-center space-y-2">
@@ -673,10 +745,36 @@ const Agents = () => {
                         <Sparkles size={20} />
                       </div>
                       <h5 className="text-[11px] font-bold text-slate-700 dark:text-white uppercase tracking-wider">Prova Social</h5>
-                      <p className="text-[10px] text-slate-500 dark:text-white/40 max-w-[200px] mx-auto">Prints de depoimentos, resultados e avaliações.</p>
-                      <Button size="sm" variant="outline" className="h-8 text-[10px] bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 rounded-xl mt-2 px-4 font-bold">
-                        Fazer Upload
-                      </Button>
+                      <p className="text-[10px] text-slate-500 dark:text-white/40 max-w-[200px] mx-auto">Prints de depoimentos e resultados para gerar confiança.</p>
+
+                      <div className="flex flex-wrap gap-2 mb-3 mt-2 justify-center">
+                        {editAgent.social_proof_media?.map((url, i) => (
+                          <div key={i} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-slate-200 dark:border-white/10">
+                            <img src={url} className="w-full h-full object-cover" />
+                            <button onClick={() => removeMedia(url, 'social')} className="absolute top-0 right-0 p-1 bg-rose-500 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                              <X size={10} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="relative inline-block mt-2">
+                        <input
+                          type="file"
+                          id="social-media-upload"
+                          className="hidden"
+                          accept="image/*"
+                          onChange={(e) => handleMediaUpload(e, 'social')}
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => document.getElementById('social-media-upload')?.click()}
+                          className="h-8 text-[10px] bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 rounded-xl px-4 font-bold"
+                        >
+                          {saving ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} Fazer Upload
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </TabsContent>
