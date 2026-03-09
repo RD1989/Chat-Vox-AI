@@ -21,30 +21,41 @@ serve(async (req) => {
 
         console.log(`[vox-crawler] Crawling URL: ${url}`);
 
-        // 1. Fetch the page
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`Falha ao acessar a URL: ${response.statusText}`);
+        // 1. Fetch the page with Real Browser User-Agent
+        const response = await fetch(url, {
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8"
+            }
+        });
+        if (!response.ok) throw new Error(`Falha ao acessar a URL (${response.status}): ${response.statusText}`);
         const html = await response.text();
 
         // 2. Simple clean up of the HTML to save tokens (remove script/style)
         const cleanHtml = html
             .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gm, "")
             .replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gm, "")
-            .replace(/<[^>]*>?/gm, " ") // replace tags with spaces
-            .replace(/\s+/g, " ") // collapse whitespace
+            .replace(/<footer\b[^>]*>([\s\S]*?)<\/footer>/gm, "")
+            .replace(/<nav\b[^>]*>([\s\S]*?)<\/nav>/gm, "")
+            .replace(/<[^>]*>?/gm, " ")
+            .replace(/\s+/g, " ")
             .trim()
-            .slice(0, 15000); // Limit context size
+            .slice(0, 30000); // Increased limit for Flash-2.0
 
         // 3. Use Gemini to extract knowledge
         const googleApiKey = Deno.env.get("GOOGLE_GENERATIVE_AI_API_KEY");
         if (!googleApiKey) throw new Error("Google API Key não configurada.");
 
-        const prompt = `Você é um extrator de conhecimento especializado. 
-Analise o texto abaixo extraído de um site e resuma as informações MAIS IMPORTANTES para serem usadas por um bot de atendimento.
-Foque em: Serviços oferecidos, Preços, FAQ, Horários e Políticas.
-Gere um resumo estruturado e direto no idioma original do site.
+        const prompt = `VOCÊ É O CÉREBRO MASTER DO CHAT VOX IA.
+Sua missão é extrair TODO o conhecimento estratégico deste site para treinar um agente de vendas de elite.
 
-TEXTO DO SITE:
+INSTRUÇÕES:
+1. Extraia detalhes minuciosos de: SERVIÇOS, PRODUTOS, PREÇOS, CONDIÇÕES, FAQ, HISTÓRIA E DIFERENCIAIS.
+2. Formate como uma Base de Conhecimento rica, organizada por tópicos.
+3. Se houver links de CTA (Whatsapp, Checkout), ignore o Link, mas extraia a intenção.
+4. Linguagem: Português Brasileiro Profissional.
+
+TEXTO BRUTO DO SITE:
 ${cleanHtml}`;
 
         const geminiRes = await fetch(
@@ -54,7 +65,7 @@ ${cleanHtml}`;
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: { temperature: 0.2 }
+                    generationConfig: { temperature: 0.1, topP: 0.95 }
                 })
             }
         );

@@ -10,6 +10,8 @@ import { toast } from "@/hooks/use-toast";
 import { Plus, Trash2, Loader2, BookOpen, Check, X, Pencil, FileText, Upload, Image as ImageIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useRef } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Globe } from "lucide-react";
 
 interface KnowledgeEntry {
   id: string;
