@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Variáveis de ambiente (nunca subir para o git!)
+.env
+.env.local
+.env.production
+
+# Arquivos temporários de migração
+supabase/database_mysql_draft.sql

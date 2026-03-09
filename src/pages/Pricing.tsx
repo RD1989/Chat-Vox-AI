@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Check, ArrowRight, Zap } from "lucide-react";
+import { Check, ArrowRight, Zap, QrCode, CreditCard } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { PixCheckoutModal } from "@/components/checkout/PixCheckoutModal";
+import { CardCheckoutModal } from "@/components/checkout/CardCheckoutModal";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -58,10 +60,12 @@ const Pricing = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [billing, setBilling] = useState<"monthly" | "quarterly">("quarterly");
-  const [checkoutData, setCheckoutData] = useState<{ open: boolean; plan: { slug: string; name: string } | null }>({
+  const [methodSelection, setMethodSelection] = useState<{ open: boolean; plan: { slug: string; name: string } | null }>({
     open: false,
     plan: null,
   });
+  const [showPix, setShowPix] = useState(false);
+  const [showCard, setShowCard] = useState(false);
 
   const handleSubscribe = (plan: any) => {
     if (!user) {
@@ -74,14 +78,20 @@ const Pricing = () => {
       return;
     }
 
-    setCheckoutData({
+    setMethodSelection({
       open: true,
       plan: { slug: plan.slug, name: plan.name }
     });
   };
 
+  const selectMethod = (method: "pix" | "card") => {
+    setMethodSelection({ ...methodSelection, open: false });
+    if (method === "pix") setShowPix(true);
+    else setShowCard(true);
+  };
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="dark min-h-screen bg-background text-foreground">
       {/* Header */}
       <header className="border-b border-border bg-background/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="container mx-auto flex items-center justify-between px-6 h-14">
@@ -89,7 +99,7 @@ const Pricing = () => {
             <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center">
               <Zap size={14} className="text-primary-foreground" />
             </div>
-            <span className="text-sm font-semibold tracking-tight text-foreground">Chat Vox</span>
+            <span className="text-sm font-semibold tracking-tight">Chat Vox</span>
           </button>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" className="text-[13px] h-8" onClick={() => navigate("/login")}>Entrar</Button>
@@ -106,7 +116,7 @@ const Pricing = () => {
               <span className="w-1.5 h-1.5 rounded-full bg-primary" />
               Planos & Preços
             </div>
-            <h1 className="text-3xl lg:text-4xl font-bold text-foreground tracking-tight mb-3">
+            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight mb-3">
               Escolha o plano <span className="text-primary">ideal</span>
             </h1>
             <p className="text-muted-foreground max-w-md mx-auto text-[14px]">
@@ -119,8 +129,8 @@ const Pricing = () => {
             <button
               onClick={() => setBilling("quarterly")}
               className={`relative text-[13px] font-medium px-5 py-2 rounded-full transition-all ${billing === "quarterly"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
                 }`}
             >
               Trimestral
@@ -129,8 +139,8 @@ const Pricing = () => {
             <button
               onClick={() => setBilling("monthly")}
               className={`text-[13px] font-medium px-5 py-2 rounded-full transition-all ${billing === "monthly"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
                 }`}
             >
               Mensal
@@ -151,21 +161,21 @@ const Pricing = () => {
                 variants={fadeUp}
                 custom={i}
                 className={`relative flex flex-col rounded-lg border p-6 transition-all ${plan.highlight
-                    ? "border-primary bg-card shadow-md ring-1 ring-primary/20"
-                    : "border-border bg-card hover:border-primary/20"
+                  ? "border-primary bg-card shadow-md ring-1 ring-primary/20"
+                  : "border-border bg-card hover:border-primary/20"
                   }`}
               >
                 {plan.highlight && (
                   <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-[10px] font-semibold px-3 py-0.5 rounded-full whitespace-nowrap">
-                    {(plan as any).badge || "🔥 Popular"}
+                    {plan.badge || "🔥 Popular"}
                   </span>
                 )}
 
                 <div className="mb-5">
-                  <h3 className="text-[13px] font-semibold text-foreground uppercase tracking-wider mb-0.5">{plan.name}</h3>
+                  <h3 className="text-[13px] font-semibold uppercase tracking-wider mb-0.5">{plan.name}</h3>
                   <p className="text-[11px] text-muted-foreground mb-4">{plan.description}</p>
                   <div className="flex items-baseline gap-0.5">
-                    <span className="text-3xl font-bold text-foreground">{plan[billing].price}</span>
+                    <span className="text-3xl font-bold">{plan[billing].price}</span>
                     {plan[billing].period && <span className="text-[13px] text-muted-foreground">{plan[billing].period}</span>}
                   </div>
                   {billing === "quarterly" && "perMonth" in plan.quarterly && plan.quarterly.perMonth && (
@@ -210,14 +220,58 @@ const Pricing = () => {
         </div>
       </section>
 
-      {user && checkoutData.plan && (
-        <PixCheckoutModal
-          isOpen={checkoutData.open}
-          onClose={() => setCheckoutData({ ...checkoutData, open: false })}
-          planSlug={checkoutData.plan.slug}
-          planName={checkoutData.plan.name}
-          userId={user.id}
-        />
+      {/* Choice Modal */}
+      <Dialog open={methodSelection.open} onOpenChange={(o) => setMethodSelection({ ...methodSelection, open: o })}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="text-center font-black uppercase tracking-tighter">Escolha como Pagar</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-1 gap-3 py-4">
+            <button
+              onClick={() => selectMethod("pix")}
+              className="flex items-center gap-4 p-4 rounded-xl border-2 border-slate-100 hover:border-primary hover:bg-primary/5 transition-all text-left"
+            >
+              <div className="bg-primary/10 p-2 rounded-lg text-primary">
+                <QrCode size={24} />
+              </div>
+              <div>
+                <p className="font-bold text-sm">Pix (Aprovação Imediata)</p>
+                <p className="text-[11px] text-muted-foreground">Pague via QR Code ou Copia e Cola</p>
+              </div>
+            </button>
+            <button
+              onClick={() => selectMethod("card")}
+              className="flex items-center gap-4 p-4 rounded-xl border-2 border-slate-100 hover:border-primary hover:bg-primary/5 transition-all text-left"
+            >
+              <div className="bg-blue-500/10 p-2 rounded-lg text-blue-500">
+                <CreditCard size={24} />
+              </div>
+              <div>
+                <p className="font-bold text-sm">Cartão de Crédito</p>
+                <p className="text-[11px] text-muted-foreground">Parcele sua assinatura com segurança</p>
+              </div>
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {user && methodSelection.plan && (
+        <>
+          <PixCheckoutModal
+            isOpen={showPix}
+            onClose={() => setShowPix(false)}
+            planSlug={methodSelection.plan.slug}
+            planName={methodSelection.plan.name}
+            userId={user.id}
+          />
+          <CardCheckoutModal
+            isOpen={showCard}
+            onClose={() => setShowCard(false)}
+            planSlug={methodSelection.plan.slug}
+            planName={methodSelection.plan.name}
+            userId={user.id}
+          />
+        </>
       )}
     </div>
   );

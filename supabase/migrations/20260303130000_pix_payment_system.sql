@@ -55,6 +55,8 @@ EXECUTE FUNCTION public.handle_updated_at();
 INSERT INTO public.system_settings (key, value) VALUES 
 ('efi_client_id', ''),
 ('efi_client_secret', ''),
+('efi_account_id', ''), -- ID de Conta para tokenização (frontend)
+('efi_pix_key', ''), -- Chave Pix para recebimento
 ('efi_certificate_p12', ''), -- Certificado em Base64
 ('efi_sandbox', 'true')
 ON CONFLICT (key) DO NOTHING;

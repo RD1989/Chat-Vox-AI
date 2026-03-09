@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Send, Bot, Loader2, Check, CheckCheck, Smile, Paperclip, MoreVertical, Search, ArrowLeft, X, Image as ImageIcon, ExternalLink } from "lucide-react";
+import { Send, Bot, Loader2, Check, CheckCheck, Smile, Paperclip, MoreVertical, Search, ArrowLeft, X, Image as ImageIcon, ExternalLink, Camera, Mic } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { playIncomingSound, playOutgoingSound } from "@/components/chat/WhatsAppSounds";
 import { toast } from "sonner";
@@ -470,13 +470,32 @@ const PublicChat = () => {
           const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/vox-chat`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "create_lead", ...leadPayload }),
+            body: JSON.stringify({
+              action: "create_lead",
+              user_id: userId,
+              messages: [],
+              ...leadPayload
+            }),
           });
           if (res.ok) {
-            const fb = await res.json();
-            if (fb.lead_id) { data = { id: fb.lead_id } as any; error = null; }
+            const text = await res.text();
+            let fb;
+            try {
+              // Se a resposta começar com "data: ", é um stream SSE inesperado para esta action
+              if (text.trim().startsWith("data: ")) {
+                const jsonStr = text.split("\n")[0].replace("data: ", "").trim();
+                fb = JSON.parse(jsonStr);
+              } else {
+                fb = JSON.parse(text);
+              }
+            } catch (e) {
+              console.error("[Chat] Failed to parse lead creation response:", text);
+            }
+            if (fb?.lead_id) { data = { id: fb.lead_id } as any; error = null; }
           }
-        } catch { /* silent */ }
+        } catch (err: any) {
+          console.error("[Chat] Fallback create_lead failed:", err.message);
+        }
       }
 
       if (data && !error) {

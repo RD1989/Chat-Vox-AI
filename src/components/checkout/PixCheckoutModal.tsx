@@ -49,7 +49,7 @@ export const PixCheckoutModal = ({ isOpen, onClose, planSlug, planName, userId }
                 .from("vox_payments" as any)
                 .select("status")
                 .eq("id", pixData.payment_id)
-                .single();
+                .single() as any;
 
             if (data?.status === "paid") {
                 setStatus("paid");
@@ -136,7 +136,11 @@ export const PixCheckoutModal = ({ isOpen, onClose, planSlug, planName, userId }
                                 <div className="flex flex-col items-center space-y-4">
                                     <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
                                         {pixData?.qrcode && (
-                                            <img src={pixData.qrcode} alt="QR Code Pix" className="w-48 h-48" />
+                                            <img
+                                                src={pixData.qrcode.startsWith("data:image") ? pixData.qrcode : `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(pixData.copiapasta)}`}
+                                                alt="QR Code Pix"
+                                                className="w-48 h-48"
+                                            />
                                         )}
                                     </div>
                                     <div className="flex items-center gap-2 text-xs font-bold text-slate-500 bg-slate-100 dark:bg-white/5 px-3 py-1.5 rounded-full">

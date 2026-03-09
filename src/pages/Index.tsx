@@ -191,7 +191,7 @@ const Index = () => {
   const heroScale = useTransform(scrollYProgress, [0, 0.5], [1, 0.96]);
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
+    <div className="dark min-h-screen bg-background overflow-x-hidden">
       {/* Header */}
       <header className="border-b border-border bg-background/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="container mx-auto flex items-center justify-between h-14 px-6">

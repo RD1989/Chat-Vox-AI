@@ -109,11 +109,14 @@ serve(async (req) => {
     const { messages, user_id, lead_id, agent_id } = body;
     console.log(`[vox-chat] Request starting: user=${user_id}, lead=${lead_id}, agent=${agent_id}`);
 
-    if (!messages || !Array.isArray(messages) || !user_id) {
-      return new Response(
-        JSON.stringify({ error: "messages (array) and user_id are required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // Skip validation for create_lead action as it has its own logic
+    if (body.action !== "create_lead") {
+      if (!messages || !Array.isArray(messages) || !user_id) {
+        return new Response(
+          JSON.stringify({ error: "messages (array) and user_id are required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
