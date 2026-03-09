@@ -415,231 +415,203 @@ const Agents = () => {
                 <TabsContent value="behavior" className="space-y-6 mt-0">
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label className="text-xs font-bold text-slate-500 dark:text-white/50 uppercase tracking-widest ml-1">Callsign (Nome)</Label>
+                      <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">Identidade do Agente (Nome)</Label>
                       <Input
                         value={editAgent.name}
                         onChange={e => setEditAgent({ ...editAgent, name: e.target.value })}
-                        placeholder="Ex: Especialista Jurídico..."
-                        className="h-12 bg-slate-50 dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-xl focus:border-primary/50"
+                        placeholder="Ex: Consultor Especialista..."
+                        className="h-12 bg-slate-50/50 dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 transition-all font-medium"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-xs font-bold text-slate-500 dark:text-white/50 uppercase tracking-widest ml-1">Cor UI (Tema)</Label>
-                      <div className="flex items-center gap-3">
+                      <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">Assinatura Visual (Cor)</Label>
+                      <div className="flex items-center gap-3 bg-slate-50/50 dark:bg-black/40 p-2 rounded-2xl border border-slate-200 dark:border-white/10 h-12">
                         <input
                           type="color"
                           value={editAgent.primary_color}
                           onChange={e => setEditAgent({ ...editAgent, primary_color: e.target.value })}
-                          className="w-12 h-12 rounded-xl border border-slate-200 dark:border-white/20 cursor-pointer overflow-hidden p-0"
+                          className="w-10 h-8 rounded-lg border border-slate-200 dark:border-white/20 cursor-pointer overflow-hidden p-0 bg-transparent"
                         />
-                        <span className="text-xs font-mono text-slate-500 dark:text-white/40 font-bold">{editAgent.primary_color.toUpperCase()}</span>
+                        <span className="text-xs font-mono text-slate-500 dark:text-white/40 font-bold flex-1">{editAgent.primary_color.toUpperCase()}</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold text-slate-500 dark:text-white/50 uppercase tracking-widest ml-1 flex items-center gap-2">
-                      Mensagem Receptiva <MessageSquare size={12} className="opacity-50" />
+                    <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
+                      Abordagem Inicial (Boas-vindas) <MessageSquare size={12} className="text-primary/70" />
                     </Label>
                     <Textarea
                       value={editAgent.welcome_message}
                       onChange={e => setEditAgent({ ...editAgent, welcome_message: e.target.value })}
                       rows={2}
-                      className="bg-slate-50 border-slate-200 text-slate-900 dark:bg-black/40 dark:border-white/10 dark:text-white rounded-xl focus:border-primary/50 text-sm p-4"
+                      className="bg-slate-50/50 border-slate-200 text-slate-900 dark:bg-black/40 dark:border-white/10 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 text-sm p-4 transition-all leading-relaxed"
                     />
                   </div>
 
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label className="text-xs font-bold text-slate-500 dark:text-white/50 uppercase tracking-widest ml-1 flex items-center gap-2">
-                        Tom de Voz (Comportamento) <Mic size={12} className="opacity-50" />
+                      <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
+                        Personalidade e Tom de Voz <Mic size={12} className="text-primary/70" />
                       </Label>
                       <Select
                         value={agentConfig.voice_tone}
                         onValueChange={(val) => setAgentConfig({ ...agentConfig, voice_tone: val })}
                       >
-                        <SelectTrigger className="w-full bg-slate-50 border-slate-200 text-slate-900 dark:bg-black/40 dark:border-white/10 dark:text-white rounded-xl focus:ring-primary/50 focus:border-primary/50 h-11">
-                          <SelectValue placeholder="Selecione a personalidade do atendente..." />
+                        <SelectTrigger className="w-full bg-slate-50/50 border-slate-200 text-slate-900 dark:bg-black/40 dark:border-white/10 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 h-12 transition-all">
+                          <SelectValue placeholder="Como o robô deve falar?" />
                         </SelectTrigger>
-                        <SelectContent className="bg-white dark:bg-[#0a0f16] border-slate-200 dark:border-white/10 rounded-xl shadow-2xl">
-                          <SelectItem value="Profissional e Respeitoso">Profissional e Respeitoso</SelectItem>
-                          <SelectItem value="Amigável e Empático">Amigável e Empático</SelectItem>
-                          <SelectItem value="Direto e Focado em Conversão">Direto e Focado em Conversão (Vendas)</SelectItem>
-                          <SelectItem value="Técnico e Analítico">Técnico e Analítico</SelectItem>
-                          <SelectItem value="Descontraído e Humorístico">Descontraído e Jovem</SelectItem>
+                        <SelectContent className="bg-white dark:bg-[#0d121b] border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl">
+                          <SelectItem value="Profissional e Respeitoso">🎩 Profissional e Formal</SelectItem>
+                          <SelectItem value="Amigável e Empático">🤝 Amigável e Empático</SelectItem>
+                          <SelectItem value="Direto e Focado em Conversão">🎯 Direto (Alta Conversão)</SelectItem>
+                          <SelectItem value="Técnico e Analítico">🔬 Técnico e Analítico</SelectItem>
+                          <SelectItem value="Descontraído e Humorístico">⚡ Jovem e Descontraído</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
                     <div className="grid grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label className="text-xs font-bold text-slate-500 dark:text-white/50 uppercase tracking-widest ml-1 flex items-center gap-2">
-                          Prioridades <Target size={12} className="opacity-50" />
+                        <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
+                          Objetivos <Target size={12} className="text-emerald-500/70" />
                         </Label>
                         <Textarea
                           value={agentConfig.priorities}
                           onChange={e => setAgentConfig({ ...agentConfig, priorities: e.target.value })}
-                          placeholder="- Obter email do lead&#10;- Agendar reunião"
-                          className="bg-slate-50 border-slate-200 text-slate-900 dark:bg-black/40 dark:border-white/10 dark:text-white rounded-xl focus:border-primary/50 text-sm p-4 min-h-[100px] placeholder:text-slate-400 dark:placeholder:text-white/20"
+                          placeholder="Ex: Coletar WhatsApp primeiro..."
+                          className="bg-slate-50/50 border-slate-200 text-slate-900 dark:bg-black/40 dark:border-white/10 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 text-xs p-4 min-h-[120px] transition-all"
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-xs font-bold text-red-500/80 uppercase tracking-widest ml-1 flex items-center gap-2">
-                          Restrições <AlertTriangle size={12} className="opacity-50 text-red-500" />
+                        <Label className="text-[11px] font-bold text-rose-500/80 uppercase tracking-widest ml-1 flex items-center gap-2">
+                          Não pode falar sobre <AlertTriangle size={12} className="text-rose-500/70" />
                         </Label>
                         <Textarea
                           value={agentConfig.restrictions}
                           onChange={e => setAgentConfig({ ...agentConfig, restrictions: e.target.value })}
-                          placeholder="- Não oferecer descontos&#10;- Não falar sobre política"
-                          className="bg-slate-50 border-slate-200 text-slate-900 dark:bg-black/40 dark:border-red-500/20 dark:text-white rounded-xl focus:border-red-500/50 text-sm p-4 min-h-[100px] placeholder:text-slate-400 dark:placeholder:text-white/20"
+                          placeholder="Ex: Não dar descontos acima de 10%..."
+                          className="bg-rose-50/10 border-slate-200 text-slate-900 dark:bg-rose-500/5 dark:border-rose-500/20 dark:text-white rounded-2xl focus:ring-rose-500/20 focus:border-rose-500/40 text-xs p-4 min-h-[120px] transition-all"
                         />
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-xs font-bold text-slate-500 dark:text-white/50 uppercase tracking-widest ml-1 flex items-center gap-2">
-                        Instruções Base (Opcional) <Bot size={12} className="opacity-50" />
+                      <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
+                        Matriz de Comportamento (Power Prompt) <Bot size={12} className="text-primary/70" />
                       </Label>
-                      <div className="relative">
+                      <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-transparent rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-500"></div>
                         <Textarea
                           value={agentConfig.base_prompt}
                           onChange={e => setAgentConfig({ ...agentConfig, base_prompt: e.target.value })}
-                          rows={4}
-                          placeholder="Identidade fundamental ou regras extras personalizadas..."
-                          className="bg-slate-50 border-slate-200 text-slate-800 dark:bg-black/60 dark:border-white/10 dark:text-primary/80 font-mono rounded-xl focus:border-primary/50 text-[13px] leading-relaxed p-5 placeholder:text-slate-400 dark:placeholder:text-white/20"
+                          rows={6}
+                          placeholder="Instruções fundamentais que definem a existência da IA..."
+                          className="relative bg-slate-50/80 border-slate-200 text-slate-800 dark:bg-black/60 dark:border-white/10 dark:text-primary/90 font-mono rounded-2xl focus:ring-primary/20 focus:border-primary/50 text-[13px] leading-relaxed p-5 transition-all"
                         />
-                        <div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-primary/50 to-transparent rounded-l-xl opacity-20 pointer-events-none"></div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-6 bg-slate-50 dark:bg-black/20 p-4 rounded-2xl border border-slate-200 dark:border-white/5">
-                      <div className="space-y-2">
-                        <Label className="text-xs font-bold text-slate-500 dark:text-white/50 uppercase tracking-widest ml-1 flex items-center gap-2">
-                          Modelo de Chat (IA) <Sparkles size={12} className="text-primary" />
-                        </Label>
-                        <Input
-                          value={editAgent.openrouter_model || ""}
-                          onChange={e => setEditAgent({ ...editAgent, openrouter_model: e.target.value })}
-                          placeholder="google/gemini-3-flash-preview"
-                          className="h-10 bg-white dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-xs rounded-xl focus:border-primary/50"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs font-bold text-slate-500 dark:text-white/50 uppercase tracking-widest ml-1 flex items-center gap-2">
-                          Modelo Vision (Imagens) <Eye size={12} className="text-primary" />
-                        </Label>
-                        <Input
-                          value={editAgent.vision_model || ""}
-                          onChange={e => setEditAgent({ ...editAgent, vision_model: e.target.value })}
-                          placeholder="google/gemini-3-flash-preview"
-                          className="h-10 bg-white dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-xs rounded-xl focus:border-primary/50"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-white/5">
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        <Sparkles size={16} className="text-primary" /> Estilo & Aparência
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <Label className="text-xs font-bold text-slate-500 dark:text-white/50 uppercase tracking-widest ml-1 flex items-center gap-2">
-                            Modo de Aparência (WhatsApp) <Eye size={12} className="opacity-50" />
-                          </Label>
-                          <Select
-                            value={editAgent.chat_appearance_mode || "auto"}
-                            onValueChange={(val) => setEditAgent({ ...editAgent, chat_appearance_mode: val as any })}
-                          >
-                            <SelectTrigger className="w-full bg-white dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-xl focus:ring-primary/50 focus:border-primary/50 h-10">
-                              <SelectValue placeholder="Escolha o tema..." />
-                            </SelectTrigger>
-                            <SelectContent className="bg-white dark:bg-[#0a0f16] border-slate-200 dark:border-white/10 rounded-xl shadow-2xl">
-                              <SelectItem value="auto">Automático (Detectar Sistema)</SelectItem>
-                              <SelectItem value="light">Modo Claro (WhatsApp Tradicional)</SelectItem>
-                              <SelectItem value="dark">Modo Escuro (WhatsApp Dark)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <p className="text-[10px] text-slate-500 italic ml-1">Força o estilo visual do chat independente da cor de tema escolhida.</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-white/5">
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        <DollarSign size={16} className="text-green-500" /> Inteligência de ROI
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Valor Médio de Venda (R$)</Label>
-                          <Input
-                            type="number"
-                            value={editAgent.avg_conversion_value || 0}
-                            onChange={(e) => setEditAgent({ ...editAgent, avg_conversion_value: parseFloat(e.target.value) || 0 })}
-                            className="bg-white dark:bg-black/20 border-slate-200 dark:border-white/10 rounded-lg"
-                            placeholder="Ex: 500"
-                          />
-                          <p className="text-[10px] text-slate-500">Quanto vale, em média, um cliente fechado por este robô?</p>
-                        </div>
                       </div>
                     </div>
                   </div>
                 </TabsContent>
 
+                <TabsContent value="pixels" className="mt-0 space-y-6">
+                  <div className="bg-primary/5 dark:bg-primary/10 p-5 rounded-2xl border border-primary/20 flex flex-col gap-1">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <Code2 size={16} className="text-primary" /> Tracking de Performance
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-white/50">
+                      Rastreie eventos de chat (lead capturado, qualificação, botões clicados) em tempo real.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {PIXEL_PLATFORMS.map((platform) => (
+                      <div key={platform.key} className="p-4 rounded-2xl border border-slate-200 dark:border-white/5 bg-slate-50/30 dark:bg-white/[0.02] flex items-center gap-4 group hover:bg-white/[0.05] transition-all duration-300">
+                        <div className={`w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center shrink-0 border border-slate-200 dark:border-white/10 ${platform.color} group-hover:scale-110 transition-transform`}>
+                          <platform.icon size={20} />
+                        </div>
+                        <div className="flex-1 space-y-1">
+                          <Label className="text-[10px] font-bold uppercase tracking-widest opacity-60">{platform.label}</Label>
+                          <Input
+                            value={pixelsConfig[platform.key] || ""}
+                            onChange={(e) => setPixelsConfig({ ...pixelsConfig, [platform.key]: e.target.value })}
+                            placeholder={platform.placeholder}
+                            className="h-8 text-xs bg-white dark:bg-black/40 border-slate-200 dark:border-white/10 rounded-lg focus:border-primary/50"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20">
+                    <p className="text-[11px] text-amber-500/80 font-medium flex items-center gap-2">
+                      <AlertTriangle size={14} /> Os eventos de 'Lead Capturado' e 'Qualificado' são enviados automaticamente para todos os pixels ativos.
+                    </p>
+                  </div>
+                </TabsContent>
+
                 <TabsContent value="followup" className="mt-0 space-y-6">
-                  <div className="bg-primary/5 dark:bg-primary/10 p-5 rounded-2xl border border-primary/20 flex items-center justify-between">
-                    <div className="space-y-1">
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        <RefreshCcw size={16} className="text-primary" /> Recuperação Automática (Follow-up)
+                  <div className="bg-primary/5 dark:bg-primary/10 p-6 rounded-3xl border border-primary/20 flex items-center justify-between relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+                    <div className="space-y-1 relative z-10">
+                      <h4 className="text-md font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <RefreshCcw size={18} className="text-primary animate-spin-slow" /> Recuperação Ativa (Follow-up)
                       </h4>
-                      <p className="text-xs text-slate-500 dark:text-white/50">
-                        Ative sequências de até 5 mensagens para leads que pararem de responder.
+                      <p className="text-xs text-slate-500 dark:text-white/40 max-w-md">
+                        Nossa IA reengaja automaticamente leads que pararam de responder, enviando mensagens estratégicas em intervalos definidos.
                       </p>
                     </div>
                     <Switch
                       checked={editAgent.follow_up_enabled || false}
                       onCheckedChange={(val) => setEditAgent({ ...editAgent, follow_up_enabled: val })}
-                      className="data-[state=checked]:bg-primary shadow-[0_0_10px_rgba(0,255,157,0.3)]"
+                      className="data-[state=checked]:bg-primary shadow-[0_0_15px_rgba(0,255,157,0.4)] relative z-10"
                     />
                   </div>
 
-                  <div className="space-y-4">
+                  <div className="relative pl-8 space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-gradient-to-b before:from-primary/50 before:via-slate-200 before:to-transparent dark:before:via-white/5">
                     {(editAgent.follow_up_config || [
                       { id: 1, delay_hours: 2, message: "" },
                       { id: 2, delay_hours: 24, message: "" },
                       { id: 3, delay_hours: 48, message: "" }
                     ]).map((step, idx) => (
-                      <div key={step.id} className="p-4 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] space-y-3 relative overflow-hidden group">
-                        <div className="flex items-center justify-between">
-                          <Badge variant="outline" className="text-[10px] font-bold bg-white dark:bg-black/20 text-slate-500 dark:text-white/40 border-slate-200 dark:border-white/10">
-                            MENSAGEM {idx + 1}
-                          </Badge>
-                          <div className="flex items-center gap-2">
-                            <Clock size={12} className="text-primary/70" />
-                            <span className="text-[10px] font-bold text-slate-400 dark:text-white/30 uppercase tracking-tighter">Aguardar</span>
-                            <Input
-                              type="number"
-                              value={step.delay_hours}
-                              onChange={(e) => {
-                                const newConfig = [...(editAgent.follow_up_config || [])];
-                                newConfig[idx] = { ...step, delay_hours: parseInt(e.target.value) || 0 };
-                                setEditAgent({ ...editAgent, follow_up_config: newConfig });
-                              }}
-                              className="w-16 h-7 text-[11px] bg-white dark:bg-black/40 border-slate-200 dark:border-white/10 text-center font-bold rounded-lg"
-                            />
-                            <span className="text-[10px] font-bold text-slate-400 dark:text-white/30 uppercase tracking-tighter">Horas</span>
-                          </div>
+                      <div key={step.id} className="relative group animate-in slide-in-from-left duration-500" style={{ animationDelay: `${idx * 0.1}s` }}>
+                        <div className="absolute -left-10 top-2 w-6 h-6 rounded-full bg-slate-100 dark:bg-black border-2 border-primary/50 flex items-center justify-center z-10 shadow-sm group-hover:scale-110 transition-transform">
+                          <span className="text-[10px] font-black text-primary">{idx + 1}</span>
                         </div>
-                        <Textarea
-                          value={step.message}
-                          onChange={(e) => {
-                            const newConfig = [...(editAgent.follow_up_config || [])];
-                            newConfig[idx] = { ...step, message: e.target.value };
-                            setEditAgent({ ...editAgent, follow_up_config: newConfig });
-                          }}
-                          placeholder="Ex: Olá! Ainda estou por aqui para te ajudar..."
-                          className="bg-white dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-xs rounded-xl focus:border-primary/50 p-3 min-h-[60px]"
-                        />
+
+                        <div className="p-5 rounded-2xl border border-slate-200 dark:border-white/5 bg-white dark:bg-black/40 shadow-sm dark:shadow-glass hover:border-primary/30 transition-all">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2">
+                              <Badge className="bg-primary/10 text-primary border-none text-[10px] font-bold uppercase tracking-widest">Gatilho Temporal</Badge>
+                            </div>
+                            <div className="flex items-center gap-2 bg-slate-50 dark:bg-white/5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/5">
+                              <Clock size={12} className="text-primary/70" />
+                              <span className="text-[10px] font-bold text-slate-500 dark:text-white/40 uppercase">Esperar</span>
+                              <input
+                                type="number"
+                                value={step.delay_hours}
+                                onChange={(e) => {
+                                  const newConfig = [...(editAgent.follow_up_config || [])];
+                                  newConfig[idx] = { ...step, delay_hours: parseInt(e.target.value) || 0 };
+                                  setEditAgent({ ...editAgent, follow_up_config: newConfig });
+                                }}
+                                className="w-12 h-6 text-xs bg-transparent text-center font-black text-slate-900 dark:text-white focus:outline-none"
+                              />
+                              <span className="text-[10px] font-bold text-slate-500 dark:text-white/40 uppercase">Horas</span>
+                            </div>
+                          </div>
+                          <Textarea
+                            value={step.message}
+                            onChange={(e) => {
+                              const newConfig = [...(editAgent.follow_up_config || [])];
+                              newConfig[idx] = { ...step, message: e.target.value };
+                              setEditAgent({ ...editAgent, follow_up_config: newConfig });
+                            }}
+                            placeholder="Ex: Oi! Notei que você não respondeu minha última mensagem. Ainda tem interesse?"
+                            className="bg-slate-50/50 dark:bg-black/20 border-slate-200 dark:border-white/5 text-slate-900 dark:text-white text-sm rounded-xl focus:ring-primary/20 focus:border-primary/50 p-4 min-h-[80px] leading-relaxed transition-all"
+                          />
+                        </div>
                       </div>
                     ))}
 
@@ -655,66 +627,89 @@ const Agents = () => {
                           });
                         }
                       }}
-                      className="w-full border border-dashed border-slate-200 dark:border-white/10 text-slate-400 dark:text-white/30 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl h-10"
+                      className="w-full border-2 border-dashed border-slate-200 dark:border-white/5 text-slate-400 dark:text-white/30 text-xs font-bold hover:bg-primary/5 hover:text-primary hover:border-primary/30 rounded-2xl h-12 transition-all"
                     >
-                      <Plus size={14} className="mr-2" /> Adicionar mais um passo (Máx 5)
+                      <Plus size={16} className="mr-2" /> Expandir Fluxo de Recuperação (Máx 5)
                     </Button>
                   </div>
                 </TabsContent>
 
                 <TabsContent value="widget" className="mt-0 space-y-6">
-                  <div className="bg-slate-50 dark:bg-black/40 p-4 rounded-xl border border-slate-200 dark:border-white/5">
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-1">
-                      <Sparkles size={16} className="text-primary" /> Conversão Ativa
+                  <div className="bg-slate-50/50 dark:bg-black/40 p-5 rounded-3xl border border-slate-200 dark:border-white/5 flex flex-col gap-1">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <Sparkles size={16} className="text-primary" /> Abordagem Pró-ativa
                     </h4>
-                    <p className="text-xs text-slate-500 dark:text-white/50">
-                      Configure quando o chat deve abrir sozinho para abordar o visitante.
+                    <p className="text-xs text-slate-500 dark:text-white/40">
+                      Configure o gatilho automático para que o widget se abra sozinho e inicie a conversão.
                     </p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label className="text-xs font-bold text-slate-500 dark:text-white/50 uppercase tracking-widest ml-1">Abrir após (segundos)</Label>
-                      <Input
-                        type="number"
-                        value={editAgent.widget_trigger_seconds || 0}
-                        onChange={e => setEditAgent({ ...editAgent, widget_trigger_seconds: parseInt(e.target.value) || 0 })}
-                        className="h-10 bg-slate-50 dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-xl focus:border-primary/50"
-                      />
+                    <div className="p-5 rounded-3xl border border-slate-200 dark:border-white/5 bg-white dark:bg-black/20 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                          <Clock size={16} />
+                        </div>
+                        <Label className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-white/40">Tempo na Página</Label>
+                      </div>
+                      <div className="flex items-end gap-2">
+                        <Input
+                          type="number"
+                          value={editAgent.widget_trigger_seconds || 0}
+                          onChange={e => setEditAgent({ ...editAgent, widget_trigger_seconds: parseInt(e.target.value) || 0 })}
+                          className="h-12 bg-slate-50 dark:bg-black/40 border-slate-200 dark:border-white/10 text-center font-bold text-lg rounded-2xl"
+                        />
+                        <span className="mb-3 text-xs font-bold text-muted-foreground">SEG</span>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs font-bold text-slate-500 dark:text-white/50 uppercase tracking-widest ml-1">Abrir ao scrollar (%)</Label>
-                      <Input
-                        type="number"
-                        value={editAgent.widget_trigger_scroll || 0}
-                        onChange={e => setEditAgent({ ...editAgent, widget_trigger_scroll: parseInt(e.target.value) || 0 })}
-                        className="h-10 bg-slate-50 dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-xl focus:border-primary/50"
-                      />
+
+                    <div className="p-5 rounded-3xl border border-slate-200 dark:border-white/5 bg-white dark:bg-black/20 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
+                          <TrendingUp size={16} />
+                        </div>
+                        <Label className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-white/40">Scroll do Site</Label>
+                      </div>
+                      <div className="flex items-end gap-2">
+                        <Input
+                          type="number"
+                          value={editAgent.widget_trigger_scroll || 0}
+                          onChange={e => setEditAgent({ ...editAgent, widget_trigger_scroll: parseInt(e.target.value) || 0 })}
+                          className="h-12 bg-slate-50 dark:bg-black/40 border-slate-200 dark:border-white/10 text-center font-bold text-lg rounded-2xl"
+                        />
+                        <span className="mb-3 text-xs font-bold text-muted-foreground">%</span>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-xs font-bold text-slate-500 dark:text-white/50 uppercase tracking-widest ml-1">Posição do Widget</Label>
-                    <div className="flex gap-3">
-                      {["bottom-right", "bottom-left"].map((pos) => (
+                  <div className="space-y-3">
+                    <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">Posição Flutuante</Label>
+                    <div className="flex gap-4">
+                      {[
+                        { id: "bottom-right", label: "Direita", icon: "👉" },
+                        { id: "bottom-left", label: "Esquerda", icon: "👈" }
+                      ].map((pos) => (
                         <Button
-                          key={pos}
-                          variant={editAgent.widget_position === pos ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setEditAgent({ ...editAgent, widget_position: pos })}
-                          className={`flex-1 rounded-xl h-10 font-bold ${editAgent.widget_position === pos ? "bg-primary text-black" : "dark:border-white/10"}`}
+                          key={pos.id}
+                          variant={editAgent.widget_position === pos.id ? "default" : "outline"}
+                          size="lg"
+                          onClick={() => setEditAgent({ ...editAgent, widget_position: pos.id })}
+                          className={`flex-1 rounded-2xl h-14 font-bold border-2 transition-all ${editAgent.widget_position === pos.id ? "bg-primary text-black border-primary shadow-[0_5px_15px_rgba(0,255,157,0.3)]" : "dark:border-white/5 dark:bg-black/20"}`}
                         >
-                          {pos === "bottom-right" ? "Direita" : "Esquerda"}
+                          <span className="mr-2 text-xl">{pos.icon}</span> {pos.label}
                         </Button>
                       ))}
                     </div>
                   </div>
 
-                  <div className="p-4 bg-primary/5 dark:bg-primary/10 rounded-2xl border border-primary/20 space-y-3">
-                    <Label className="text-xs font-bold text-primary flex items-center gap-2 uppercase tracking-tighter">
-                      <Code2 size={14} /> Código de Incorporação do Agente
+                  <div className="p-6 bg-primary/5 dark:bg-black/40 rounded-3xl border border-primary/20 space-y-4 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                      <Code2 size={80} className="text-primary" />
+                    </div>
+                    <Label className="text-xs font-bold text-primary flex items-center gap-2 uppercase tracking-widest relative z-10">
+                      <Code2 size={16} /> Script de Instalação (Agente)
                     </Label>
-                    <div className="bg-black/40 p-3 rounded-xl font-mono text-[10px] text-white/70 break-all border border-white/5 max-h-[100px] overflow-y-auto">
+                    <div className="bg-black p-4 rounded-2xl font-mono text-[11px] text-white/60 break-all border border-white/5 max-h-[120px] overflow-y-auto leading-relaxed relative z-10">
                       {`<!-- Chat Vox Agent: ${editAgent.name} -->
 <script>
 (function(){
@@ -729,9 +724,9 @@ const Agents = () => {
 </script>`}
                     </div>
                     <Button
-                      variant="ghost"
+                      variant="secondary"
                       size="sm"
-                      className="w-full text-primary hover:text-primary hover:bg-primary/10 text-xs font-bold gap-2"
+                      className="w-full bg-primary/10 hover:bg-primary/20 text-primary border-none text-xs font-bold gap-2 h-10 rounded-xl relative z-10"
                       onClick={() => {
                         const code = `<!-- Chat Vox Agent: ${editAgent.name} -->
 <script>
@@ -755,24 +750,24 @@ const Agents = () => {
                 </TabsContent>
 
                 <TabsContent value="knowledge" className="mt-0 space-y-4">
-                  <div className="bg-slate-50 dark:bg-black/40 p-4 rounded-xl border border-slate-200 dark:border-white/5 mb-4">
+                  <div className="bg-slate-50 dark:bg-black/40 p-5 rounded-3xl border border-slate-200 dark:border-white/5 mb-4">
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-1">
-                      <BookOpen size={16} className="text-primary" /> Cérebro do Agente
+                      <BookOpen size={18} className="text-primary" /> Cérebro Estratégico
                     </h4>
-                    <p className="text-xs text-slate-500 dark:text-white/50">
-                      Adicione informações exclusivas deste agente. Ele usará esses dados para responder clientes com precisão.
+                    <p className="text-xs text-slate-500 dark:text-white/40 font-medium">
+                      Alimente este agente com documentos, FAQs e informações exclusivas para respostas ultra-precisas.
                     </p>
                   </div>
                   {user && <KnowledgeBase userId={user.id} agentId={editAgent.id} />}
                 </TabsContent>
 
                 <TabsContent value="links" className="mt-0 space-y-4">
-                  <div className="bg-primary/5 dark:bg-primary/10 p-4 rounded-xl border border-primary/20 mb-4">
+                  <div className="bg-gradient-to-br from-primary/20 to-transparent p-6 rounded-3xl border border-primary/20 mb-4 shadow-glass">
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-1">
-                      <LinkIcon2 size={16} className="text-primary" /> Atalhos de Conversão (CTA)
+                      <LinkIcon2 size={18} className="text-primary" /> Gatilhos de Conversão (CTA)
                     </h4>
-                    <p className="text-xs text-slate-500 dark:text-white/50">
-                      Cadastre links estratégicos (WhatsApp, Checkout, Agendamento) que a IA poderá oferecer como botões de alta conversão.
+                    <p className="text-xs text-slate-500 dark:text-white/40 font-medium leading-relaxed">
+                      Gerencie botões de alta conversão (WhatsApp, Checkout, Agendamento) que a IA poderá oferecer durante o chat.
                     </p>
                   </div>
                   <AgentButtonsManager agentId={editAgent.id} />

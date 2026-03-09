@@ -7,12 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Loader2, Save, Copy, ExternalLink, Palette, Bot, Code2,
   Facebook, BarChart3, ShoppingBag, Megaphone, Target,
   Webhook, Braces, MessageSquareCode, Sparkles, Bell, BookOpen,
+  TrendingUp, Clock, Users,
 } from "lucide-react";
 import { ChatThemeSelector, type ChatTheme } from "@/components/settings/ChatThemeSelector";
 import { AvatarUpload } from "@/components/settings/AvatarUpload";
@@ -153,363 +155,423 @@ const VoxSettings = () => {
   }
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground tracking-tight">Configurações do Chat Vox</h1>
-        <p className="text-sm text-muted-foreground mt-1">Personalize seu chat, IA, rastreamento e integrações.</p>
+    <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500 max-w-5xl mx-auto pb-10">
+      <div className="flex items-center justify-between bg-white dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-glass relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-primary/5 dark:bg-primary/10 rounded-full blur-[80px] -mr-32 -mt-32 animate-pulse"></div>
+        <div className="relative z-10">
+          <h1 className="text-3xl font-extrabold text-slate-900 dark:bg-clip-text dark:text-transparent dark:bg-gradient-to-r dark:from-white dark:to-white/70 tracking-tight flex items-center gap-3 mb-2">
+            <Bot size={32} className="text-primary dark:drop-shadow-[0_0_15px_rgba(0,255,157,0.5)]" /> Centro de Comando
+          </h1>
+          <p className="text-[15px] font-medium text-slate-500 dark:text-white/40 max-w-lg">
+            Configurações globais de inteligência, design e rastreamento do seu Ecossistema Chat Vox.
+          </p>
+        </div>
+        <div className="relative z-10">
+          <Button onClick={handleSave} disabled={saving} className="rounded-2xl h-12 px-8 bg-primary hover:bg-primary/90 text-black shadow-[0_5px_20px_rgba(0,255,157,0.3)] hover:shadow-[0_8px_25px_rgba(0,255,157,0.5)] transition-all font-black gap-2">
+            {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+            SALVAR ALTERAÇÕES
+          </Button>
+        </div>
       </div>
 
-      {/* Chat Link + Widget */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="border-primary/20 bg-primary/[0.02]">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <ExternalLink size={14} className="text-primary" />
-              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Link do Chat</p>
-            </div>
-            <div className="flex gap-2">
-              <Input value={chatUrl} readOnly className="text-xs h-8 bg-background/50" />
-              <Button variant="outline" size="icon" onClick={() => copyText(chatUrl, "Link")} className="h-8 w-8 shrink-0">
-                <Copy size={14} />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border/50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Braces size={14} className="text-muted-foreground" />
-              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Widget Embed</p>
-            </div>
-            <div className="flex gap-2">
-              <Input value="<script> ... </script>" readOnly className="text-xs h-8 bg-background/50 font-mono" />
-              <Button variant="outline" size="icon" onClick={() => copyText(widgetSnippet, "Código")} className="h-8 w-8 shrink-0">
-                <Copy size={14} />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Tabs defaultValue="ai" className="w-full">
-        <TabsList className="w-full justify-start bg-accent/30 p-1 rounded-xl flex-wrap h-auto gap-1">
-          <TabsTrigger value="ai" className="gap-1.5 text-xs rounded-lg">
-            <Sparkles size={13} /> IA & Prompt
-          </TabsTrigger>
-          <TabsTrigger value="identity" className="gap-1.5 text-xs rounded-lg">
-            <Bot size={13} /> Identidade
-          </TabsTrigger>
-          <TabsTrigger value="appearance" className="gap-1.5 text-xs rounded-lg">
-            <Palette size={13} /> Aparência
-          </TabsTrigger>
-          <TabsTrigger value="widget" className="gap-1.5 text-xs rounded-lg">
-            <MessageSquareCode size={13} /> Widget
-          </TabsTrigger>
-
-          <TabsTrigger value="webhooks" className="gap-1.5 text-xs rounded-lg">
-            <Webhook size={13} /> Webhooks
-          </TabsTrigger>
-          <TabsTrigger value="notifications" className="gap-1.5 text-xs rounded-lg">
-            <Bell size={13} /> Notificações
-          </TabsTrigger>
-          <TabsTrigger value="knowledge" className="gap-1.5 text-xs rounded-lg">
-            <BookOpen size={13} /> Base de Conhecimento
-          </TabsTrigger>
-        </TabsList>
-
-        {/* AI & Prompt Tab */}
-        <TabsContent value="ai" className="mt-6 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Sparkles size={15} className="text-primary" /> Prompt da IA
-              </CardTitle>
-              <CardDescription>
-                Personalize como sua IA se comporta. Deixe em branco para usar o prompt padrão.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label className="text-xs font-semibold text-muted-foreground">System Prompt (Instruções da IA)</Label>
-                <Textarea
-                  value={form.system_prompt as string}
-                  onChange={(e) => update("system_prompt", e.target.value)}
-                  rows={8}
-                  placeholder={`Exemplo: Você é a assistente virtual da Clínica XYZ. Seu objetivo é:\n- Tirar dúvidas sobre tratamentos\n- Qualificar o lead perguntando sobre interesse e orçamento\n- Agendar uma avaliação gratuita\n- Sempre responder de forma empática e profissional`}
-                  className="font-mono text-xs"
-                />
-                <p className="text-[10px] text-muted-foreground">
-                  Dica: Inclua informações sobre seus serviços, preços e regras de atendimento para a IA responder melhor.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Identity Tab */}
-        <TabsContent value="identity" className="mt-6 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Identidade da IA</CardTitle>
-              <CardDescription>Nome, avatar e mensagem de boas-vindas.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label className="text-xs font-semibold text-muted-foreground">Nome da IA</Label>
-                <Input value={form.ai_name as string} onChange={(e) => update("ai_name", e.target.value)} placeholder="Chat Vox" />
-              </div>
-              {user && (
-                <AvatarUpload
-                  userId={user.id}
-                  currentUrl={form.ai_avatar_url as string}
-                  onUrlChange={(url) => update("ai_avatar_url", url)}
-                />
-              )}
-              <div className="space-y-2">
-                <Label className="text-xs font-semibold text-muted-foreground">Mensagem de Boas-Vindas</Label>
-                <Textarea value={form.welcome_message as string} onChange={(e) => update("welcome_message", e.target.value)} rows={3} />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Appearance Tab */}
-        <TabsContent value="appearance" className="mt-6 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Tema do Chat</CardTitle>
-              <CardDescription>Escolha o visual do seu chat entre WhatsApp, templates prontos ou totalmente customizado.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <ChatThemeSelector
-                activeMode={chatThemeMode}
-                onModeChange={setChatThemeMode}
-                themeConfig={chatThemeConfig}
-                onThemeChange={setChatThemeConfig}
-                primaryColor={form.primary_color as string}
-                aiName={form.ai_name as string}
-                aiAvatarUrl={form.ai_avatar_url as string}
-              />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Cor Principal & CSS</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label className="text-xs font-semibold text-muted-foreground">Cor Principal</Label>
-                <div className="flex gap-3 items-center">
-                  <input
-                    type="color"
-                    value={form.primary_color as string}
-                    onChange={(e) => update("primary_color", e.target.value)}
-                    className="w-10 h-10 rounded-lg border border-border cursor-pointer"
-                  />
-                  <Input value={form.primary_color as string} onChange={(e) => update("primary_color", e.target.value)} className="w-36" />
-                  <div className="w-32 h-10 rounded-lg" style={{ backgroundColor: form.primary_color as string }} />
+      {/* Chat Link + Widget Quick Access */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="group relative">
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 to-transparent rounded-[2rem] blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+          <Card className="relative bg-white dark:bg-black/40 border-slate-200 dark:border-white/5 rounded-[2rem] shadow-sm dark:shadow-glass overflow-hidden h-full">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                    <ExternalLink size={16} />
+                  </div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-white/50">Link de Acesso Direto</p>
                 </div>
+                <Badge className="bg-primary/10 text-primary border-none text-[10px] font-bold">PÚBLICO</Badge>
               </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-semibold text-muted-foreground">CSS Customizado (Avançado)</Label>
-                <Textarea
-                  value={form.custom_css as string}
-                  onChange={(e) => update("custom_css", e.target.value)}
-                  rows={4}
-                  placeholder=".chatvox-widget { border-radius: 20px; }"
-                  className="font-mono text-xs"
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Widget Tab */}
-        <TabsContent value="widget" className="mt-6 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Configuração do Widget</CardTitle>
-              <CardDescription>Configure o comportamento do popup flutuante.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-muted-foreground">Abrir após (segundos)</Label>
-                  <Input
-                    type="number"
-                    value={form.widget_trigger_seconds}
-                    onChange={(e) => update("widget_trigger_seconds", parseInt(e.target.value) || 0)}
-                    min={0}
-                    max={120}
-                  />
-                  <p className="text-[10px] text-muted-foreground">0 = não abrir automaticamente</p>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-muted-foreground">Abrir ao scrollar (%)</Label>
-                  <Input
-                    type="number"
-                    value={form.widget_trigger_scroll}
-                    onChange={(e) => update("widget_trigger_scroll", parseInt(e.target.value) || 0)}
-                    min={0}
-                    max={100}
-                  />
-                  <p className="text-[10px] text-muted-foreground">0 = desativado</p>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-semibold text-muted-foreground">Posição do Widget</Label>
-                <div className="flex gap-2">
-                  {["bottom-right", "bottom-left"].map((pos) => (
-                    <Button
-                      key={pos}
-                      variant={form.widget_position === pos ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => update("widget_position", pos)}
-                      className="text-xs"
-                    >
-                      {pos === "bottom-right" ? "Inferior Direito" : "Inferior Esquerdo"}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Embed code */}
-              <div className="space-y-2 pt-4 border-t border-border/50">
-                <Label className="text-xs font-semibold text-muted-foreground">Código para Incorporar</Label>
-                <div className="bg-accent/30 rounded-lg p-3 font-mono text-[11px] text-foreground/80 whitespace-pre-wrap break-all">
-                  {widgetSnippet}
-                </div>
-                <Button variant="outline" size="sm" onClick={() => copyText(widgetSnippet, "Código")} className="text-xs">
-                  <Copy size={12} className="mr-1.5" /> Copiar Código
+              <div className="flex gap-2">
+                <Input value={chatUrl} readOnly className="text-xs h-12 bg-slate-50/50 dark:bg-black/40 border-slate-200 dark:border-white/10 rounded-xl" />
+                <Button variant="secondary" size="icon" onClick={() => copyText(chatUrl, "Link")} className="h-12 w-12 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10">
+                  <Copy size={16} />
                 </Button>
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
 
-
-
-        {/* Webhooks Tab */}
-        <TabsContent value="webhooks" className="mt-6 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Webhook size={15} className="text-primary" /> Webhook
-              </CardTitle>
-              <CardDescription>
-                Receba notificações em tempo real quando novos leads e mensagens chegarem. Compatível com Zapier, Make, n8n.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label className="text-xs font-semibold text-muted-foreground">URL do Webhook</Label>
-                <Input
-                  value={form.webhook_url as string}
-                  onChange={(e) => update("webhook_url", e.target.value)}
-                  placeholder="https://hooks.zapier.com/... ou https://hook.us1.make.com/..."
-                  className="text-xs"
-                />
-                <p className="text-[10px] text-muted-foreground">
-                  A cada mensagem, enviaremos um POST com dados do lead e mensagem.
-                </p>
+        <div className="group relative">
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/30 to-transparent rounded-[2rem] blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+          <Card className="relative bg-white dark:bg-black/40 border-slate-200 dark:border-white/5 rounded-[2rem] shadow-sm dark:shadow-glass overflow-hidden h-full">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500">
+                    <Code2 size={16} />
+                  </div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-white/50">Widget Master Script</p>
+                </div>
+                <Badge className="bg-blue-500/10 text-blue-500 border-none text-[10px] font-bold">EMBED</Badge>
               </div>
-              <div className="bg-accent/30 rounded-lg p-3">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Payload Exemplo</p>
-                <pre className="text-[10px] font-mono text-foreground/70 whitespace-pre-wrap">
-                  {`{
+              <div className="flex gap-2">
+                <Input value="<script> Centro de Comando Master </script>" readOnly className="text-xs h-12 bg-slate-50/50 dark:bg-black/40 border-slate-200 dark:border-white/10 rounded-xl font-mono" />
+                <Button variant="secondary" size="icon" onClick={() => copyText(widgetSnippet, "Código")} className="h-12 w-12 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10">
+                  <Copy size={16} />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      <Tabs defaultValue="ai" className="w-full">
+        <TabsList className="w-full justify-start bg-slate-100 dark:bg-black/40 p-1.5 rounded-2xl flex-wrap h-auto gap-1 border border-slate-200 dark:border-white/5 mb-8">
+          <TabsTrigger value="ai" className="gap-2 text-[11px] font-bold uppercase tracking-tight rounded-xl data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:shadow-sm px-4 h-10 transition-all">
+            <Sparkles size={14} className="text-primary" /> IA & Prompt
+          </TabsTrigger>
+          <TabsTrigger value="identity" className="gap-2 text-[11px] font-bold uppercase tracking-tight rounded-xl data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:shadow-sm px-4 h-10 transition-all">
+            <Bot size={14} /> Identidade
+          </TabsTrigger>
+          <TabsTrigger value="appearance" className="gap-2 text-[11px] font-bold uppercase tracking-tight rounded-xl data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:shadow-sm px-4 h-10 transition-all">
+            <Palette size={14} /> Aparência
+          </TabsTrigger>
+          <TabsTrigger value="widget" className="gap-2 text-[11px] font-bold uppercase tracking-tight rounded-xl data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:shadow-sm px-4 h-10 transition-all">
+            <MessageSquareCode size={14} /> Posicionamento
+          </TabsTrigger>
+          <TabsTrigger value="webhooks" className="gap-2 text-[11px] font-bold uppercase tracking-tight rounded-xl data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:shadow-sm px-4 h-10 transition-all">
+            <Webhook size={14} /> Webhooks
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="gap-2 text-[11px] font-bold uppercase tracking-tight rounded-xl data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:shadow-sm px-4 h-10 transition-all">
+            <Bell size={14} /> Alertas
+          </TabsTrigger>
+          <TabsTrigger value="knowledge" className="gap-2 text-[11px] font-bold uppercase tracking-tight rounded-xl data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:shadow-sm px-4 h-10 transition-all">
+            <BookOpen size={14} /> Base Master
+          </TabsTrigger>
+        </TabsList>
+
+        <div className="mt-2 min-h-[400px]">
+          {/* AI & Prompt Tab */}
+          <TabsContent value="ai" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <Card className="bg-white dark:bg-transparent border-slate-200 dark:border-white/5 rounded-3xl shadow-sm dark:shadow-none overflow-hidden">
+              <CardHeader className="bg-slate-50/50 dark:bg-white/[0.02] border-b border-slate-100 dark:border-white/5 p-6">
+                <CardTitle className="text-lg flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                    <Sparkles size={20} />
+                  </div>
+                  Motor de Inteligência Global
+                </CardTitle>
+                <CardDescription className="text-[13px] ml-13">
+                  Estas instruções serão herdadas por todos os agentes que não possuírem um prompt específico. Defina as regras mestras da sua operação.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-8 space-y-6">
+                <div className="space-y-3">
+                  <Label className="text-xs font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">System Prompt (Diretrizes Master)</Label>
+                  <div className="relative group">
+                    <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-transparent rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-500"></div>
+                    <Textarea
+                      value={form.system_prompt as string}
+                      onChange={(e) => update("system_prompt", e.target.value)}
+                      rows={12}
+                      placeholder={`Exemplo: Você é o cérebro central da empresa Alpha. Suas diretrizes fundamentais são:\n1. Sempre seja cordial...\n2. Colete leads qualificados...\n3. Use gatilhos mentais de escassez...`}
+                      className="relative bg-slate-50/80 border-slate-200 text-slate-800 dark:bg-black/60 dark:border-white/10 dark:text-primary/90 font-mono rounded-2xl focus:ring-primary/20 focus:border-primary/50 text-[13px] leading-relaxed p-6 transition-all"
+                    />
+                  </div>
+                  <div className="flex items-start gap-2 p-4 rounded-xl bg-primary/5 border border-primary/10">
+                    <Target size={16} className="text-primary mt-0.5" />
+                    <p className="text-[11px] text-slate-600 dark:text-white/50 leading-relaxed font-medium">
+                      <strong>Dica Pro:</strong> Use este espaço para definir o tom de voz padrão da marca e as restrições éticas de todos os bots.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Identity Tab */}
+          <TabsContent value="identity" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <Card className="bg-white dark:bg-transparent border-slate-200 dark:border-white/5 rounded-3xl shadow-sm dark:shadow-none p-6">
+              <CardContent className="space-y-8 pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-3">
+                    <Label className="text-xs font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">Assinatura do Bot (Nome)</Label>
+                    <Input
+                      value={form.ai_name as string}
+                      onChange={(e) => update("ai_name", e.target.value)}
+                      placeholder="Chat Vox"
+                      className="h-14 bg-slate-50/50 dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 transition-all font-bold text-lg"
+                    />
+                  </div>
+                  {user && (
+                    <div className="space-y-3">
+                      <Label className="text-xs font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">Avatar Global</Label>
+                      <AvatarUpload
+                        userId={user.id}
+                        currentUrl={form.ai_avatar_url as string}
+                        onUrlChange={(url) => update("ai_avatar_url", url)}
+                      />
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-3">
+                  <Label className="text-xs font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">Boas-vindas Padrão</Label>
+                  <Textarea
+                    value={form.welcome_message as string}
+                    onChange={(e) => update("welcome_message", e.target.value)}
+                    rows={4}
+                    className="bg-slate-50/50 border-slate-200 text-slate-900 dark:bg-black/40 dark:border-white/10 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 text-sm p-5 transition-all leading-relaxed"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Appearance Tab */}
+          <TabsContent value="appearance" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card className="lg:col-span-2 bg-white dark:bg-transparent border-slate-200 dark:border-white/5 rounded-3xl p-6 h-full">
+                <CardHeader className="px-0 pt-0">
+                  <CardTitle className="text-lg">Configurador Estético</CardTitle>
+                </CardHeader>
+                <CardContent className="px-0">
+                  <ChatThemeSelector
+                    activeMode={chatThemeMode}
+                    onModeChange={setChatThemeMode}
+                    themeConfig={chatThemeConfig}
+                    onThemeChange={setChatThemeConfig}
+                    primaryColor={form.primary_color as string}
+                    aiName={form.ai_name as string}
+                    aiAvatarUrl={form.ai_avatar_url as string}
+                  />
+                </CardContent>
+              </Card>
+
+              <div className="space-y-6">
+                <Card className="bg-white dark:bg-transparent border-slate-200 dark:border-white/5 rounded-3xl p-6">
+                  <CardHeader className="px-0 pt-0">
+                    <CardTitle className="text-sm">Paleta de Marca</CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-0 space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex gap-3 items-center bg-slate-50 dark:bg-black/40 p-3 rounded-2xl border border-slate-200 dark:border-white/10">
+                        <input
+                          type="color"
+                          value={form.primary_color as string}
+                          onChange={(e) => update("primary_color", e.target.value)}
+                          className="w-12 h-10 rounded-xl border border-slate-200 dark:border-white/20 cursor-pointer overflow-hidden p-0 bg-transparent"
+                        />
+                        <Input value={form.primary_color as string} onChange={(e) => update("primary_color", e.target.value)} className="w-full bg-transparent border-none text-sm font-mono font-bold" />
+                      </div>
+                      <div className="w-full h-3 rounded-full overflow-hidden flex">
+                        <div className="flex-1 bg-primary"></div>
+                        <div className="flex-1 bg-primary/60"></div>
+                        <div className="flex-1 bg-primary/30"></div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white dark:bg-transparent border-slate-200 dark:border-white/5 rounded-3xl p-6">
+                  <CardHeader className="px-0 pt-0">
+                    <CardTitle className="text-sm font-bold flex items-center gap-2">
+                      <Code2 size={16} className="text-blue-500" /> Overwrite CSS
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-0">
+                    <Textarea
+                      value={form.custom_css as string}
+                      onChange={(e) => update("custom_css", e.target.value)}
+                      rows={6}
+                      placeholder=".chatvox-bubble { ... }"
+                      className="font-mono text-[11px] bg-black/60 dark:border-white/10 dark:text-blue-400 p-4 rounded-xl"
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Widget Tab */}
+          <TabsContent value="widget" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <Card className="bg-white dark:bg-transparent border-slate-200 dark:border-white/5 rounded-3xl p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                      <Clock size={20} />
+                    </div>
+                    <Label className="text-sm font-bold uppercase tracking-widest text-slate-500">Temporizador de Conversão</Label>
+                  </div>
+                  <Input
+                    type="number"
+                    value={form.widget_trigger_seconds}
+                    onChange={(e) => update("widget_trigger_seconds", parseInt(e.target.value) || 0)}
+                    className="h-16 text-center text-2xl font-black bg-slate-50 dark:bg-black/40 border-slate-200 dark:border-white/10 rounded-3xl"
+                  />
+                  <p className="text-xs text-center text-muted-foreground font-medium">Segundos até o widget abrir sozinho (0 = off)</p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
+                      <TrendingUp size={20} />
+                    </div>
+                    <Label className="text-sm font-bold uppercase tracking-widest text-slate-500">Intenção por Scroll (%)</Label>
+                  </div>
+                  <Input
+                    type="number"
+                    value={form.widget_trigger_scroll}
+                    onChange={(e) => update("widget_trigger_scroll", parseInt(e.target.value) || 0)}
+                    className="h-16 text-center text-2xl font-black bg-slate-50 dark:bg-black/40 border-slate-200 dark:border-white/10 rounded-3xl"
+                  />
+                  <p className="text-xs text-center text-muted-foreground font-medium">Porcentagem de leitura da página para abrir (0 = off)</p>
+                </div>
+              </div>
+
+              <div className="space-y-4 pt-8 border-t border-slate-100 dark:border-white/5">
+                <Label className="text-xs font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">Ancoragem do Widget</Label>
+                <div className="flex gap-4">
+                  {[
+                    { id: "bottom-right", label: "Inferior Direito", icon: "👉" },
+                    { id: "bottom-left", label: "Inferior Esquerdo", icon: "👈" }
+                  ].map((pos) => (
+                    <Button
+                      key={pos.id}
+                      variant={form.widget_position === pos.id ? "default" : "outline"}
+                      size="lg"
+                      onClick={() => update("widget_position", pos.id)}
+                      className={`flex-1 rounded-[1.5rem] h-16 font-bold border-2 transition-all ${form.widget_position === pos.id ? "bg-primary text-black border-primary shadow-[0_5px_20px_rgba(0,255,157,0.3)]" : "dark:bg-black/40 dark:border-white/5"}`}
+                    >
+                      <span className="mr-3 text-2xl">{pos.icon}</span> {pos.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          </TabsContent>
+
+          {/* Webhooks Tab */}
+          <TabsContent value="webhooks" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <Card className="bg-white dark:bg-transparent border-slate-200 dark:border-white/5 rounded-3xl p-8">
+              <div className="flex items-center justify-between mb-8">
+                <CardTitle className="text-lg flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
+                    <Webhook size={20} />
+                  </div>
+                  Fluxo de Dados Externos (Webhooks)
+                </CardTitle>
+                <Badge variant="outline" className="text-orange-500 border-orange-500/30 bg-orange-500/5">EXTERNO</Badge>
+              </div>
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <Label className="text-xs font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">Endpoint de Recebimento</Label>
+                  <Input
+                    value={form.webhook_url as string}
+                    onChange={(e) => update("webhook_url", e.target.value)}
+                    placeholder="https://hooks.zapier.com/..."
+                    className="h-14 bg-slate-50/50 dark:bg-black/40 border-slate-200 dark:border-white/10 rounded-2xl font-mono text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground ml-1">Dispare dados para o Zapier, Make, n8n ou seu CRM próprio a cada mensagem.</p>
+                </div>
+
+                <div className="bg-black p-6 rounded-[2rem] border border-white/5">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <Braces size={12} className="text-primary" /> Payload JSON Master
+                  </p>
+                  <pre className="text-[11px] font-mono text-white/50 whitespace-pre-wrap leading-relaxed">
+                    {`{
   "event": "message.received",
   "lead": {
     "id": "uuid",
-    "name": "João",
-    "phone": "11999999999",
     "status": "qualificado",
-    "qualification_score": 75
+    "score": 75
   },
-  "message": {
-    "role": "assistant",
-    "content": "Olá! Como posso ajudar?"
-  },
-  "timestamp": "2026-02-27T12:00:00Z"
+  "message": { "role": "assistant", "content": "..." }
 }`}
-                </pre>
+                  </pre>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </Card>
+          </TabsContent>
 
-        {/* Notifications Tab */}
-        <TabsContent value="notifications" className="mt-6 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Bell size={15} className="text-primary" /> Notificações
-              </CardTitle>
-              <CardDescription>
-                Configure alertas para acompanhar seus leads em tempo real.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label className="text-xs font-semibold text-muted-foreground">Email para Notificações</Label>
-                <Input
-                  value={(form.notify_email as string) || ""}
-                  onChange={(e) => update("notify_email", e.target.value)}
-                  placeholder="seu@email.com"
-                  type="email"
-                  className="text-xs"
-                />
-                <p className="text-[10px] text-muted-foreground">
-                  Deixe em branco para desativar notificações por email.
+          {/* Notifications Tab */}
+          <TabsContent value="notifications" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <Card className="bg-white dark:bg-transparent border-slate-200 dark:border-white/5 rounded-3xl p-8">
+              <div className="space-y-8">
+                <div className="space-y-3">
+                  <Label className="text-xs font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">Email de Destino</Label>
+                  <Input
+                    value={(form.notify_email as string) || ""}
+                    onChange={(e) => update("notify_email", e.target.value)}
+                    placeholder="alerta@suaempresa.com"
+                    type="email"
+                    className="h-14 bg-slate-50/50 dark:bg-black/40 border-slate-200 dark:border-white/10 rounded-2xl"
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-6 rounded-3xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
+                    <div className="flex gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                        <Users size={20} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-900 dark:text-white">Captação de Lead</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Notificar via email quando um novo humano iniciar o chat.</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={!!form.notify_on_new_lead}
+                      onCheckedChange={(v) => update("notify_on_new_lead", v ? 1 : 0)}
+                      className="data-[state=checked]:bg-primary"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-6 rounded-3xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
+                    <div className="flex gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
+                        <Target size={20} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-900 dark:text-white">Qualificação de Elite</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Alertar apenas quando a IA detectar um lead com score ≥ 60.</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={!!form.notify_on_qualified}
+                      onCheckedChange={(v) => update("notify_on_qualified", v ? 1 : 0)}
+                      className="data-[state=checked]:bg-emerald-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </TabsContent>
+
+          {/* Knowledge Base Tab */}
+          <TabsContent value="knowledge" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <Card className="bg-white dark:bg-transparent border-slate-200 dark:border-white/5 rounded-[2.5rem] shadow-sm dark:shadow-none p-4">
+              <div className="bg-primary/5 dark:bg-white/[0.02] p-6 rounded-[2rem] border border-primary/10 mb-6">
+                <h4 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                    <BookOpen size={20} />
+                  </div>
+                  Biblioteca de Conhecimento Master
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-white/40 max-w-2xl font-medium leading-relaxed">
+                  Os documentos carregados aqui são o fundamento intelectual de todos os seus agentes. Eles consultarão esta base sempre que não souberem uma resposta específica.
                 </p>
               </div>
-              <div className="flex items-center justify-between p-3 rounded-lg bg-accent/30">
-                <div>
-                  <p className="text-sm font-medium text-foreground">Novo Lead Capturado</p>
-                  <p className="text-[10px] text-muted-foreground">Notificar quando um novo lead iniciar o chat</p>
-                </div>
-                <Switch
-                  checked={!!form.notify_on_new_lead}
-                  onCheckedChange={(v) => update("notify_on_new_lead", v ? 1 : 0)}
-                />
+              <div className="px-2">
+                {user && <KnowledgeBase userId={user.id} />}
               </div>
-              <div className="flex items-center justify-between p-3 rounded-lg bg-accent/30">
-                <div>
-                  <p className="text-sm font-medium text-foreground">Lead Qualificado</p>
-                  <p className="text-[10px] text-muted-foreground">Notificar quando a IA qualificar um lead (score ≥60)</p>
-                </div>
-                <Switch
-                  checked={!!form.notify_on_qualified}
-                  onCheckedChange={(v) => update("notify_on_qualified", v ? 1 : 0)}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Knowledge Base Tab */}
-        <TabsContent value="knowledge" className="mt-6 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm flex items-center gap-2">
-                <BookOpen size={15} className="text-primary" /> Base de Conhecimento
-              </CardTitle>
-              <CardDescription>
-                Adicione informações sobre seu negócio (serviços, preços, FAQ) que a IA usará para responder melhor.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {user && <KnowledgeBase userId={user.id} />}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-
+            </Card>
+          </TabsContent>
+        </div>
       </Tabs>
 
-      <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
-        {saving ? <Loader2 size={16} className="animate-spin mr-2" /> : <Save size={16} className="mr-2" />}
-        Salvar Configurações
-      </Button>
+      <div className="pt-10 flex justify-center">
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-white/20">Chat Vox OS v2.0 • Secured Data Protocol</p>
+      </div>
     </div>
   );
 };
