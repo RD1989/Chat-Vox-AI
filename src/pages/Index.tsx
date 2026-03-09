@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/accordion";
 import ChatPreview from "@/components/landing/ChatPreview";
 import CookieConsent from "@/components/CookieConsent";
+import { ExitIntentPopup } from "@/components/marketing/ExitIntentPopup";
 import { useRef } from "react";
 
 const fadeUp = {
@@ -1122,6 +1123,7 @@ const Index = () => {
         </div>
       </footer>
       <CookieConsent />
+      <ExitIntentPopup />
     </div>
   );
 };

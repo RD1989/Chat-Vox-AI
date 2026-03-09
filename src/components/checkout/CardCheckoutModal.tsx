@@ -13,9 +13,10 @@ interface CardCheckoutModalProps {
     planSlug: string;
     planName: string;
     userId: string;
+    coupon?: string;
 }
 
-export const CardCheckoutModal = ({ isOpen, onClose, planSlug, planName, userId }: CardCheckoutModalProps) => {
+export const CardCheckoutModal = ({ isOpen, onClose, planSlug, planName, userId, coupon }: CardCheckoutModalProps) => {
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         number: "",
@@ -41,6 +42,7 @@ export const CardCheckoutModal = ({ isOpen, onClose, planSlug, planName, userId 
                     method: "card",
                     plan_slug: planSlug,
                     user_id: userId,
+                    coupon,
                     card_data: {
                         // O token real seria gerado via Efi.setAccount('XX').setEnvironment('sandbox').getPaymentToken(...)
                         payment_token: "simulated_token_" + Math.random().toString(36).substring(7),

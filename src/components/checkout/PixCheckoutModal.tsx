@@ -11,9 +11,10 @@ interface PixCheckoutModalProps {
     planSlug: string;
     planName: string;
     userId: string;
+    coupon?: string;
 }
 
-export const PixCheckoutModal = ({ isOpen, onClose, planSlug, planName, userId }: PixCheckoutModalProps) => {
+export const PixCheckoutModal = ({ isOpen, onClose, planSlug, planName, userId, coupon }: PixCheckoutModalProps) => {
     const [loading, setLoading] = useState(true);
     const [pixData, setPixData] = useState<{ qrcode: string; copiapasta: string; payment_id: string; amount: number } | null>(null);
     const [status, setStatus] = useState<"pending" | "paid" | "expired">("pending");
@@ -25,7 +26,7 @@ export const PixCheckoutModal = ({ isOpen, onClose, planSlug, planName, userId }
             const generatePix = async () => {
                 try {
                     const { data, error } = await supabase.functions.invoke("vox-payments", {
-                        body: { method: "pix", plan_slug: planSlug, user_id: userId }
+                        body: { method: "pix", plan_slug: planSlug, user_id: userId, coupon }
                     });
 
                     if (error) throw error;

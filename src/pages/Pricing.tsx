@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Check, ArrowRight, Zap, QrCode, CreditCard } from "lucide-react";
-import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { Check, ArrowRight, Zap, QrCode, CreditCard, Sparkles, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { PixCheckoutModal } from "@/components/checkout/PixCheckoutModal";
 import { CardCheckoutModal } from "@/components/checkout/CardCheckoutModal";
@@ -19,8 +19,8 @@ const fadeUp = {
 const plans = [
   {
     slug: "free", name: "Free",
-    monthly: { price: "R$0", period: "" },
-    quarterly: { price: "R$0", period: "" },
+    monthly: { price: "R$0", raw: 0, period: "" },
+    quarterly: { price: "R$0", raw: 0, period: "" },
     description: "Para testar a plataforma",
     leads: "5 leads",
     highlight: false,
@@ -28,8 +28,8 @@ const plans = [
   },
   {
     slug: "starter", name: "Starter",
-    monthly: { price: "R$97,90", period: "/mês" },
-    quarterly: { price: "R$234,90", period: "/tri", perMonth: "R$78,30/mês" },
+    monthly: { price: "R$97,90", raw: 9790, period: "/mês" },
+    quarterly: { price: "R$234,90", raw: 23490, period: "/tri", perMonth: "R$78,30/mês" },
     description: "Para profissionais começando",
     leads: "300 leads/mês",
     highlight: false,
@@ -37,8 +37,8 @@ const plans = [
   },
   {
     slug: "pro", name: "Pro",
-    monthly: { price: "R$197,90", period: "/mês" },
-    quarterly: { price: "R$474,90", period: "/tri", perMonth: "R$158,30/mês" },
+    monthly: { price: "R$197,90", raw: 19790, period: "/mês" },
+    quarterly: { price: "R$474,90", raw: 47490, period: "/tri", perMonth: "R$158,30/mês" },
     description: "Melhor custo-benefício",
     leads: "3.000 leads/mês",
     highlight: true,
@@ -47,8 +47,8 @@ const plans = [
   },
   {
     slug: "scale", name: "Scale",
-    monthly: { price: "R$397,90", period: "/mês" },
-    quarterly: { price: "R$954,90", period: "/tri", perMonth: "R$318,30/mês" },
+    monthly: { price: "R$397,90", raw: 39790, period: "/mês" },
+    quarterly: { price: "R$954,90", raw: 95490, period: "/tri", perMonth: "R$318,30/mês" },
     description: "Para alto volume",
     leads: "Leads ilimitados",
     highlight: false,
@@ -58,6 +58,10 @@ const plans = [
 
 const Pricing = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const coupon = searchParams.get("coupon");
+  const isOff50 = coupon === "OFF50";
+
   const { user } = useAuth();
   const [billing, setBilling] = useState<"monthly" | "quarterly">("quarterly");
   const [methodSelection, setMethodSelection] = useState<{ open: boolean; plan: { slug: string; name: string } | null }>({
@@ -67,9 +71,22 @@ const Pricing = () => {
   const [showPix, setShowPix] = useState(false);
   const [showCard, setShowCard] = useState(false);
 
+  const formatBRL = (cents: number) => {
+    return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  };
+
+  const calculateDisplayPrice = (plan: any, type: "monthly" | "quarterly") => {
+    const rawPrice = plan[type].raw;
+    if (isOff50 && plan.slug !== "free") {
+      return formatBRL(rawPrice * 0.5);
+    }
+    return plan[type].price;
+  };
+
   const handleSubscribe = (plan: any) => {
     if (!user) {
-      navigate("/signup");
+      if (isOff50) navigate(`/signup?coupon=${coupon}`);
+      else navigate("/signup");
       return;
     }
 
@@ -88,6 +105,11 @@ const Pricing = () => {
     setMethodSelection({ ...methodSelection, open: false });
     if (method === "pix") setShowPix(true);
     else setShowCard(true);
+  };
+
+  const removeCoupon = () => {
+    searchParams.delete("coupon");
+    setSearchParams(searchParams);
   };
 
   return (
@@ -109,8 +131,34 @@ const Pricing = () => {
       </header>
 
       {/* Hero */}
-      <section className="py-16 lg:py-20">
-        <div className="container mx-auto px-6 text-center">
+      <section className="py-16 lg:py-20 overflow-hidden relative">
+        <AnimatePresence>
+          {isOff50 && (
+            <div className="absolute top-10 left-1/2 -translate-x-1/2 w-full max-w-lg z-10 px-6">
+              <motion.div
+                initial={{ y: -50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: -50, opacity: 0 }}
+                className="bg-primary/10 border border-primary/20 backdrop-blur-md rounded-2xl p-4 flex items-center justify-between gap-4"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white">
+                    <Sparkles size={20} />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-black tracking-tight text-white uppercase leading-none">Cupom Aplicado!</p>
+                    <p className="text-[11px] text-primary font-bold">50% de DESCONTO ativado</p>
+                  </div>
+                </div>
+                <button onClick={removeCoupon} className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-colors">
+                  <X size={16} />
+                </button>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        <div className="container mx-auto px-6 text-center mt-12">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <div className="inline-flex items-center gap-1.5 border border-border bg-secondary text-muted-foreground text-[11px] font-medium px-3 py-1 rounded-full mb-6">
               <span className="w-1.5 h-1.5 rounded-full bg-primary" />
@@ -174,11 +222,18 @@ const Pricing = () => {
                 <div className="mb-5">
                   <h3 className="text-[13px] font-semibold uppercase tracking-wider mb-0.5">{plan.name}</h3>
                   <p className="text-[11px] text-muted-foreground mb-4">{plan.description}</p>
-                  <div className="flex items-baseline gap-0.5">
-                    <span className="text-3xl font-bold">{plan[billing].price}</span>
-                    {plan[billing].period && <span className="text-[13px] text-muted-foreground">{plan[billing].period}</span>}
+                  <div className="flex flex-col">
+                    <div className="flex items-baseline gap-0.5">
+                      <span className="text-3xl font-bold">{calculateDisplayPrice(plan, billing)}</span>
+                      {plan[billing].period && <span className="text-[13px] text-muted-foreground">{plan[billing].period}</span>}
+                    </div>
+                    {isOff50 && plan.slug !== "free" && (
+                      <span className="text-[12px] text-muted-foreground/50 line-through font-medium">
+                        de {plan[billing].price}
+                      </span>
+                    )}
                   </div>
-                  {billing === "quarterly" && "perMonth" in plan.quarterly && plan.quarterly.perMonth && (
+                  {billing === "quarterly" && "perMonth" in plan.quarterly && plan.quarterly.perMonth && !isOff50 && (
                     <p className="text-[10px] text-muted-foreground mt-0.5">equivale a {plan.quarterly.perMonth}</p>
                   )}
                   <p className="text-[11px] font-medium text-primary mt-1.5">{plan.leads}</p>
@@ -263,6 +318,7 @@ const Pricing = () => {
             planSlug={methodSelection.plan.slug}
             planName={methodSelection.plan.name}
             userId={user.id}
+            coupon={coupon || undefined}
           />
           <CardCheckoutModal
             isOpen={showCard}
@@ -270,6 +326,7 @@ const Pricing = () => {
             planSlug={methodSelection.plan.slug}
             planName={methodSelection.plan.name}
             userId={user.id}
+            coupon={coupon || undefined}
           />
         </>
       )}

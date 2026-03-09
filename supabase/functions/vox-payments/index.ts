@@ -22,7 +22,7 @@ serve(async (req) => {
     }
 
     try {
-        const { plan_slug, user_id, method = "pix" } = await req.json();
+        const { plan_slug, user_id, method = "pix", coupon } = await req.json();
 
         if (!plan_slug || !user_id) {
             return new Response(JSON.stringify({ error: "plan_slug and user_id are required" }), {
@@ -49,11 +49,21 @@ serve(async (req) => {
             });
         }
 
+        // --- LÓGICA DE CUPOM ---
+        let finalPriceCents = plan.price_brl;
+        const appliedCoupon = coupon === "OFF50" ? "OFF50" : null;
+
+        if (appliedCoupon === "OFF50") {
+            finalPriceCents = Math.round(plan.price_brl * 0.5);
+            console.log(`[vox-payments] Cupom OFF50 aplicado. Desconto de 50%. De ${plan.price_brl} para ${finalPriceCents}`);
+        }
+        // -----------------------
+
         // Validação removida: Não precisamos checar a tabela 'profiles' estritamente com .single(),
         // pois contas recém-criadas podem demorar a popular a tabela pública e isso causava o erro 403
         // no funil imediato de Checkout. A ForeignKey na tabela vox_payments garante a integridade com auth.users.
 
-        console.log(`[vox-payments] Gerando cobrança para ${plan.name} (R$ ${plan.price_brl / 100})`);
+        console.log(`[vox-payments] Gerando cobrança para ${plan.name} (R$ ${finalPriceCents / 100})`);
         // 2. Buscar Credenciais Efí (Priorizando Variáveis de Ambiente/Secrets)
         const clientId = Deno.env.get("EFIPAY_CLIENT_ID");
         const clientSecret = Deno.env.get("EFIPAY_CLIENT_SECRET");
@@ -121,7 +131,7 @@ serve(async (req) => {
                 }
             }
 
-            const pixGenerator = new Pix("ChatVox AI", "Brasilia", pixKey, plan.price_brl / 100, txid);
+            const pixGenerator = new Pix("ChatVox AI", "Brasilia", pixKey, finalPriceCents / 100, txid);
             const validPixCopiaECola = pixGenerator.getPayload();
 
             console.log(`[vox-payments] Gerando Pix Master: ${txid}`);
@@ -132,11 +142,16 @@ serve(async (req) => {
                 .insert({
                     user_id,
                     plan_slug,
-                    amount_cents: plan.price_brl,
+                    amount_cents: finalPriceCents,
                     status: "pending",
                     pix_id: txid,
                     pix_copiapasta: validPixCopiaECola,
-                    metadata: { sandbox: isSandbox, master_pix: true, price: (plan.price_brl / 100).toFixed(2) }
+                    metadata: {
+                        sandbox: isSandbox,
+                        master_pix: true,
+                        price: (finalPriceCents / 100).toFixed(2),
+                        coupon: appliedCoupon
+                    }
                 })
                 .select()
                 .single();
@@ -149,7 +164,7 @@ serve(async (req) => {
             return new Response(JSON.stringify({
                 payment_id: payment.id,
                 copiapasta: validPixCopiaECola,
-                amount: plan.price_brl,
+                amount: finalPriceCents,
                 txid: txid,
                 qrcode: `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(validPixCopiaECola)}`
             }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -165,11 +180,16 @@ serve(async (req) => {
                 .insert({
                     user_id,
                     plan_slug,
-                    amount_cents: plan.price_brl,
+                    amount_cents: finalPriceCents,
                     status: "paid", // Cartão aprova na hora neste fluxo
                     pix_id: txid,   // Reutilizando a coluna para ID de Transação
                     pix_copiapasta: "CREDIT_CARD_PROCESSING",
-                    metadata: { method: "card", card_simulated: true, price: (plan.price_brl / 100).toFixed(2) }
+                    metadata: {
+                        method: "card",
+                        card_simulated: true,
+                        price: (finalPriceCents / 100).toFixed(2),
+                        coupon: appliedCoupon
+                    }
                 })
                 .select()
                 .single();
