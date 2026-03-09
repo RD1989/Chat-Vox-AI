@@ -580,7 +580,7 @@ const VoxSettings = () => {
                     </div>
                     <Switch
                       checked={!!form.notify_on_new_lead}
-                      onCheckedChange={(v) => update("notify_on_new_lead", v ? 1 : 0)}
+                      onCheckedChange={(v) => update("notify_on_new_lead", v)}
                       className="data-[state=checked]:bg-primary"
                     />
                   </div>
@@ -597,7 +597,7 @@ const VoxSettings = () => {
                     </div>
                     <Switch
                       checked={!!form.notify_on_qualified}
-                      onCheckedChange={(v) => update("notify_on_qualified", v ? 1 : 0)}
+                      onCheckedChange={(v) => update("notify_on_qualified", v)}
                       className="data-[state=checked]:bg-emerald-500"
                     />
                   </div>
