@@ -49,21 +49,9 @@ serve(async (req) => {
             });
         }
 
-        const { data: userProfile, error: profileError } = await supabase
-            .from("profiles")
-            .select("id")
-            .eq("id", user_id)
-            .single();
-
-        if (profileError || !userProfile) {
-            console.error(`[vox-payments] Usuário ${user_id} não encontrado no banco de dados novo.`);
-            return new Response(JSON.stringify({
-                error: "Sessão expirada ou usuário não encontrado. Por favor, faça logout e entre novamente."
-            }), {
-                status: 403,
-                headers: { ...corsHeaders, "Content-Type": "application/json" },
-            });
-        }
+        // Validação removida: Não precisamos checar a tabela 'profiles' estritamente com .single(),
+        // pois contas recém-criadas podem demorar a popular a tabela pública e isso causava o erro 403
+        // no funil imediato de Checkout. A ForeignKey na tabela vox_payments garante a integridade com auth.users.
 
         console.log(`[vox-payments] Gerando cobrança para ${plan.name} (R$ ${plan.price_brl / 100})`);
         // 2. Buscar Credenciais Efí (Priorizando Variáveis de Ambiente/Secrets)
