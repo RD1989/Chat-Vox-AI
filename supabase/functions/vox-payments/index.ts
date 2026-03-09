@@ -31,11 +31,22 @@ serve(async (req) => {
             });
         }
 
+        // 🛡️ Risco 1: Bloquear pagamento por cartão simulado
+        if (method === "card") {
+            return new Response(JSON.stringify({
+                error: "Pagamento por cartão temporariamente indisponível.",
+                details: "Utilize Pix para efetuar o pagamento. O método de cartão estará disponível em breve."
+            }), {
+                status: 400,
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+        }
+
         const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
         const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
         const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-        // 2. Buscar plano e VALIDAR USUÁRIO
+        // 1. Buscar plano
         const { data: plan, error: planError } = await supabase
             .from("plans")
             .select("*")
@@ -49,21 +60,74 @@ serve(async (req) => {
             });
         }
 
-        // --- LÓGICA DE CUPOM ---
+        // 🛡️ Risco 4: Validar Cupom de forma dinâmica no banco de dados
         let finalPriceCents = plan.price_brl;
-        const appliedCoupon = coupon === "OFF50" ? "OFF50" : null;
+        let appliedCoupon: string | null = null;
+        let discountApplied = 0;
 
-        if (appliedCoupon === "OFF50") {
-            finalPriceCents = Math.round(plan.price_brl * 0.5);
-            console.log(`[vox-payments] Cupom OFF50 aplicado. Desconto de 50%. De ${plan.price_brl} para ${finalPriceCents}`);
+        if (coupon && typeof coupon === "string") {
+            const couponCode = coupon.toUpperCase().trim();
+
+            const { data: couponData, error: couponError } = await supabase
+                .from("vox_coupons")
+                .select("*")
+                .eq("code", couponCode)
+                .eq("is_active", true)
+                .maybeSingle();
+
+            if (couponError) {
+                console.error("[vox-payments] Erro ao buscar cupom:", couponError);
+            }
+
+            if (couponData) {
+                // Verificar validade
+                const isExpired = couponData.expires_at && new Date(couponData.expires_at) < new Date();
+                const isMaxedOut = couponData.max_uses !== null && couponData.current_uses >= couponData.max_uses;
+
+                if (isExpired) {
+                    return new Response(JSON.stringify({
+                        error: "Cupom expirado.",
+                        details: `O cupom ${couponCode} não é mais válido.`
+                    }), {
+                        status: 400,
+                        headers: { ...corsHeaders, "Content-Type": "application/json" },
+                    });
+                }
+
+                if (isMaxedOut) {
+                    return new Response(JSON.stringify({
+                        error: "Cupom esgotado.",
+                        details: `O cupom ${couponCode} atingiu o limite de usos.`
+                    }), {
+                        status: 400,
+                        headers: { ...corsHeaders, "Content-Type": "application/json" },
+                    });
+                }
+
+                // Aplicar desconto
+                discountApplied = couponData.discount_percentage;
+                finalPriceCents = Math.round(plan.price_brl * (1 - discountApplied / 100));
+                appliedCoupon = couponCode;
+
+                // Incrementar usos do cupom
+                await supabase
+                    .from("vox_coupons")
+                    .update({ current_uses: (couponData.current_uses || 0) + 1 })
+                    .eq("id", couponData.id);
+
+                console.log(`[vox-payments] Cupom ${couponCode} aplicado. ${discountApplied}% desconto. De ${plan.price_brl} para ${finalPriceCents}`);
+            } else {
+                // Cupom inválido
+                return new Response(JSON.stringify({
+                    error: "Cupom inválido.",
+                    details: `O cupom ${couponCode} não existe ou está inativo.`
+                }), {
+                    status: 400,
+                    headers: { ...corsHeaders, "Content-Type": "application/json" },
+                });
+            }
         }
-        // -----------------------
 
-        // Validação removida: Não precisamos checar a tabela 'profiles' estritamente com .single(),
-        // pois contas recém-criadas podem demorar a popular a tabela pública e isso causava o erro 403
-        // no funil imediato de Checkout. A ForeignKey na tabela vox_payments garante a integridade com auth.users.
-
-        console.log(`[vox-payments] Gerando cobrança para ${plan.name} (R$ ${finalPriceCents / 100})`);
         // 2. Buscar Credenciais Efí (Priorizando Variáveis de Ambiente/Secrets)
         const clientId = Deno.env.get("EFIPAY_CLIENT_ID");
         const clientSecret = Deno.env.get("EFIPAY_CLIENT_SECRET");
@@ -79,16 +143,17 @@ serve(async (req) => {
             });
         }
 
-        // NOTA: Geração de Pix Estático não exige autenticação mTLS na API Efí. Escapamos esse fluxo e usamos apenas a Chave Pix.
-        console.log("[vox-payments] Modo Pix Master Estático Ativado. Ignorando chamada OAuth para evitar erro de mTLS 403.");
+        // 3. Fluxo Pix Dinâmico (Cobrança Imediata Efí - quando disponível)
+        // Se existir suporte a mTLS no ambiente Deno, o fluxo de Pix Dinâmico é preferido.
+        // Por enquanto, mantemos o Pix Estático Bacen como padrão estável de lançamento.
+        console.log("[vox-payments] Modo Pix Master Estático Ativado.");
 
-        // 4. Fluxo Pix Master (Forçado Estático para Estabilidade de Lançamento)
         if (method === "pix") {
             if (!pixKey) throw new Error("Chave Pix não configurada (EFIPAY_PIX_KEY)");
 
             const txid = `VOX${Date.now()}${(Math.random() * 1000).toFixed(0)}`.toUpperCase();
 
-            // Geração de PIX Estático - PADRÃO BACEN (Classe Oficial via Multi Bot AI)
+            // Geração de PIX Estático - PADRÃO BACEN
             class Pix {
                 private merchantName: string;
                 private merchantCity: string;
@@ -150,7 +215,9 @@ serve(async (req) => {
                         sandbox: isSandbox,
                         master_pix: true,
                         price: (finalPriceCents / 100).toFixed(2),
-                        coupon: appliedCoupon
+                        original_price: (plan.price_brl / 100).toFixed(2),
+                        coupon: appliedCoupon,
+                        discount_percentage: discountApplied
                     }
                 })
                 .select()
@@ -166,45 +233,9 @@ serve(async (req) => {
                 copiapasta: validPixCopiaECola,
                 amount: finalPriceCents,
                 txid: txid,
+                discount_applied: discountApplied,
+                coupon_applied: appliedCoupon,
                 qrcode: `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(validPixCopiaECola)}`
-            }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        }
-
-        // 5. Fluxo Cartão de Crédito (Aprovação Imediata Simulada para Lançamento)
-        if (method === "card") {
-            const txid = `CARD${Date.now()}`.toUpperCase();
-
-            // Insere o pagamento como 'paid' direto (Simulação)
-            const { data: payment, error: insertError } = await supabase
-                .from("vox_payments")
-                .insert({
-                    user_id,
-                    plan_slug,
-                    amount_cents: finalPriceCents,
-                    status: "paid", // Cartão aprova na hora neste fluxo
-                    pix_id: txid,   // Reutilizando a coluna para ID de Transação
-                    pix_copiapasta: "CREDIT_CARD_PROCESSING",
-                    metadata: {
-                        method: "card",
-                        card_simulated: true,
-                        price: (finalPriceCents / 100).toFixed(2),
-                        coupon: appliedCoupon
-                    }
-                })
-                .select()
-                .single();
-
-            if (insertError || !payment) {
-                console.error("[vox-payments] Erro ao registrar pagamento de cartão:", insertError);
-                throw new Error("Erro de banco de dados ao processar cartão.");
-            }
-
-            console.log(`[vox-payments] Pagamento de cartão Aprovado (Simulado): ${txid}`);
-
-            return new Response(JSON.stringify({
-                payment_id: payment.id,
-                status: "paid",
-                txid: txid,
             }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
         }
 

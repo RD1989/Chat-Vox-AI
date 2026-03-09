@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.vox-audio]
 verify_jwt = false
+
+[functions.vox-webhooks]
+verify_jwt = false
