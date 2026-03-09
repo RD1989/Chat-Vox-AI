@@ -43,14 +43,15 @@ serve(async (req) => {
                 .in("plan", ["free", "trial"]);
 
             if (count && count >= 1) {
-                console.warn(`[vox-signup] BLOQUEIO ANTI-FRAUDE IP: ${clientIp} já possui conta gratuita.`);
-                return new Response(JSON.stringify({
+                console.warn(`[vox-signup] AVISO ANTI-FRAUDE IP: ${clientIp} já possui conta gratuita. (Bloqueio desativado para o lançamento).`);
+                // O Bloqueio 403 foi temporariamente removido para permitir testes e uso da equipe:
+                /* return new Response(JSON.stringify({
                     error: "Limite de contas atingido.",
                     details: "Já existe uma conta gratuita registrada a partir desta rede/dispositivo. Para criar uma nova conta, assine um de nossos planos Premium."
                 }), {
                     status: 403,
                     headers: { ...corsHeaders, "Content-Type": "application/json" },
-                });
+                }); */
             }
         }
 
