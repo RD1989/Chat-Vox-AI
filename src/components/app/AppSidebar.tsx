@@ -98,9 +98,14 @@ const AppSidebar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Plan card — Premium Look */}
-        <div className="mx-3 mt-8 mb-6 p-4 rounded-xl border border-slate-300 bg-white dark:border-white/10 dark:bg-white/5 relative overflow-hidden group">
-          <div className="flex items-center justify-between mb-4 relative z-10">
+        {/* Anti-clipping spacer */}
+        <div className="h-4 shrink-0" />
+      </SidebarContent>
+
+      <SidebarFooter className="p-4 border-t border-slate-300 bg-slate-100 dark:border-white/10 dark:bg-[#050505]">
+        {/* Plan card — Premium Look (fixo no footer, nunca cortado) */}
+        <div className="mb-3 p-3 rounded-xl border border-slate-300 bg-white dark:border-white/10 dark:bg-white/5 relative overflow-hidden">
+          <div className="flex items-center justify-between mb-3">
             <span className="text-[10px] uppercase tracking-widest font-bold text-slate-500 dark:text-white/50">Licença Atual</span>
             <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${isAdmin
               ? "text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-500/20"
@@ -110,40 +115,38 @@ const AppSidebar = () => {
             </span>
           </div>
 
-          {/* Leads Limit */}
-          <div className="space-y-1.5 mb-4 relative z-10">
+          {/* Leads */}
+          <div className="space-y-1 mb-2.5">
             <div className="flex items-baseline justify-between">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Leads Capturados</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Leads</span>
               <div className="flex items-baseline gap-1">
-                <span className="font-sans text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">{currentLeads}</span>
-                <span className="text-[10px] text-slate-500 dark:text-white/40 font-bold uppercase">/ {leadLimit === null ? "∞" : leadLimit}</span>
+                <span className="font-sans text-base font-extrabold text-slate-900 dark:text-white">{currentLeads}</span>
+                <span className="text-[10px] text-slate-500 dark:text-white/40 font-bold">/ {leadLimit === null ? "∞" : leadLimit}</span>
               </div>
             </div>
             {leadLimit !== null && (
               <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-black/40 overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all duration-1000 ease-out ${(currentLeads >= leadLimit) ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" : "bg-primary"
-                    }`}
+                  className={`h-full rounded-full transition-all duration-1000 ease-out ${(currentLeads >= leadLimit) ? "bg-red-500" : "bg-primary"}`}
                   style={{ width: `${Math.min((currentLeads / leadLimit) * 100, 100)}%` }}
                 />
               </div>
             )}
           </div>
 
-          {/* Messages Limit */}
-          <div className="space-y-1.5 mb-6 relative z-10">
+          {/* Interações */}
+          <div className="space-y-1 mb-3">
             <div className="flex items-baseline justify-between">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Interações IA</span>
               <div className="flex items-baseline gap-1">
-                <span className="font-sans text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">{currentRequests}</span>
-                <span className="text-[10px] text-slate-500 dark:text-white/40 font-bold uppercase">/ {requestLimit === null ? "∞" : requestLimit}</span>
+                <span className="font-sans text-base font-extrabold text-slate-900 dark:text-white">{currentRequests}</span>
+                <span className="text-[10px] text-slate-500 dark:text-white/40 font-bold">/ {requestLimit === null ? "∞" : requestLimit}</span>
               </div>
             </div>
             {requestLimit !== null && (
               <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-black/40 overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all duration-1000 ease-out ${(currentRequests >= requestLimit) ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" : "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]"
-                    }`}
+                  className={`h-full rounded-full transition-all duration-1000 ease-out ${(currentRequests >= requestLimit) ? "bg-red-500" : "bg-emerald-500"}`}
                   style={{ width: `${Math.min((currentRequests / requestLimit) * 100, 100)}%` }}
                 />
               </div>
@@ -153,9 +156,9 @@ const AppSidebar = () => {
           {!isAdmin && (
             <button
               onClick={() => navigate("/pricing")}
-              className={`w-full h-10 rounded-lg text-[11px] font-bold shadow-md transition-all flex items-center justify-center gap-2 relative z-10 active:scale-[0.98] ${(leadLimit && currentLeads >= leadLimit) || (requestLimit && currentRequests >= requestLimit)
+              className={`w-full h-9 rounded-lg text-[11px] font-bold shadow-md transition-all flex items-center justify-center gap-2 active:scale-[0.98] ${(leadLimit && currentLeads >= leadLimit) || (requestLimit && currentRequests >= requestLimit)
                 ? "bg-red-600 text-white hover:bg-red-700 animate-bounce"
-                : planName === "Free" ? "bg-primary text-black hover:bg-primary/90 shadow-[0_0_15px_rgba(0,255,157,0.5)] animate-pulse" : "bg-primary text-black hover:opacity-90 dark:shadow-[0_0_15px_rgba(0,255,157,0.3)]"
+                : planName === "Free" ? "bg-primary text-black hover:bg-primary/90 shadow-[0_0_15px_rgba(0,255,157,0.5)]" : "bg-primary text-black hover:opacity-90"
                 }`}
             >
               <Zap size={14} fill="currentColor" />
@@ -164,17 +167,12 @@ const AppSidebar = () => {
           )}
 
           {isAdmin && (
-            <div className="text-center py-2 px-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-              <span className="text-[10px] font-bold text-amber-600 dark:text-amber-500 uppercase tracking-widest">Acesso de Desenvolvedor</span>
+            <div className="text-center py-1.5 px-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+              <span className="text-[10px] font-bold text-amber-600 dark:text-amber-500 uppercase tracking-widest">Dev</span>
             </div>
           )}
         </div>
 
-        {/* Anti-clipping spacer */}
-        <div className="h-10 shrink-0" />
-      </SidebarContent>
-
-      <SidebarFooter className="p-4 border-t border-slate-300 bg-slate-100 dark:border-white/10 dark:bg-[#050505]">
         <SidebarMenu className="gap-1">
           {/* Theme Toggle Button */}
           <SidebarMenuItem>
