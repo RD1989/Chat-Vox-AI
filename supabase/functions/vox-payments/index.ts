@@ -35,7 +35,7 @@ serve(async (req) => {
         const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
         const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-        // 1. Buscar Detalhes do Plano
+        // 2. Buscar plano e VALIDAR USUÁRIO
         const { data: plan, error: planError } = await supabase
             .from("plans")
             .select("*")
@@ -49,6 +49,23 @@ serve(async (req) => {
             });
         }
 
+        const { data: userProfile, error: profileError } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("id", user_id)
+            .single();
+
+        if (profileError || !userProfile) {
+            console.error(`[vox-payments] Usuário ${user_id} não encontrado no banco de dados novo.`);
+            return new Response(JSON.stringify({
+                error: "Sessão expirada ou usuário não encontrado. Por favor, faça logout e entre novamente."
+            }), {
+                status: 403,
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+        }
+
+        console.log(`[vox-payments] Gerando cobrança para ${plan.name} (R$ ${plan.price_brl / 100})`);
         // 2. Buscar Credenciais Efí (Priorizando Variáveis de Ambiente/Secrets)
         const clientId = Deno.env.get("EFIPAY_CLIENT_ID");
         const clientSecret = Deno.env.get("EFIPAY_CLIENT_SECRET");
@@ -75,7 +92,7 @@ serve(async (req) => {
         // 3. Autenticação OAuth (Basic Auth)
         const authHeader = `Basic ${btoa(`${clientId}:${clientSecret}`)}`;
 
-        console.log(`[vox-payments] Autenticando com Efí (Sandbox: ${isSandbox})`);
+        console.log(`[vox-payments] Autenticando com Efí: CID=${clientId.substring(0, 10)}... URL=${authUrl}`);
 
         const tokenRes = await fetch(authUrl, {
             method: "POST",
@@ -88,11 +105,13 @@ serve(async (req) => {
 
         if (!tokenRes.ok) {
             const errBody = await tokenRes.text();
+            console.error(`[vox-payments] Erro na autenticação Efí: ${tokenRes.status} - ${errBody}`);
             throw new Error(`Falha na autenticação Efí: ${errBody}`);
         }
 
         const tokenData: TokenResponse = await tokenRes.json();
         const accessToken = tokenData.access_token;
+        console.log("[vox-payments] Token obtido com sucesso.");
 
         // 4. Fluxo Pix
         if (method === "pix") {
