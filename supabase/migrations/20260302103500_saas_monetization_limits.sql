@@ -2,13 +2,8 @@
 -- Sincronizar preços e limites da tabela plans com o Marketing (Pricing.tsx)
 -- Preços em centavos (integer)
 
--- 1. Garantir que a coluna agent_limit existe (caso a migração anterior tenha falhado ou seja nova)
-DO $$ 
-BEGIN 
-    IF NOT EXISTS (SELECT 1 FROM pf_get_column_info('plans', 'agent_limit')) THEN
-        ALTER TABLE public.plans ADD COLUMN IF NOT EXISTS agent_limit integer DEFAULT 1;
-    END IF;
-END $$;
+-- 1. Garantir que a coluna agent_limit existe
+ALTER TABLE public.plans ADD COLUMN IF NOT EXISTS agent_limit integer DEFAULT 1;
 
 -- 2. Atualizar limites e preços
 UPDATE public.plans SET 
