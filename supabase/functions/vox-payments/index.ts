@@ -49,17 +49,13 @@ serve(async (req) => {
             });
         }
 
-        // 2. Buscar Credenciais Efí da system_settings
-        const { data: settings } = await supabase
-            .from("system_settings")
-            .select("key, value")
-            .in("key", ["efi_client_id", "efi_client_secret", "efi_certificate_p12", "efi_sandbox", "efi_pix_key"]);
+        // 2. Buscar Credenciais Efí (Priorizando Variáveis de Ambiente/Secrets)
+        const clientId = Deno.env.get("EFIPAY_CLIENT_ID");
+        const clientSecret = Deno.env.get("EFIPAY_CLIENT_SECRET");
+        const pixKey = Deno.env.get("EFIPAY_PIX_KEY");
+        const isSandbox = Deno.env.get("EFIPAY_SANDBOX") === "true";
 
-        const clientId = settings?.find(s => s.key === "efi_client_id")?.value;
-        const clientSecret = settings?.find(s => s.key === "efi_client_secret")?.value;
-        const certificateBase64 = settings?.find(s => s.key === "efi_certificate_p12")?.value;
-        const pixKey = settings?.find(s => s.key === "efi_pix_key")?.value;
-        const isSandbox = settings?.find(s => s.key === "efi_sandbox")?.value === "true";
+        console.log(`[vox-payments] Iniciando processamento para plano: ${plan_slug} - User: ${user_id}`);
 
         if (!clientId || !clientSecret) {
             return new Response(JSON.stringify({ error: "Credenciais Efí não configuradas" }), {
