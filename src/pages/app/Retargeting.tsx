@@ -13,7 +13,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Plus,
-  Sparkles
+  Sparkles,
+  Mail
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,7 +27,8 @@ import { ptBR } from "date-fns/locale";
 interface RetargetingLead {
   id: string;
   name: string;
-  phone: string;
+  phone: string | null;
+  email: string | null;
   qualification_score: number;
   status: string;
   updated_at: string;
@@ -193,18 +195,40 @@ const Retargeting = () => {
                       </td>
                       <td className="px-6 py-5">
                         <Badge className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase ${lead.qualification_score > 80
-                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                            : "bg-primary/10 text-primary border border-primary/20"
+                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                          : "bg-primary/10 text-primary border border-primary/20"
                           }`}>
                           {lead.qualification_score > 80 ? "Alta Intenção" : "Pendente"}
                         </Badge>
                       </td>
                       <td className="px-6 py-5 text-right">
-                        <Button size="sm" className="rounded-lg bg-white text-black hover:bg-white/90 font-bold gap-2" onClick={() => window.open(`https://wa.me/${lead.phone?.replace(/\\D/g, '')}`, '_blank')}>
-                          <MessageSquare size={14} />
-                          Recuperar
-                          <ArrowRight size={14} />
-                        </Button>
+                        {lead.phone ? (
+                          <Button
+                            size="sm"
+                            className="rounded-lg bg-[#25D366] text-white hover:bg-[#25D366]/90 font-bold gap-2 border-none"
+                            onClick={() => window.open(`https://wa.me/55${lead.phone?.replace(/\\D/g, '')}?text=${encodeURIComponent(`Olá ${lead.name}, tudo bem? Vi que você estava conversando com nosso assistente virtual e não encerrou o atendimento...`)}`, '_blank')}
+                          >
+                            <MessageSquare size={14} />
+                            WhatsApp
+                          </Button>
+                        ) : lead.email ? (
+                          <Button
+                            size="sm"
+                            className="rounded-lg bg-blue-500 text-white hover:bg-blue-600 font-bold gap-2 border-none"
+                            onClick={() => window.location.href = `mailto:${lead.email}`}
+                          >
+                            <Mail size={14} />
+                            E-mail
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            disabled
+                            className="rounded-lg bg-white/5 text-white/40 font-bold gap-2 cursor-not-allowed border border-white/5"
+                          >
+                            Sem Contato
+                          </Button>
+                        )}
                       </td>
                     </motion.tr>
                   ))}
