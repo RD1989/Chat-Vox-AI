@@ -44,18 +44,27 @@ export const useAuth = () => {
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
-        },
+      // Usar a Nova Edge Function Anti-Fraude (IP Block) ao invés da rotina Client direta do Supabase
+      const { data, error } = await supabase.functions.invoke("vox-signup", {
+        body: { email, password, full_name: fullName }
       });
-      if (error) throw error;
-      return { data, error: null };
+
+      if (error) {
+        // O error do Supabase Functions precisa ser destrinchado se ele veio do nosso block de IP 403
+        throw new Error(error.message || "Erro desconhecido na rede");
+      }
+
+      if (data?.error) {
+        // Custom errors vindos da Response JSON da Function (ex: "Limite de contas atingido")
+        throw new Error(data.error);
+      }
+
+      // Logar o usuário recém criado automaticamente
+      await signIn(email, password);
+
+      return { data: data?.user, error: null };
     } catch (error: any) {
+      console.warn("[Anti-Fraude SignUp] Erro interceptado no Client:", error);
       return { error };
     }
   };

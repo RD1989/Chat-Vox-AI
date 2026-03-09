@@ -180,11 +180,16 @@ serve(async (req) => {
     const currentPlan = profile?.plan || "free";
 
     // Fetch plan limits
-    const { data: planLimits } = await supabase
+    const { data: dbPlanLimits } = await supabase
       .from("plans")
       .select("lead_limit, request_limit")
       .eq("slug", currentPlan)
       .single();
+
+    // Forçar escassez no plano Free, independente do que estiver na base legada
+    const planLimits = currentPlan === "free"
+      ? { lead_limit: 5, request_limit: 50 }
+      : dbPlanLimits;
 
     // Count messages (Total usage for the user)
     const { count: messageCount } = await supabase

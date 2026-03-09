@@ -95,13 +95,15 @@ const AppLayout = () => {
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Botão de Upgrade Embutido */}
-              <button
-                onClick={() => navigate('/pricing')}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-primary/10 dark:hover:bg-primary/20 dark:text-primary transition-all font-bold text-[10px] uppercase tracking-wider"
-              >
-                <Sparkles size={12} /> Fazer Upgrade
-              </button>
+              {/* Botão de Upgrade Embutido no Cabeçalho */}
+              {!plan.loading && plan.name === "Free" && (
+                <button
+                  onClick={() => navigate('/pricing')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-primary/10 dark:hover:bg-primary/20 dark:text-primary transition-all font-bold text-[10px] uppercase tracking-wider relative group"
+                >
+                  <Sparkles size={12} className="group-hover:animate-pulse" /> Subir para o PRO
+                </button>
+              )}
 
               <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-white/70 dark:hover:text-white dark:hover:bg-white/10 relative rounded-full transition-all">
                 <Bell size={16} />

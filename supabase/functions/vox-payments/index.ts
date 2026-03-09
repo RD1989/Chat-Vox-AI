@@ -127,37 +127,8 @@ serve(async (req) => {
 
             if (!cobRes.ok) {
                 const errBody = await cobRes.text();
-                // Se falhar mTLS (provável em ambiente local sem proxy), mantemos o mock mas com txid real
-                console.warn("[vox-payments] Erro na API Pix (Simulando resposta para ambiente local):", errBody);
-
-                // MOCK PARA AMBIENTE LOCAL/SEM CERTIFICADO
-                const mockPix = {
-                    location: `pix.gerencianet.com.br/qr/v2/${txid}`,
-                    pixCopiaECola: `00020101021226850014br.gov.bcb.pix0123${pixKey}520400005303986540${(plan.price_brl / 100).toFixed(2)}5802BR5908CHATVOX6008BRASILIA62070503${txid}6304ABCD`,
-                    qrcode_base64: "data:image/png;base64,...(gerado pelo front)..."
-                };
-
-                // Registrar o pagamento
-                const { data: payment } = await supabase
-                    .from("vox_payments")
-                    .insert({
-                        user_id,
-                        plan_slug,
-                        amount_cents: plan.price_brl,
-                        status: "pending",
-                        pix_id: txid,
-                        pix_copiapasta: mockPix.pixCopiaECola,
-                        metadata: { sandbox: isSandbox, simulated: true }
-                    })
-                    .select()
-                    .single();
-
-                return new Response(JSON.stringify({
-                    payment_id: payment.id,
-                    copiapasta: mockPix.pixCopiaECola,
-                    amount: plan.price_brl,
-                    txid: txid
-                }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+                console.error("[vox-payments] Falha real na API Pix da Efí:", errBody);
+                throw new Error(`Falha ao gerar cobrança Pix: Verifique suas credenciais e os certificados de Produção/Homologação. Retorno: ${errBody}`);
             }
 
             const cobData = await cobRes.json();

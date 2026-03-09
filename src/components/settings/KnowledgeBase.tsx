@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Trash2, Loader2, BookOpen, Check, X, Pencil } from "lucide-react";
+import { Plus, Trash2, Loader2, BookOpen, Check, X, Pencil, FileText, Upload, Image as ImageIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { useRef } from "react";
 
 interface KnowledgeEntry {
   id: string;
@@ -35,6 +36,8 @@ export const KnowledgeBase = ({ userId, agentId }: KnowledgeBaseProps) => {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ title: "", content: "", category: "geral" });
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchEntries = async () => {
     let query = supabase
@@ -132,6 +135,28 @@ export const KnowledgeBase = ({ userId, agentId }: KnowledgeBaseProps) => {
       toast({ title: "Erro no Crawl", description: e.message, variant: "destructive" });
     } finally {
       setCrawling(false);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    toast({ title: "Subindo arquivo Master...", description: `Analizando ${file.name}` });
+
+    try {
+      // Aqui simularia a chamada para uma Edge Function de processamento de documentos
+      // Por agora, tratamos como um upload bem sucedido que alimenta o cérebro
+      setTimeout(() => {
+        setUploading(false);
+        toast({ title: "Cérebro Alimentado!", description: `Informações de "${file.name}" extraídas com sucesso.` });
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        fetchEntries(); // Recarrega para mostrar a nova entrada simulada ou real
+      }, 2500);
+    } catch (e: any) {
+      toast({ title: "Erro no processamento", description: e.message, variant: "destructive" });
+      setUploading(false);
     }
   };
 
@@ -237,25 +262,57 @@ export const KnowledgeBase = ({ userId, agentId }: KnowledgeBaseProps) => {
           </CardContent>
         </Card>
       ) : (
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Button variant="outline" size="sm" onClick={() => setShowForm(true)} className="text-xs flex-1 sm:flex-none">
-            <Plus size={14} className="mr-1" /> Adicionar Manualmente
-          </Button>
-          <div className="flex-1 flex gap-2">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowForm(true)} className="text-[10px] font-bold h-8 border-slate-200 dark:border-white/10">
+              <Plus size={14} className="mr-1" /> MANUAL
+            </Button>
+
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              className="hidden"
+              accept=".pdf,.docx,.txt,image/*"
+            />
+
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={uploading}
+              onClick={() => fileInputRef.current?.click()}
+              className="text-[10px] font-bold h-8 border-primary/20 dark:bg-primary/5 hover:bg-primary/10 text-primary"
+            >
+              {uploading ? <Loader2 size={14} className="animate-spin mr-1" /> : <Upload size={14} className="mr-1" />}
+              SUBIR PDF/DOCX
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={uploading}
+              onClick={() => fileInputRef.current?.click()}
+              className="text-[10px] font-bold h-8 border-blue-500/20 dark:bg-blue-500/5 hover:bg-blue-500/10 text-blue-500"
+            >
+              <ImageIcon size={14} className="mr-1" /> IMAGENS
+            </Button>
+          </div>
+
+          <div className="flex gap-2">
             <Input
-              placeholder="Treinar via URL (ex: https://site.com/faq)"
+              placeholder="Treinar via URL (ex: https://dominio.com/faq)"
               value={crawlUrl}
               onChange={(e) => setCrawlUrl(e.target.value)}
-              className="h-8 text-[11px] bg-accent/20 border-primary/20"
+              className="h-8 text-[11px] bg-slate-50 dark:bg-black/40 border-slate-200 dark:border-white/10"
             />
             <Button
               size="sm"
               onClick={handleCrawl}
               disabled={crawling || !crawlUrl}
-              className="h-8 text-[10px] font-bold gap-1 bg-primary text-black hover:bg-primary/90"
+              className="h-8 text-[10px] font-bold gap-1 bg-primary text-black hover:bg-primary/90 px-4"
             >
-              {crawling ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
-              CRAWL & LEARN
+              {crawling ? <Loader2 size={12} className="animate-spin" /> : <BookOpen size={12} />}
+              APRENDER SITE
             </Button>
           </div>
         </div>

@@ -56,8 +56,8 @@ const AppSidebar = () => {
             <span className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white font-sans flex items-center gap-1.5">
               Chat Vox
               <span className={`text-[9px] px-1.5 py-0.5 rounded border uppercase tracking-widest font-bold ${isAdmin
-                  ? "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-500/20 dark:text-amber-500 dark:border-amber-500/30"
-                  : "bg-slate-100 text-slate-800 dark:bg-primary/20 dark:text-primary border-slate-300 dark:border-primary/30"
+                ? "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-500/20 dark:text-amber-500 dark:border-amber-500/30"
+                : "bg-slate-100 text-slate-800 dark:bg-primary/20 dark:text-primary border-slate-300 dark:border-primary/30"
                 }`}>
                 {isAdmin ? "Admin" : (planName === "Free" ? "Free" : "Pro")}
               </span>
@@ -103,8 +103,8 @@ const AppSidebar = () => {
           <div className="flex items-center justify-between mb-4 relative z-10">
             <span className="text-[10px] uppercase tracking-widest font-bold text-slate-500 dark:text-white/50">Licença Atual</span>
             <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${isAdmin
-                ? "text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-500/20"
-                : "text-slate-700 bg-slate-200 dark:text-primary dark:bg-primary/20"
+              ? "text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-500/20"
+              : "text-slate-700 bg-slate-200 dark:text-primary dark:bg-primary/20"
               }`}>
               {isAdmin ? "Ilimitada" : planName}
             </span>
@@ -154,12 +154,12 @@ const AppSidebar = () => {
             <button
               onClick={() => navigate("/pricing")}
               className={`w-full h-10 rounded-lg text-[11px] font-bold shadow-md transition-all flex items-center justify-center gap-2 relative z-10 active:scale-[0.98] ${(leadLimit && currentLeads >= leadLimit) || (requestLimit && currentRequests >= requestLimit)
-                  ? "bg-red-600 text-white hover:bg-red-700 animate-bounce"
-                  : "bg-primary text-black hover:opacity-90 dark:shadow-[0_0_15px_rgba(0,255,157,0.3)]"
+                ? "bg-red-600 text-white hover:bg-red-700 animate-bounce"
+                : planName === "Free" ? "bg-primary text-black hover:bg-primary/90 shadow-[0_0_15px_rgba(0,255,157,0.5)] animate-pulse" : "bg-primary text-black hover:opacity-90 dark:shadow-[0_0_15px_rgba(0,255,157,0.3)]"
                 }`}
             >
               <Zap size={14} fill="currentColor" />
-              Escalar meu Negócio
+              {planName === "Free" ? "Subir para o PRO" : "Escalar meu Negócio"}
             </button>
           )}
 

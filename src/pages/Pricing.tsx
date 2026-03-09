@@ -22,9 +22,9 @@ const plans = [
     monthly: { price: "R$0", period: "" },
     quarterly: { price: "R$0", period: "" },
     description: "Para testar a plataforma",
-    leads: "25 leads",
+    leads: "5 leads",
     highlight: false,
-    features: ["1 Chat IA ativo", "25 leads inclusos", "CRM básico", "1 widget de chat", "Painel de conversas"],
+    features: ["1 Chat IA ativo", "5 leads inclusos", "50 interações mensais", "CRM básico", "1 widget de chat"],
   },
   {
     slug: "starter", name: "Starter",

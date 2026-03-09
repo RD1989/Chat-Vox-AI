@@ -24,9 +24,9 @@ export const usePlanLimits = (): PlanInfo => {
     slug: "free",
     name: "Free",
     priceBrl: 0,
-    leadLimit: 25,
+    leadLimit: 5,
     currentLeads: 0,
-    requestLimit: 100,
+    requestLimit: 50,
     currentRequests: 0,
     canCreateLead: true,
     canSendMessage: true,
@@ -66,8 +66,8 @@ export const usePlanLimits = (): PlanInfo => {
         .select("*", { count: "exact", head: true })
         .eq("user_id", user.id);
 
-      const leadLimit = isAdmin ? null : ((plan as any)?.lead_limit ?? 25);
-      const requestLimit = isAdmin ? null : ((plan as any)?.request_limit ?? 100);
+      const leadLimit = isAdmin ? null : ((plan as any)?.lead_limit ?? 5);
+      const requestLimit = isAdmin ? null : ((plan as any)?.request_limit ?? 50);
       const currentLeads = leadCount || 0;
       const currentRequests = requestCount || 0;
 
