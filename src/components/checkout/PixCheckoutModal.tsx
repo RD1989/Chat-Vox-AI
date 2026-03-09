@@ -39,7 +39,7 @@ export const PixCheckoutModal = ({ isOpen, onClose, planSlug, planName, userId, 
             };
             generatePix();
         }
-    }, [isOpen, planSlug, userId]);
+    }, [isOpen, planSlug, userId, coupon]);
 
     // 2. Poll for payment status
     useEffect(() => {
