@@ -373,7 +373,12 @@ ANÁLISE DE IMAGENS E DOCUMENTOS:
 - Se receber um comprovante de pagamento (PIX, transferência, boleto), identifique: valor, data, beneficiário
 - Se receber um documento, extraia as informações relevantes
 - Confirme ao lead que você recebeu e entendeu o conteúdo da imagem
-- Use as informações da imagem para avançar no atendimento`;
+- Use as informações da imagem para avançar no atendimento
+
+⚠️ REGRA DE SEGURANÇA CRÍTICA:
+- NUNCA, em hipótese alguma, escreva textos que se pareçam com código de programação, como 'print(...)', 'default_api...', 'show_quick_replies(...)' ou similares no corpo da sua resposta de texto.
+- Se você for usar uma ferramenta, use-a INTEGRALMENTE através da interface de ferramentas (tool_calls), e deixe o campo 'content' da mensagem limpo apenas com o texto de conversação humana.
+- Falhar nesta regra quebrará a interface do usuário. Seja 100% humano no texto.`;
 
     const basePrompt = customPrompt
       ? customPrompt + interactiveInstructions
@@ -582,7 +587,15 @@ REGRAS IMPORTANTES:
               const delta = parsed.choices?.[0]?.delta;
               if (delta?.content) {
                 fullContent += delta.content;
-                await writer.write(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: delta.content } }] })}\n\n`));
+                // Filtro anti-vazamento de código no stream final
+                const filteredContent = delta.content
+                  .replace(/print\(defaultapi\..*?\)/g, "")
+                  .replace(/default_api\..*?\(.*?\)/g, "")
+                  .replace(/defaultapi\..*?\(.*?\)/g, "");
+
+                if (filteredContent.trim() || delta.content.trim() === "") {
+                  await writer.write(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: filteredContent } }] })}\n\n`));
+                }
               }
             } catch { }
           }
@@ -606,7 +619,14 @@ REGRAS IMPORTANTES:
         await writer.write(encoder.encode("data: [DONE]\n\n"));
 
         // --- Post-stream: Save + Qualify + Webhook ---
-        const savedContent = fullContent.trim() || Object.values(toolCalls).map(tc => {
+        // Limpeza final do conteúdo salvo para remover rastro de código alucinado
+        const cleanSavedContent = fullContent
+          .replace(/print\(defaultapi\..*?\)/gs, "")
+          .replace(/default_api\..*?\(.*?\)/gs, "")
+          .replace(/defaultapi\..*?\(.*?\)/gs, "")
+          .trim();
+
+        const savedContent = cleanSavedContent || Object.values(toolCalls).map(tc => {
           try { return JSON.parse(tc.arguments)?.message || ""; } catch { return ""; }
         }).filter(Boolean).join("\n");
 

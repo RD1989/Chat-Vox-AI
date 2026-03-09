@@ -723,16 +723,21 @@ const PublicChat = () => {
             // Handle regular text content delta
             if (json.choices?.[0]?.delta?.content) {
               const content = json.choices[0].delta.content;
-              streamContentRef.current += content;
 
-              if (!assistantMsgAdded) {
-                setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: "", timestamp: new Date() }]);
-                assistantMsgAdded = true;
+              // Filtro Secundário no Front-end: Ignorar lixo de código
+              if (content.includes("defaultapi") || content.includes("print(")) {
+                console.warn("[Vox] Código alucinado interceptado e filtrado no front-end.");
+              } else {
+                streamContentRef.current += content;
+                if (!assistantMsgAdded) {
+                  setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: "", timestamp: new Date() }]);
+                  assistantMsgAdded = true;
+                }
+
+                setMessages(prev => prev.map(m =>
+                  m.id === assistantId ? { ...m, content: streamContentRef.current } : m
+                ));
               }
-
-              setMessages(prev => prev.map(m =>
-                m.id === assistantId ? { ...m, content: streamContentRef.current } : m
-              ));
             }
 
             // Handle interactive elements (buttons/forms) sent as special SSE events
@@ -741,593 +746,599 @@ const PublicChat = () => {
                 // Se a ferramenta trouxer uma mensagem de contexto, usamos como conteúdo
                 setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: json.data?.message || "", timestamp: new Date() }]);
                 assistantMsgAdded = true;
-              } else if (json.data?.message) {
-                // Se o balão já foi criado (via stream) mas está vazio, preenchemos com o texto da ferramenta
+                if (json.data?.message) {
+                  // Filtro para o texto de contexto da ferramenta
+                  const cleanToolMessage = json.data.message
+                    .replace(/print\(defaultapi\..*?\)/g, "")
+                    .replace(/default_api\..*?\(.*?\)/g, "")
+                    .trim();
+
+                  // Se o balão já foi criado (via stream) mas está vazio, preenchemos com o texto da ferramenta
+                  setMessages(prev => prev.map(m =>
+                    m.id === assistantId && !m.content ? { ...m, content: cleanToolMessage } : m
+                  ));
+                }
+
                 setMessages(prev => prev.map(m =>
-                  m.id === assistantId && !m.content ? { ...m, content: json.data.message } : m
+                  m.id === assistantId ? {
+                    ...m,
+                    interactive: {
+                      type: json.interactive_type as any,
+                      data: json.data,
+                      answered: false
+                    }
+                  } : m
                 ));
               }
-
-              setMessages(prev => prev.map(m =>
-                m.id === assistantId ? {
-                  ...m,
-                  interactive: {
-                    type: json.interactive_type as any,
-                    data: json.data,
-                    answered: false
-                  }
-                } : m
-              ));
+            } catch (e) {
+              // Ignore partial JSON chunks during streaming
             }
-          } catch (e) {
-            // Ignore partial JSON chunks during streaming
           }
-        }
       }
 
-    } catch (e: any) {
-      console.error("Chat error:", e);
-      setMessages(prev => [
-        ...prev,
-        { id: `error-${Date.now()}`, role: "assistant", content: e.message || "Erro de conexão.", timestamp: new Date() },
-      ]);
-    } finally {
-      setIsLoading(false);
-      setIsTyping(false);
-    }
-  };
-
-  const sendMessage = async () => {
-    const text = input.trim();
-    const hasFiles = pendingFiles.length > 0;
-    if ((!text && !hasFiles) || isLoading || !userId) return;
-
-    playOutgoingSound();
-
-    let uploadedUrls: string[] = [];
-    if (hasFiles) {
-      uploadedUrls = await uploadFiles(pendingFiles);
-    }
-
-    // Process extraction context to send implicitly to the LLM (without polluting visual chat)
-    let hiddenContext = "";
-    const pdfFiles = pendingFiles.filter(pf => pf.extractedText);
-    if (pdfFiles.length > 0) {
-      hiddenContext = pdfFiles.map(pf => `[CONTEÚDO LIDO DO ARQUIVO "${pf.file.name}"]:\n${pf.extractedText}`).join("\n\n");
-    }
-
-    setPendingFiles([]);
-
-    const displayText = text || (uploadedUrls.length > 0 ? "📎 Anexo enviado" : "");
-    const userMsg: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: displayText,
-      timestamp: new Date(),
-      imageUrls: uploadedUrls.length > 0 ? uploadedUrls : undefined,
-      hiddenContext: hiddenContext || undefined,
+      } catch (e: any) {
+        console.error("Chat error:", e);
+        setMessages(prev => [
+          ...prev,
+          { id: `error-${Date.now()}`, role: "assistant", content: e.message || "Erro de conexão.", timestamp: new Date() },
+        ]);
+      } finally {
+        setIsLoading(false);
+        setIsTyping(false);
+      }
     };
 
-    setMessages(prev => [...prev, userMsg]);
-    setInput("");
+    const sendMessage = async () => {
+      const text = input.trim();
+      const hasFiles = pendingFiles.length > 0;
+      if ((!text && !hasFiles) || isLoading || !userId) return;
 
-    // Explicitly pass hiddenContext downward so current invocation of sendMessageWithContent sees it correctly
-    // Since state is asynchronous, we inject it directly by cheating the last element locally.
-    const lastMsgCopy = { ...userMsg };
+      playOutgoingSound();
 
-    // Calling internal content sender safely, ensuring current state context is fresh
-    setTimeout(() => {
-      // O `sendMessageWithContent` precisa enxergar o estado. Usando callback seria melhor, 
-      // mas como definimos no buildContent o parâmetro `messages[messages.length - 1]?.hiddenContext`, isso 
-      // não leria `userMsg` imediatamente pois React batcheia.
-      // Para não dar problema (como read text being ignored), vamos repassar como string global temporária.
-    }, 0);
+      let uploadedUrls: string[] = [];
+      if (hasFiles) {
+        uploadedUrls = await uploadFiles(pendingFiles);
+      }
 
-    sendMessageWithContent(displayText, uploadedUrls.length > 0 ? uploadedUrls : undefined, hiddenContext || undefined);
-  };
+      // Process extraction context to send implicitly to the LLM (without polluting visual chat)
+      let hiddenContext = "";
+      const pdfFiles = pendingFiles.filter(pf => pf.extractedText);
+      if (pdfFiles.length > 0) {
+        hiddenContext = pdfFiles.map(pf => `[CONTEÚDO LIDO DO ARQUIVO "${pf.file.name}"]:\n${pf.extractedText}`).join("\n\n");
+      }
+
+      setPendingFiles([]);
+
+      const displayText = text || (uploadedUrls.length > 0 ? "📎 Anexo enviado" : "");
+      const userMsg: Message = {
+        id: Date.now().toString(),
+        role: "user",
+        content: displayText,
+        timestamp: new Date(),
+        imageUrls: uploadedUrls.length > 0 ? uploadedUrls : undefined,
+        hiddenContext: hiddenContext || undefined,
+      };
+
+      setMessages(prev => [...prev, userMsg]);
+      setInput("");
+
+      // Explicitly pass hiddenContext downward so current invocation of sendMessageWithContent sees it correctly
+      // Since state is asynchronous, we inject it directly by cheating the last element locally.
+      const lastMsgCopy = { ...userMsg };
+
+      // Calling internal content sender safely, ensuring current state context is fresh
+      setTimeout(() => {
+        // O `sendMessageWithContent` precisa enxergar o estado. Usando callback seria melhor, 
+        // mas como definimos no buildContent o parâmetro `messages[messages.length - 1]?.hiddenContext`, isso 
+        // não leria `userMsg` imediatamente pois React batcheia.
+        // Para não dar problema (como read text being ignored), vamos repassar como string global temporária.
+      }, 0);
+
+      sendMessageWithContent(displayText, uploadedUrls.length > 0 ? uploadedUrls : undefined, hiddenContext || undefined);
+    };
 
 
 
-  if (configLoading) {
+    if (configLoading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#0b141a" }}>
+          <Loader2 className="animate-spin" size={28} style={{ color: "rgba(255,255,255,0.5)" }} />
+        </div>
+      );
+    }
+
+    const isWhatsApp = config.chat_theme === "whatsapp";
+
+    // Dynamic Theme Logic
+    const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const appearance = config.chat_appearance_mode === "auto" || !config.chat_appearance_mode
+      ? (systemPrefersDark ? "dark" : "light")
+      : config.chat_appearance_mode;
+
+    const isDark = appearance === "dark";
+
+    const tc = config.chat_theme_config;
+    const headerBg = tc.headerBg || (isWhatsApp ? (isDark ? "#202c33" : "#008069") : config.primary_color);
+    const headerText = tc.headerText || (isDark ? "#e9edef" : "#ffffff");
+    const chatBg = tc.chatBg || (isDark ? "#0b141a" : "#efeae2");
+    const userBubbleBg = tc.userBubbleBg || (isWhatsApp ? (isDark ? "#005c4b" : "#d9fdd3") : config.primary_color);
+    const userBubbleText = tc.userBubbleText || (isDark ? "#e9edef" : "#111b21");
+    const aiBubbleBg = tc.aiBubbleBg || (isDark ? "#202c33" : "#ffffff");
+    const aiBubbleText = tc.aiBubbleText || (isDark ? "#e9edef" : "#111b21");
+    const inputBg = tc.inputBg || (isDark ? "#2a3942" : "#ffffff");
+    const inputBarBg = tc.inputBarBg || (isDark ? "#202c33" : "#f0f2f5");
+    const secondaryText = isDark ? "#8696a0" : "#667781";
+    const accentColor = isDark ? "#00a884" : "#128c7e";
+
+    const wallpaperStyle = {
+      backgroundColor: chatBg,
+      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cdefs%3E%3Cstyle%3E.a%7Bfill:${isDark ? '%23ffffff' : '%23000000'};fill-opacity:0.02%7D%3C/style%3E%3C/defs%3E%3Cpath class='a' d='M30 10c-2 0-4 2-4 4s2 4 4 4 4-2 4-4-2-4-4-4zm0 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z'/%3E%3Cpath class='a' d='M70 30l-4-4-4 4 4 4zm-4-2l-2 2 2 2 2-2z'/%3E%3Cpath class='a' d='M110 15c-3 0-5 2-5 5s2 5 5 5 5-2 5-5-2-5-5-5zm0 8c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3z'/%3E%3Cpath class='a' d='M150 25h6v2h-6z'/%3E%3Cpath class='a' d='M20 60l3-5h-6z'/%3E%3Cpath class='a' d='M60 50c0-2.8-2.2-5-5-5s-5 2.2-5 5 2.2 5 5 5 5-2.2 5-5zm-8 0c0-1.7 1.3-3 3-3s3 1.3 3 3-1.3 3-3 3-3-1.3-3-3z'/%3E%3Cpath class='a' d='M100 60h-2v-6h2v2h4v2h-4z'/%3E%3Cpath class='a' d='M140 55c-1.7 0-3 1.3-3 3s1.3 3 3 3 3-1.3 3-3-1.3-3-3-3z'/%3E%3Cpath class='a' d='M175 45l-3 3 3 3 3-3z'/%3E%3Cpath class='a' d='M25 100l5-3-5-3v2h-4v2h4z'/%3E%3Cpath class='a' d='M65 95h8v2h-8z'/%3E%3Cpath class='a' d='M120 90c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z'/%3E%3Cpath class='a' d='M160 100l-6-4v8z'/%3E%3Cpath class='a' d='M35 140c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5zm0 8c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3z'/%3E%3Cpath class='a' d='M80 135h2v8h-2z'/%3E%3Cpath class='a' d='M130 140l4 4-4 4'/%3E%3Cpath class='a' d='M170 130c-3.3 0-6 2.7-6 6s2.7 6 6 6 6-2.7 6-6-2.7-6-6-6zm0 10c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4z'/%3E%3Cpath class='a' d='M15 175l4-7h-8z'/%3E%3Cpath class='a' d='M85 170c-2 0-3.5 1.5-3.5 3.5s1.5 3.5 3.5 3.5 3.5-1.5 3.5-3.5-1.5-3.5-3.5-3.5z'/%3E%3Cpath class='a' d='M140 180h8v2h-8z'/%3E%3Cpath class='a' d='M180 175l-3 5h6z'/%3E%3C/svg%3E")`,
+    };
+
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#0b141a" }}>
-        <Loader2 className="animate-spin" size={28} style={{ color: "rgba(255,255,255,0.5)" }} />
-      </div>
-    );
-  }
-
-  const isWhatsApp = config.chat_theme === "whatsapp";
-
-  // Dynamic Theme Logic
-  const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const appearance = config.chat_appearance_mode === "auto" || !config.chat_appearance_mode
-    ? (systemPrefersDark ? "dark" : "light")
-    : config.chat_appearance_mode;
-
-  const isDark = appearance === "dark";
-
-  const tc = config.chat_theme_config;
-  const headerBg = tc.headerBg || (isWhatsApp ? (isDark ? "#202c33" : "#008069") : config.primary_color);
-  const headerText = tc.headerText || (isDark ? "#e9edef" : "#ffffff");
-  const chatBg = tc.chatBg || (isDark ? "#0b141a" : "#efeae2");
-  const userBubbleBg = tc.userBubbleBg || (isWhatsApp ? (isDark ? "#005c4b" : "#d9fdd3") : config.primary_color);
-  const userBubbleText = tc.userBubbleText || (isDark ? "#e9edef" : "#111b21");
-  const aiBubbleBg = tc.aiBubbleBg || (isDark ? "#202c33" : "#ffffff");
-  const aiBubbleText = tc.aiBubbleText || (isDark ? "#e9edef" : "#111b21");
-  const inputBg = tc.inputBg || (isDark ? "#2a3942" : "#ffffff");
-  const inputBarBg = tc.inputBarBg || (isDark ? "#202c33" : "#f0f2f5");
-  const secondaryText = isDark ? "#8696a0" : "#667781";
-  const accentColor = isDark ? "#00a884" : "#128c7e";
-
-  const wallpaperStyle = {
-    backgroundColor: chatBg,
-    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cdefs%3E%3Cstyle%3E.a%7Bfill:${isDark ? '%23ffffff' : '%23000000'};fill-opacity:0.02%7D%3C/style%3E%3C/defs%3E%3Cpath class='a' d='M30 10c-2 0-4 2-4 4s2 4 4 4 4-2 4-4-2-4-4-4zm0 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z'/%3E%3Cpath class='a' d='M70 30l-4-4-4 4 4 4zm-4-2l-2 2 2 2 2-2z'/%3E%3Cpath class='a' d='M110 15c-3 0-5 2-5 5s2 5 5 5 5-2 5-5-2-5-5-5zm0 8c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3z'/%3E%3Cpath class='a' d='M150 25h6v2h-6z'/%3E%3Cpath class='a' d='M20 60l3-5h-6z'/%3E%3Cpath class='a' d='M60 50c0-2.8-2.2-5-5-5s-5 2.2-5 5 2.2 5 5 5 5-2.2 5-5zm-8 0c0-1.7 1.3-3 3-3s3 1.3 3 3-1.3 3-3 3-3-1.3-3-3z'/%3E%3Cpath class='a' d='M100 60h-2v-6h2v2h4v2h-4z'/%3E%3Cpath class='a' d='M140 55c-1.7 0-3 1.3-3 3s1.3 3 3 3 3-1.3 3-3-1.3-3-3-3z'/%3E%3Cpath class='a' d='M175 45l-3 3 3 3 3-3z'/%3E%3Cpath class='a' d='M25 100l5-3-5-3v2h-4v2h4z'/%3E%3Cpath class='a' d='M65 95h8v2h-8z'/%3E%3Cpath class='a' d='M120 90c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z'/%3E%3Cpath class='a' d='M160 100l-6-4v8z'/%3E%3Cpath class='a' d='M35 140c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5zm0 8c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3z'/%3E%3Cpath class='a' d='M80 135h2v8h-2z'/%3E%3Cpath class='a' d='M130 140l4 4-4 4'/%3E%3Cpath class='a' d='M170 130c-3.3 0-6 2.7-6 6s2.7 6 6 6 6-2.7 6-6-2.7-6-6-6zm0 10c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4z'/%3E%3Cpath class='a' d='M15 175l4-7h-8z'/%3E%3Cpath class='a' d='M85 170c-2 0-3.5 1.5-3.5 3.5s1.5 3.5 3.5 3.5 3.5-1.5 3.5-3.5-1.5-3.5-3.5-3.5z'/%3E%3Cpath class='a' d='M140 180h8v2h-8z'/%3E%3Cpath class='a' d='M180 175l-3 5h6z'/%3E%3C/svg%3E")`,
-  };
-
-  return (
-    <div className="h-[100dvh] flex flex-col overflow-hidden" style={{ backgroundColor: chatBg }}>
-      {/* WhatsApp Header */}
-      <header className="flex items-center px-4 py-2 z-10 shrink-0" style={{ backgroundColor: headerBg }}>
-        <div className="flex items-center gap-3 flex-1">
-          <ArrowLeft
-            size={20}
-            style={{ color: headerText, opacity: 0.9 }}
-            className="sm:hidden cursor-pointer"
-            onClick={() => window.parent.postMessage({ type: "vox-close" }, "*")}
-          />
-          <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden"
-            style={{ backgroundColor: "rgba(255,255,255,0.1)" }}>
-            {config.ai_avatar_url ? (
-              <img src={config.ai_avatar_url} alt={config.ai_name} className="w-full h-full object-cover" />
-            ) : (
-              <Bot size={20} style={{ color: headerText }} />
-            )}
+      <div className="h-[100dvh] flex flex-col overflow-hidden" style={{ backgroundColor: chatBg }}>
+        {/* WhatsApp Header */}
+        <header className="flex items-center px-4 py-2 z-10 shrink-0" style={{ backgroundColor: headerBg }}>
+          <div className="flex items-center gap-3 flex-1">
+            <ArrowLeft
+              size={20}
+              style={{ color: headerText, opacity: 0.9 }}
+              className="sm:hidden cursor-pointer"
+              onClick={() => window.parent.postMessage({ type: "vox-close" }, "*")}
+            />
+            <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden"
+              style={{ backgroundColor: "rgba(255,255,255,0.1)" }}>
+              {config.ai_avatar_url ? (
+                <img src={config.ai_avatar_url} alt={config.ai_name} className="w-full h-full object-cover" />
+              ) : (
+                <Bot size={20} style={{ color: headerText }} />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <h1 className="font-normal text-[16px] leading-tight truncate" style={{ color: headerText }}>
+                {config.ai_name}
+              </h1>
+              <p className="text-[13px] leading-tight" style={{ color: `${headerText}99` }}>
+                {isTyping ? "digitando..." : "online"}
+              </p>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <h1 className="font-normal text-[16px] leading-tight truncate" style={{ color: headerText }}>
-              {config.ai_name}
-            </h1>
-            <p className="text-[13px] leading-tight" style={{ color: `${headerText}99` }}>
-              {isTyping ? "digitando..." : "online"}
-            </p>
+          <div className="flex items-center gap-5">
+            <Search size={22} style={{ color: headerText, opacity: isDark ? 0.85 : 0.9 }} />
+            <MoreVertical size={22} style={{ color: headerText, opacity: isDark ? 0.85 : 0.9 }} />
           </div>
-        </div>
-        <div className="flex items-center gap-5">
-          <Search size={22} style={{ color: headerText, opacity: isDark ? 0.85 : 0.9 }} />
-          <MoreVertical size={22} style={{ color: headerText, opacity: isDark ? 0.85 : 0.9 }} />
-        </div>
-      </header>
+        </header>
 
-      {/* Messages area */}
-      <div className="flex-1 overflow-y-auto px-[3%] sm:px-[6%] py-2" style={wallpaperStyle}>
-        <div className="flex justify-center mb-3 mt-1">
-          <span className="text-[12.5px] px-3 py-1 rounded-lg shadow-sm font-medium"
-            style={{ backgroundColor: isDark ? "#182229" : "#ffffff", color: secondaryText }}>Hoje</span>
-        </div>
-        <div className="flex justify-center mb-4">
-          <span className="text-[11.5px] text-center px-4 py-1.5 rounded-lg max-w-[85%] leading-snug shadow-sm"
-            style={{ backgroundColor: isDark ? "#182229e6" : "#fff9c6", color: isDark ? secondaryText : "#54656f" }}>
-            🔒 As mensagens são protegidas com criptografia de ponta a ponta.
-          </span>
-        </div>
+        {/* Messages area */}
+        <div className="flex-1 overflow-y-auto px-[3%] sm:px-[6%] py-2" style={wallpaperStyle}>
+          <div className="flex justify-center mb-3 mt-1">
+            <span className="text-[12.5px] px-3 py-1 rounded-lg shadow-sm font-medium"
+              style={{ backgroundColor: isDark ? "#182229" : "#ffffff", color: secondaryText }}>Hoje</span>
+          </div>
+          <div className="flex justify-center mb-4">
+            <span className="text-[11.5px] text-center px-4 py-1.5 rounded-lg max-w-[85%] leading-snug shadow-sm"
+              style={{ backgroundColor: isDark ? "#182229e6" : "#fff9c6", color: isDark ? secondaryText : "#54656f" }}>
+              🔒 As mensagens são protegidas com criptografia de ponta a ponta.
+            </span>
+          </div>
 
-        <AnimatePresence>
-          {messages.map((msg) => {
-            const hasText = msg.content && msg.content.trim().length > 0;
-            const hasImages = msg.imageUrls && msg.imageUrls.length > 0;
-            const hasNativeInteractive = msg.interactive &&
-              (msg.interactive.type === "show_form" ||
-                (msg.interactive.type === "show_quick_replies" && msg.interactive.data.buttons?.length));
-            const hasInjectedInteractive = msg.injectedInteractive && msg.injectedInteractive.data.buttons?.length;
+          <AnimatePresence>
+            {messages.map((msg) => {
+              const hasText = msg.content && msg.content.trim().length > 0;
+              const hasImages = msg.imageUrls && msg.imageUrls.length > 0;
+              const hasNativeInteractive = msg.interactive &&
+                (msg.interactive.type === "show_form" ||
+                  (msg.interactive.type === "show_quick_replies" && msg.interactive.data.buttons?.length));
+              const hasInjectedInteractive = msg.injectedInteractive && msg.injectedInteractive.data.buttons?.length;
 
-            // If the message is completely empty of any visual payload, hide the entire bubble
-            const isCompletelyEmpty = !hasText && !hasImages && !hasNativeInteractive && !hasInjectedInteractive;
+              // If the message is completely empty of any visual payload, hide the entire bubble
+              const isCompletelyEmpty = !hasText && !hasImages && !hasNativeInteractive && !hasInjectedInteractive;
 
-            if (isCompletelyEmpty) return null;
+              if (isCompletelyEmpty) return null;
 
-            return (
-              <motion.div
-                key={msg.id}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.15 }}
-                className={`flex mb-[3px] ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-              >
-                <div className="relative max-w-[85%] sm:max-w-[75%]">
-                  {/* SVG tail */}
-                  {msg.role === "user" ? (
-                    <svg className="absolute -right-2 top-0" width="8" height="13" viewBox="0 0 8 13">
-                      <path d="M1 0L0 0C0 0 4 4 4 13L8 0Z" fill={userBubbleBg} />
-                    </svg>
-                  ) : (
-                    <svg className="absolute -left-2 top-0" width="8" height="13" viewBox="0 0 8 13">
-                      <path d="M7 0L8 0C8 0 4 4 4 13L0 0Z" fill={aiBubbleBg} />
-                    </svg>
-                  )}
-
-                  <div
-                    className={`px-[11px] pt-[7px] pb-[8px] text-[16px] leading-[21px] shadow-[0_1px_0.5px_rgba(0,0,0,0.13)] ${msg.role === "user"
-                      ? "rounded-tl-lg rounded-bl-lg rounded-br-lg"
-                      : "rounded-tr-lg rounded-br-lg rounded-bl-lg"
-                      }`}
-                    style={
-                      msg.role === "user"
-                        ? { backgroundColor: userBubbleBg, color: userBubbleText }
-                        : { backgroundColor: aiBubbleBg, color: aiBubbleText }
-                    }
-                  >
-                    {/* Image attachments */}
-                    {msg.imageUrls && msg.imageUrls.length > 0 && (
-                      <div className={`${msg.imageUrls.length > 1 ? "grid grid-cols-2 gap-1" : ""} mb-1 -mx-1 -mt-0.5 rounded overflow-hidden`}>
-                        {msg.imageUrls.map((url, idx) => (
-                          <img key={idx} src={url} alt="Anexo" className="w-full rounded object-cover cursor-pointer max-h-[200px]"
-                            onClick={() => window.open(url, "_blank")} />
-                        ))}
-                      </div>
-                    )}
-                    {/* Text content */}
-                    {msg.content?.trim() && (
-                      <div className="space-y-3">
-                        <span
-                          className="break-words"
-                          dangerouslySetInnerHTML={{ __html: formatWhatsAppText(msg.content.replace(/\[BUTTON:.*?\]/g, '').trim()) }}
-                        />
-
-                        {/* CTA Buttons via [BUTTON: Label] marker */}
-                        {msg.role === "assistant" && Array.from(msg.content.matchAll(/\[BUTTON:\s*(.*?)\]/g)).map((match, idx) => {
-                          const label = match[1].trim();
-                          const btnConfig = conversionButtons.find(b => b.label.toLowerCase() === label.toLowerCase());
-                          if (!btnConfig) return null;
-
-                          return (
-                            <button
-                              key={idx}
-                              onClick={() => window.open(btnConfig.url, "_blank")}
-                              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-[14px] transition-all shadow-md group hover:scale-[1.02] active:scale-95"
-                              style={{
-                                backgroundColor: accentColor,
-                                color: "#fff",
-                                boxShadow: `0 4px 15px ${accentColor}40`
-                              }}
-                            >
-                              <ExternalLink size={16} className="group-hover:translate-x-0.5 transition-transform" />
-                              {btnConfig.label}
-                            </button>
-                          );
-                        })}
-                      </div>
+              return (
+                <motion.div
+                  key={msg.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className={`flex mb-[3px] ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  <div className="relative max-w-[85%] sm:max-w-[75%]">
+                    {/* SVG tail */}
+                    {msg.role === "user" ? (
+                      <svg className="absolute -right-2 top-0" width="8" height="13" viewBox="0 0 8 13">
+                        <path d="M1 0L0 0C0 0 4 4 4 13L8 0Z" fill={userBubbleBg} />
+                      </svg>
+                    ) : (
+                      <svg className="absolute -left-2 top-0" width="8" height="13" viewBox="0 0 8 13">
+                        <path d="M7 0L8 0C8 0 4 4 4 13L0 0Z" fill={aiBubbleBg} />
+                      </svg>
                     )}
 
-                    {/* Quick Reply Buttons (Native + Injected Fallbacks) */}
-                    {(msg.interactive?.type === "show_quick_replies" && msg.interactive.data.buttons) || (msg.injectedInteractive?.type === "show_quick_replies" && msg.injectedInteractive.data.buttons) ? (
-                      <div className="mt-2 space-y-1.5">
-                        {(msg.interactive?.data.buttons || msg.injectedInteractive?.data.buttons)?.map((btn, i) => {
-                          const isAnswered = msg.interactive?.answered || msg.injectedInteractive?.answered;
-                          return (
-                            <button
-                              key={i}
-                              onClick={() => {
-                                if (!isAnswered) {
-                                  handleButtonClick(btn, msg.id);
-                                  if (msg.injectedInteractive) {
-                                    setMessages(prev => prev.map(m => m.id === msg.id && m.injectedInteractive ? { ...m, injectedInteractive: { ...m.injectedInteractive, answered: true } } : m));
-                                  }
-                                }
-                              }}
-                              disabled={isAnswered || isLoading}
-                              className="w-full text-left px-3 py-2 rounded-lg text-[13.5px] font-medium transition-all duration-150 border"
-                              style={{
-                                backgroundColor: isAnswered ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.08)",
-                                borderColor: isAnswered ? "rgba(255,255,255,0.08)" : accentColor + "60",
-                                color: isAnswered ? `${aiBubbleText}80` : accentColor,
-                                cursor: isAnswered ? "default" : "pointer",
-                              }}
-                              onMouseEnter={(e) => {
-                                if (!isAnswered) {
-                                  (e.target as HTMLButtonElement).style.backgroundColor = accentColor + "20";
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                if (!isAnswered) {
-                                  (e.target as HTMLButtonElement).style.backgroundColor = "rgba(255,255,255,0.08)";
-                                }
-                              }}
-                            >
-                              {btn.label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    ) : null}
-
-                    {/* Inline Form */}
-                    {msg.interactive?.type === "show_form" && msg.interactive.data.fields && (
-                      <InlineForm
-                        fields={msg.interactive.data.fields}
-                        submitLabel={msg.interactive.data.submit_label || "Enviar"}
-                        answered={msg.interactive?.answered || false}
-                        onSubmit={(data) => handleFormSubmit(data, msg.id)}
-                        accentColor={accentColor}
-                        inputBg={inputBg}
-                        textColor={aiBubbleText}
-                        isLoading={isLoading}
-                      />
-                    )}
-
-                    {/* Time + ticks */}
-                    <span className="float-right ml-2 mt-1 flex items-center gap-0.5 select-none"
-                      style={{ fontSize: "11px", color: msg.role === "user" ? `${userBubbleText}99` : `${aiBubbleText}80` }}>
-                      {formatTime(msg.timestamp)}
-                      {msg.role === "user" && (
-                        <CheckCheck size={16} style={{ color: "#53bdeb", marginLeft: "2px" }} />
+                    <div
+                      className={`px-[11px] pt-[7px] pb-[8px] text-[16px] leading-[21px] shadow-[0_1px_0.5px_rgba(0,0,0,0.13)] ${msg.role === "user"
+                        ? "rounded-tl-lg rounded-bl-lg rounded-br-lg"
+                        : "rounded-tr-lg rounded-br-lg rounded-bl-lg"
+                        }`}
+                      style={
+                        msg.role === "user"
+                          ? { backgroundColor: userBubbleBg, color: userBubbleText }
+                          : { backgroundColor: aiBubbleBg, color: aiBubbleText }
+                      }
+                    >
+                      {/* Image attachments */}
+                      {msg.imageUrls && msg.imageUrls.length > 0 && (
+                        <div className={`${msg.imageUrls.length > 1 ? "grid grid-cols-2 gap-1" : ""} mb-1 -mx-1 -mt-0.5 rounded overflow-hidden`}>
+                          {msg.imageUrls.map((url, idx) => (
+                            <img key={idx} src={url} alt="Anexo" className="w-full rounded object-cover cursor-pointer max-h-[200px]"
+                              onClick={() => window.open(url, "_blank")} />
+                          ))}
+                        </div>
                       )}
-                    </span>
+                      {/* Text content */}
+                      {msg.content?.trim() && (
+                        <div className="space-y-3">
+                          <span
+                            className="break-words"
+                            dangerouslySetInnerHTML={{ __html: formatWhatsAppText(msg.content.replace(/\[BUTTON:.*?\]/g, '').trim()) }}
+                          />
+
+                          {/* CTA Buttons via [BUTTON: Label] marker */}
+                          {msg.role === "assistant" && Array.from(msg.content.matchAll(/\[BUTTON:\s*(.*?)\]/g)).map((match, idx) => {
+                            const label = match[1].trim();
+                            const btnConfig = conversionButtons.find(b => b.label.toLowerCase() === label.toLowerCase());
+                            if (!btnConfig) return null;
+
+                            return (
+                              <button
+                                key={idx}
+                                onClick={() => window.open(btnConfig.url, "_blank")}
+                                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-[14px] transition-all shadow-md group hover:scale-[1.02] active:scale-95"
+                                style={{
+                                  backgroundColor: accentColor,
+                                  color: "#fff",
+                                  boxShadow: `0 4px 15px ${accentColor}40`
+                                }}
+                              >
+                                <ExternalLink size={16} className="group-hover:translate-x-0.5 transition-transform" />
+                                {btnConfig.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Quick Reply Buttons (Native + Injected Fallbacks) */}
+                      {(msg.interactive?.type === "show_quick_replies" && msg.interactive.data.buttons) || (msg.injectedInteractive?.type === "show_quick_replies" && msg.injectedInteractive.data.buttons) ? (
+                        <div className="mt-2 space-y-1.5">
+                          {(msg.interactive?.data.buttons || msg.injectedInteractive?.data.buttons)?.map((btn, i) => {
+                            const isAnswered = msg.interactive?.answered || msg.injectedInteractive?.answered;
+                            return (
+                              <button
+                                key={i}
+                                onClick={() => {
+                                  if (!isAnswered) {
+                                    handleButtonClick(btn, msg.id);
+                                    if (msg.injectedInteractive) {
+                                      setMessages(prev => prev.map(m => m.id === msg.id && m.injectedInteractive ? { ...m, injectedInteractive: { ...m.injectedInteractive, answered: true } } : m));
+                                    }
+                                  }
+                                }}
+                                disabled={isAnswered || isLoading}
+                                className="w-full text-left px-3 py-2 rounded-lg text-[13.5px] font-medium transition-all duration-150 border"
+                                style={{
+                                  backgroundColor: isAnswered ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.08)",
+                                  borderColor: isAnswered ? "rgba(255,255,255,0.08)" : accentColor + "60",
+                                  color: isAnswered ? `${aiBubbleText}80` : accentColor,
+                                  cursor: isAnswered ? "default" : "pointer",
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (!isAnswered) {
+                                    (e.target as HTMLButtonElement).style.backgroundColor = accentColor + "20";
+                                  }
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (!isAnswered) {
+                                    (e.target as HTMLButtonElement).style.backgroundColor = "rgba(255,255,255,0.08)";
+                                  }
+                                }}
+                              >
+                                {btn.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : null}
+
+                      {/* Inline Form */}
+                      {msg.interactive?.type === "show_form" && msg.interactive.data.fields && (
+                        <InlineForm
+                          fields={msg.interactive.data.fields}
+                          submitLabel={msg.interactive.data.submit_label || "Enviar"}
+                          answered={msg.interactive?.answered || false}
+                          onSubmit={(data) => handleFormSubmit(data, msg.id)}
+                          accentColor={accentColor}
+                          inputBg={inputBg}
+                          textColor={aiBubbleText}
+                          isLoading={isLoading}
+                        />
+                      )}
+
+                      {/* Time + ticks */}
+                      <span className="float-right ml-2 mt-1 flex items-center gap-0.5 select-none"
+                        style={{ fontSize: "11px", color: msg.role === "user" ? `${userBubbleText}99` : `${aiBubbleText}80` }}>
+                        {formatTime(msg.timestamp)}
+                        {msg.role === "user" && (
+                          <CheckCheck size={16} style={{ color: "#53bdeb", marginLeft: "2px" }} />
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              )
+            })}
+          </AnimatePresence>
+
+          {/* Typing indicator */}
+          {isTyping && (
+            <motion.div
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="flex justify-start mb-2"
+            >
+              <div className="relative max-w-[75%]">
+                <svg className="absolute -left-2 top-0" width="8" height="13" viewBox="0 0 8 13">
+                  <path d="M7 0L8 0C8 0 4 4 4 13L0 0Z" fill={aiBubbleBg} />
+                </svg>
+                <div className="px-[12px] py-[10px] rounded-tr-lg rounded-br-lg rounded-bl-lg shadow-sm"
+                  style={{ backgroundColor: aiBubbleBg }}>
+                  <div className="flex gap-[4px] items-center h-[14px]">
+                    {[0, 200, 400].map(delay => (
+                      <motion.span
+                        key={delay}
+                        animate={{
+                          opacity: [0.3, 1, 0.3],
+                          translateY: [0, -2, 0]
+                        }}
+                        transition={{
+                          duration: 1.2,
+                          repeat: Infinity,
+                          delay: delay / 1000,
+                          ease: "easeInOut"
+                        }}
+                        className="w-[6px] h-[6px] rounded-full"
+                        style={{ backgroundColor: `${aiBubbleText}99` }}
+                      />
+                    ))}
                   </div>
                 </div>
-              </motion.div>
-            )
-          })}
-        </AnimatePresence>
-
-        {/* Typing indicator */}
-        {isTyping && (
-          <motion.div
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="flex justify-start mb-2"
-          >
-            <div className="relative max-w-[75%]">
-              <svg className="absolute -left-2 top-0" width="8" height="13" viewBox="0 0 8 13">
-                <path d="M7 0L8 0C8 0 4 4 4 13L0 0Z" fill={aiBubbleBg} />
-              </svg>
-              <div className="px-[12px] py-[10px] rounded-tr-lg rounded-br-lg rounded-bl-lg shadow-sm"
-                style={{ backgroundColor: aiBubbleBg }}>
-                <div className="flex gap-[4px] items-center h-[14px]">
-                  {[0, 200, 400].map(delay => (
-                    <motion.span
-                      key={delay}
-                      animate={{
-                        opacity: [0.3, 1, 0.3],
-                        translateY: [0, -2, 0]
-                      }}
-                      transition={{
-                        duration: 1.2,
-                        repeat: Infinity,
-                        delay: delay / 1000,
-                        ease: "easeInOut"
-                      }}
-                      className="w-[6px] h-[6px] rounded-full"
-                      style={{ backgroundColor: `${aiBubbleText}99` }}
-                    />
-                  ))}
-                </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Name prompt */}
+        {showNamePrompt && !leadCreated && (
+          <div className="px-3 pb-2" style={{ backgroundColor: inputBarBg }}>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+              className="rounded-lg p-3" style={{ backgroundColor: aiBubbleBg }}>
+              <p className="text-[14px] mb-3" style={{ color: aiBubbleText }}>
+                Antes de começar, qual é o seu nome?
+              </p>
+              <form onSubmit={(e) => { e.preventDefault(); if (nameInput.trim()) createLead(nameInput.trim()); }}
+                className="flex gap-2">
+                <input value={nameInput} onChange={(e) => setNameInput(e.target.value)}
+                  placeholder="Seu nome..." autoFocus
+                  className="flex-1 rounded-lg px-3 py-2 text-[14px] outline-none border-none"
+                  style={{ backgroundColor: inputBg, color: getContrastColor(inputBg) }} />
+                <button type="submit" disabled={isLoading} className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 disabled:opacity-50"
+                  style={{ backgroundColor: accentColor, color: "#fff" }}>
+                  {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                </button>
+              </form>
+            </motion.div>
+          </div>
         )}
 
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Name prompt */}
-      {showNamePrompt && !leadCreated && (
-        <div className="px-3 pb-2" style={{ backgroundColor: inputBarBg }}>
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            className="rounded-lg p-3" style={{ backgroundColor: aiBubbleBg }}>
-            <p className="text-[14px] mb-3" style={{ color: aiBubbleText }}>
-              Antes de começar, qual é o seu nome?
-            </p>
-            <form onSubmit={(e) => { e.preventDefault(); if (nameInput.trim()) createLead(nameInput.trim()); }}
-              className="flex gap-2">
-              <input value={nameInput} onChange={(e) => setNameInput(e.target.value)}
-                placeholder="Seu nome..." autoFocus
-                className="flex-1 rounded-lg px-3 py-2 text-[14px] outline-none border-none"
-                style={{ backgroundColor: inputBg, color: getContrastColor(inputBg) }} />
-              <button type="submit" disabled={isLoading} className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 disabled:opacity-50"
-                style={{ backgroundColor: accentColor, color: "#fff" }}>
-                {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-              </button>
-            </form>
-          </motion.div>
-        </div>
-      )}
-
-      {/* File Preview */}
-      {pendingFiles.length > 0 && leadCreated && (
-        <div className="flex gap-2 px-3 py-2 overflow-x-auto" style={{ backgroundColor: inputBarBg }}>
-          {pendingFiles.map((pf, i) => (
-            <div key={i} className="relative shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-white/10">
-              {pf.preview ? (
-                <img src={pf.preview} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-white/5">
-                  <Paperclip size={20} style={{ color: `${aiBubbleText}60` }} />
-                </div>
-              )}
-              <button
-                onClick={() => removePendingFile(i)}
-                className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/70 flex items-center justify-center"
-              >
-                <X size={12} className="text-white" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Refined WhatsApp Input Bar */}
-      {leadCreated && (
-        <div className="flex items-end gap-2 px-2 py-[10px] pb-4 shrink-0" style={{ backgroundColor: chatBg }}>
-          <div className="flex-1 flex items-end gap-2 px-3 py-1.5 rounded-3xl shadow-sm min-h-[48px]"
-            style={{ backgroundColor: inputBg }}>
-            <button
-              className="w-10 h-10 flex items-center justify-center shrink-0 rounded-full"
-              style={{ color: secondaryText }}
-            >
-              <Smile size={24} className="opacity-80" />
-            </button>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*,.pdf,.doc,.docx"
-              className="hidden"
-              onChange={handleFileSelect}
-            />
-
-            <textarea
-              ref={inputRef as any}
-              value={input}
-              onChange={(e) => {
-                setInput(e.target.value);
-                // Simple auto-resize logic
-                e.target.style.height = "auto";
-                e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  sendMessage();
-                }
-              }}
-              placeholder="Mensagem"
-              className="flex-1 bg-transparent border-none focus:ring-0 text-[17px] py-[10px] resize-none overflow-y-auto max-h-[120px] placeholder:text-slate-500"
-              rows={1}
-              style={{ color: aiBubbleText }}
-            />
-
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="w-10 h-10 flex items-center justify-center shrink-0 rounded-full"
-              style={{ color: secondaryText }}
-            >
-              <Paperclip size={22} className="rotate-45 opacity-80" />
-            </button>
-
-            {!input.trim() && (
-              <button className="w-10 h-10 flex items-center justify-center shrink-0 rounded-full"
-                style={{ color: secondaryText }}>
-                <Camera size={24} className="opacity-80" />
-              </button>
-            )}
+        {/* File Preview */}
+        {pendingFiles.length > 0 && leadCreated && (
+          <div className="flex gap-2 px-3 py-2 overflow-x-auto" style={{ backgroundColor: inputBarBg }}>
+            {pendingFiles.map((pf, i) => (
+              <div key={i} className="relative shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-white/10">
+                {pf.preview ? (
+                  <img src={pf.preview} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-white/5">
+                    <Paperclip size={20} style={{ color: `${aiBubbleText}60` }} />
+                  </div>
+                )}
+                <button
+                  onClick={() => removePendingFile(i)}
+                  className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/70 flex items-center justify-center"
+                >
+                  <X size={12} className="text-white" />
+                </button>
+              </div>
+            ))}
           </div>
+        )}
 
-          <button
-            onClick={sendMessage}
-            disabled={isLoading || (!input.trim() && pendingFiles.length === 0)}
-            className={`w-[48px] h-[48px] rounded-full flex items-center justify-center shrink-0 transition-all shadow-md active:scale-90 ${isLoading ? "opacity-70" : "opacity-100"}`}
-            style={{ backgroundColor: accentColor }}
-          >
-            {isLoading ? (
-              <Loader2 size={24} className="animate-spin text-white" />
-            ) : input.trim() || pendingFiles.length > 0 ? (
-              <Send size={22} className="text-white ml-0.5" />
-            ) : (
-              <Mic size={24} className="text-white" />
-            )}
-          </button>
-        </div>
-      )}
-    </div>
-  );
-};
+        {/* Refined WhatsApp Input Bar */}
+        {leadCreated && (
+          <div className="flex items-end gap-2 px-2 py-[10px] pb-4 shrink-0" style={{ backgroundColor: chatBg }}>
+            <div className="flex-1 flex items-end gap-2 px-3 py-1.5 rounded-3xl shadow-sm min-h-[48px]"
+              style={{ backgroundColor: inputBg }}>
+              <button
+                className="w-10 h-10 flex items-center justify-center shrink-0 rounded-full"
+                style={{ color: secondaryText }}
+              >
+                <Smile size={24} className="opacity-80" />
+              </button>
 
-// Inline Form Component
-const InlineForm = ({
-  fields,
-  submitLabel,
-  answered,
-  onSubmit,
-  accentColor,
-  inputBg,
-  textColor,
-  isLoading,
-}: {
-  fields: FormField[];
-  submitLabel: string;
-  answered: boolean;
-  onSubmit: (data: Record<string, string>) => void;
-  accentColor: string;
-  inputBg: string;
-  textColor: string;
-  isLoading: boolean;
-}) => {
-  const [formData, setFormData] = useState<Record<string, string>>({});
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,.pdf,.doc,.docx"
+                className="hidden"
+                onChange={handleFileSelect}
+              />
 
-  const handleChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+              <textarea
+                ref={inputRef as any}
+                value={input}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  // Simple auto-resize logic
+                  e.target.style.height = "auto";
+                  e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
+                placeholder="Mensagem"
+                className="flex-1 bg-transparent border-none focus:ring-0 text-[17px] py-[10px] resize-none overflow-y-auto max-h-[120px] placeholder:text-slate-500"
+                rows={1}
+                style={{ color: aiBubbleText }}
+              />
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    for (const field of fields) {
-      if (field.required && !formData[field.name]?.trim()) return;
-    }
-    onSubmit(formData);
-  };
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="w-10 h-10 flex items-center justify-center shrink-0 rounded-full"
+                style={{ color: secondaryText }}
+              >
+                <Paperclip size={22} className="rotate-45 opacity-80" />
+              </button>
 
-  if (answered) {
-    return (
-      <div className="mt-2 px-2 py-1.5 rounded text-[12px] italic" style={{ color: `${textColor}60` }}>
-        ✅ Formulário enviado
+              {!input.trim() && (
+                <button className="w-10 h-10 flex items-center justify-center shrink-0 rounded-full"
+                  style={{ color: secondaryText }}>
+                  <Camera size={24} className="opacity-80" />
+                </button>
+              )}
+            </div>
+
+            <button
+              onClick={sendMessage}
+              disabled={isLoading || (!input.trim() && pendingFiles.length === 0)}
+              className={`w-[48px] h-[48px] rounded-full flex items-center justify-center shrink-0 transition-all shadow-md active:scale-90 ${isLoading ? "opacity-70" : "opacity-100"}`}
+              style={{ backgroundColor: accentColor }}
+            >
+              {isLoading ? (
+                <Loader2 size={24} className="animate-spin text-white" />
+              ) : input.trim() || pendingFiles.length > 0 ? (
+                <Send size={22} className="text-white ml-0.5" />
+              ) : (
+                <Mic size={24} className="text-white" />
+              )}
+            </button>
+          </div>
+        )}
       </div>
     );
-  }
+  };
 
-  return (
-    <form onSubmit={handleSubmit} className="mt-3 space-y-2.5">
-      {fields.map((field) => (
-        <div key={field.name}>
-          <label className="block text-[12px] mb-1 font-medium" style={{ color: `${textColor}cc` }}>
-            {field.label} {field.required && <span style={{ color: "#ef4444" }}>*</span>}
-          </label>
-          {field.type === "select" ? (
-            <select
-              value={formData[field.name] || ""}
-              onChange={(e) => handleChange(field.name, e.target.value)}
-              required={field.required}
-              className="w-full rounded-lg px-3 py-2 text-[13px] outline-none border-none"
-              style={{ backgroundColor: inputBg, color: textColor }}
-            >
-              <option value="">{field.placeholder || "Selecione..."}</option>
-              {field.options?.map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-          ) : field.type === "textarea" ? (
-            <textarea
-              value={formData[field.name] || ""}
-              onChange={(e) => handleChange(field.name, e.target.value)}
-              placeholder={field.placeholder}
-              required={field.required}
-              rows={2}
-              className="w-full rounded-lg px-3 py-2 text-[13px] outline-none border-none resize-none"
-              style={{ backgroundColor: inputBg, color: textColor }}
-            />
-          ) : (
-            <input
-              type={field.type}
-              value={formData[field.name] || ""}
-              onChange={(e) => handleChange(field.name, e.target.value)}
-              placeholder={field.placeholder}
-              required={field.required}
-              className="w-full rounded-lg px-3 py-2 text-[13px] outline-none border-none"
-              style={{ backgroundColor: inputBg, color: textColor }}
-            />
-          )}
+  // Inline Form Component
+  const InlineForm = ({
+    fields,
+    submitLabel,
+    answered,
+    onSubmit,
+    accentColor,
+    inputBg,
+    textColor,
+    isLoading,
+  }: {
+    fields: FormField[];
+    submitLabel: string;
+    answered: boolean;
+    onSubmit: (data: Record<string, string>) => void;
+    accentColor: string;
+    inputBg: string;
+    textColor: string;
+    isLoading: boolean;
+  }) => {
+    const [formData, setFormData] = useState<Record<string, string>>({});
+
+    const handleChange = (name: string, value: string) => {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      for (const field of fields) {
+        if (field.required && !formData[field.name]?.trim()) return;
+      }
+      onSubmit(formData);
+    };
+
+    if (answered) {
+      return (
+        <div className="mt-2 px-2 py-1.5 rounded text-[12px] italic" style={{ color: `${textColor}60` }}>
+          ✅ Formulário enviado
         </div>
-      ))}
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="w-full py-2 rounded-lg text-[13.5px] font-semibold transition-all"
-        style={{ backgroundColor: accentColor, color: "#fff" }}
-      >
-        {submitLabel}
-      </button>
-    </form>
-  );
-};
+      );
+    }
 
-export default PublicChat;
+    return (
+      <form onSubmit={handleSubmit} className="mt-3 space-y-2.5">
+        {fields.map((field) => (
+          <div key={field.name}>
+            <label className="block text-[12px] mb-1 font-medium" style={{ color: `${textColor}cc` }}>
+              {field.label} {field.required && <span style={{ color: "#ef4444" }}>*</span>}
+            </label>
+            {field.type === "select" ? (
+              <select
+                value={formData[field.name] || ""}
+                onChange={(e) => handleChange(field.name, e.target.value)}
+                required={field.required}
+                className="w-full rounded-lg px-3 py-2 text-[13px] outline-none border-none"
+                style={{ backgroundColor: inputBg, color: textColor }}
+              >
+                <option value="">{field.placeholder || "Selecione..."}</option>
+                {field.options?.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+            ) : field.type === "textarea" ? (
+              <textarea
+                value={formData[field.name] || ""}
+                onChange={(e) => handleChange(field.name, e.target.value)}
+                placeholder={field.placeholder}
+                required={field.required}
+                rows={2}
+                className="w-full rounded-lg px-3 py-2 text-[13px] outline-none border-none resize-none"
+                style={{ backgroundColor: inputBg, color: textColor }}
+              />
+            ) : (
+              <input
+                type={field.type}
+                value={formData[field.name] || ""}
+                onChange={(e) => handleChange(field.name, e.target.value)}
+                placeholder={field.placeholder}
+                required={field.required}
+                className="w-full rounded-lg px-3 py-2 text-[13px] outline-none border-none"
+                style={{ backgroundColor: inputBg, color: textColor }}
+              />
+            )}
+          </div>
+        ))}
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full py-2 rounded-lg text-[13.5px] font-semibold transition-all"
+          style={{ backgroundColor: accentColor, color: "#fff" }}
+        >
+          {submitLabel}
+        </button>
+      </form>
+    );
+  };
+
+  export default PublicChat;
