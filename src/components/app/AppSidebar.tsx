@@ -100,7 +100,6 @@ const AppSidebar = () => {
           <SidebarGroupContent>
             <SidebarMenu className="gap-0.5">
               <NavItem label="Agentes de IA" icon={Bot} path="/app/agents" />
-              <NavItem label="Recuperação" icon={ShoppingBag} path="/app/retargeting" />
               <NavItem label="Estatísticas" icon={BarChart3} path="/app/analytics" />
             </SidebarMenu>
           </SidebarGroupContent>
