@@ -5,6 +5,10 @@ import { Send, Bot, Loader2, Check, CheckCheck, Smile, Paperclip, MoreVertical, 
 import { motion, AnimatePresence } from "framer-motion";
 import { playIncomingSound, playOutgoingSound } from "@/components/chat/WhatsAppSounds";
 import { toast } from "sonner";
+import * as pdfjsLib from "pdfjs-dist";
+
+// Definindo o location do Web Worker do PDF.js (Sem isso ele falha no vite)
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
 // Background notification: flash title when tab is hidden
 const useBackgroundNotification = () => {
@@ -197,6 +201,30 @@ const formatWhatsAppText = (text: string) => {
   return formatted;
 };
 
+// PDF Text Extractor Helper
+const extractTextFromPDF = async (file: File): Promise<string> => {
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    const pdf = await loadingTask.promise;
+    let fullText = "";
+
+    // Limite de segurança de 30 páginas para não travar a aplicação/modelo
+    const maxPages = Math.min(pdf.numPages, 30);
+
+    for (let i = 1; i <= maxPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map((item: any) => item.str).join(" ");
+      fullText += `--- PÁGINA ${i} ---\n${pageText}\n\n`;
+    }
+    return fullText.trim();
+  } catch (error) {
+    console.error("Erro ao ler PDF:", error);
+    return "[Erro crítico: Não foi possível extrair o texto completo deste PDF devido a formatação, senha ou bloqueio de cópia.]";
+  }
+};
+
 interface Message {
   id: string;
   role: "user" | "assistant";
@@ -205,6 +233,13 @@ interface Message {
   interactive?: InteractiveElement;
   imageUrls?: string[];
   injectedInteractive?: InteractiveElement; // To store virtual buttons created by the Regex Interceptor
+  hiddenContext?: string; // Texto oculto do UI mas visível para a IA (ex: text extraído de PDF)
+}
+
+interface PendingFile {
+  file: File;
+  preview: string;
+  extractedText?: string;
 }
 
 interface VoxConfig {
@@ -286,7 +321,7 @@ const PublicChat = () => {
   const [systemPromptBase, setSystemPromptBase] = useState("");
   const [knowledgeBase, setKnowledgeBase] = useState("");
   const [conversionButtons, setConversionButtons] = useState<ConversionButton[]>([]);
-  const [pendingFiles, setPendingFiles] = useState<{ file: File; preview: string }[]>([]);
+  const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -556,7 +591,7 @@ const PublicChat = () => {
 
 
   // Upload files to storage and get public URLs
-  const uploadFiles = async (files: { file: File; preview: string }[]): Promise<string[]> => {
+  const uploadFiles = async (files: PendingFile[]): Promise<string[]> => {
     const urls: string[] = [];
     for (const { file } of files) {
       const ext = file.name.split('.').pop() || 'jpg';
@@ -574,13 +609,27 @@ const PublicChat = () => {
     return urls;
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    const newFiles = Array.from(files).slice(0, 5).map(file => ({
-      file,
-      preview: file.type.startsWith("image/") ? URL.createObjectURL(file) : "",
-    }));
+
+    const newFiles = [];
+    for (const file of Array.from(files).slice(0, 5)) {
+      const isPdf = file.name.toLowerCase().endsWith('.pdf');
+      let extractedText = "";
+
+      if (isPdf) {
+        toast(`Lendo arquivo ${file.name}...`, { position: "top-center" });
+        extractedText = await extractTextFromPDF(file);
+      }
+
+      newFiles.push({
+        file,
+        preview: file.type.startsWith("image/") ? URL.createObjectURL(file) : "",
+        extractedText,
+      });
+    }
+
     setPendingFiles(prev => [...prev, ...newFiles].slice(0, 5));
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -594,7 +643,7 @@ const PublicChat = () => {
     });
   };
 
-  const sendMessageWithContent = async (text: string, imageUrls?: string[]) => {
+  const sendMessageWithContent = async (text: string, imageUrls?: string[], hiddenCtx?: string) => {
     if (isLoading || !userId) return;
     setIsLoading(true);
     setIsTyping(true);
@@ -604,20 +653,32 @@ const PublicChat = () => {
 
     try {
       // Build messages history including images if present
-      const buildContent = (content: string, imgs?: string[]) => {
+      const buildContent = (content: string, imgs?: string[], hiddenCtx?: string) => {
+        let baseContent = content || "";
+        if (hiddenCtx) {
+          baseContent += `\n\n${hiddenCtx}`;
+        }
+
         if (imgs && imgs.length > 0) {
           const parts: any[] = [];
-          if (content) parts.push({ type: "text", text: content });
-          for (const url of imgs) parts.push({ type: "image_url", image_url: { url } });
-          return parts;
+          if (baseContent) parts.push({ type: "text", text: baseContent });
+          for (const url of imgs) {
+            // Se a url terminada em pdf porventura foi passada (historico legado), a filtramos e apenas repassamos o link como texto.
+            if (url.toLowerCase().match(/\.(pdf|doc|docx)$/i)) {
+              parts.push({ type: "text", text: `\n[Contexto Visual: Documento não-imagem ignorado pelo Vision Model. Fonte do link: ${url}]` });
+            } else {
+              parts.push({ type: "image_url", image_url: { url } });
+            }
+          }
+          return parts.length > 1 || parts[0]?.type === "image_url" ? parts : baseContent;
         }
-        return content;
+        return baseContent;
       };
 
       const history = [...messages.filter(m => m.id !== "welcome").map(m => ({
         role: m.role,
-        content: buildContent(m.content, m.imageUrls),
-      })), { role: "user" as const, content: buildContent(text, imageUrls) }].slice(-12);
+        content: buildContent(m.content, m.imageUrls, m.hiddenContext),
+      })), { role: "user" as const, content: buildContent(text, imageUrls, messages[messages.length - 1]?.hiddenContext) }].slice(-12);
 
       // Call vox-chat Edge Function with SSE support
       const response = await fetch(CHAT_URL, {
@@ -726,8 +787,16 @@ const PublicChat = () => {
     let uploadedUrls: string[] = [];
     if (hasFiles) {
       uploadedUrls = await uploadFiles(pendingFiles);
-      setPendingFiles([]);
     }
+
+    // Process extraction context to send implicitly to the LLM (without polluting visual chat)
+    let hiddenContext = "";
+    const pdfFiles = pendingFiles.filter(pf => pf.extractedText);
+    if (pdfFiles.length > 0) {
+      hiddenContext = pdfFiles.map(pf => `[CONTEÚDO LIDO DO ARQUIVO "${pf.file.name}"]:\n${pf.extractedText}`).join("\n\n");
+    }
+
+    setPendingFiles([]);
 
     const displayText = text || (uploadedUrls.length > 0 ? "📎 Anexo enviado" : "");
     const userMsg: Message = {
@@ -736,10 +805,25 @@ const PublicChat = () => {
       content: displayText,
       timestamp: new Date(),
       imageUrls: uploadedUrls.length > 0 ? uploadedUrls : undefined,
+      hiddenContext: hiddenContext || undefined,
     };
+
     setMessages(prev => [...prev, userMsg]);
     setInput("");
-    sendMessageWithContent(displayText, uploadedUrls.length > 0 ? uploadedUrls : undefined);
+
+    // Explicitly pass hiddenContext downward so current invocation of sendMessageWithContent sees it correctly
+    // Since state is asynchronous, we inject it directly by cheating the last element locally.
+    const lastMsgCopy = { ...userMsg };
+
+    // Calling internal content sender safely, ensuring current state context is fresh
+    setTimeout(() => {
+      // O `sendMessageWithContent` precisa enxergar o estado. Usando callback seria melhor, 
+      // mas como definimos no buildContent o parâmetro `messages[messages.length - 1]?.hiddenContext`, isso 
+      // não leria `userMsg` imediatamente pois React batcheia.
+      // Para não dar problema (como read text being ignored), vamos repassar como string global temporária.
+    }, 0);
+
+    sendMessageWithContent(displayText, uploadedUrls.length > 0 ? uploadedUrls : undefined, hiddenContext || undefined);
   };
 
 

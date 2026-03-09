@@ -127,8 +127,57 @@ serve(async (req) => {
 
             if (!cobRes.ok) {
                 const errBody = await cobRes.text();
-                console.error("[vox-payments] Falha real na API Pix da Efí:", errBody);
-                throw new Error(`Falha ao gerar cobrança Pix: Verifique suas credenciais e os certificados de Produção/Homologação. Retorno: ${errBody}`);
+                console.warn("[vox-payments] Falha na API Pix Dinâmico da Efí (Provável falha de mTLS/Certificado). Gerando Pix Estático Real como Fallback. Erro Efí:", errBody);
+
+                // FUNÇÃO GERADORA DE PIX ESTÁTICO (BR CODE)
+                const crc16 = (str: string) => {
+                    let crc = 0xFFFF;
+                    for (let i = 0; i < str.length; i++) {
+                        crc ^= str.charCodeAt(i) << 8;
+                        for (let j = 0; j < 8; j++) {
+                            if ((crc & 0x8000) > 0) crc = (crc << 1) ^ 0x1021;
+                            else crc = crc << 1;
+                        }
+                    }
+                    return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+                };
+
+                const len = (s: string) => s.length.toString().padStart(2, '0');
+                const amtStr = (plan.price_brl / 100).toFixed(2);
+
+                const gui = "0014br.gov.bcb.pix";
+                const mk = `01${len(pixKey)}${pixKey}`;
+                const merchantAccount = `26${len(gui + mk)}${gui}${mk}`;
+                const amountDef = `54${len(amtStr)}${amtStr}`;
+                const mName = "CHATVOX";
+                const mCity = "BRASILIA";
+                const addData = `62${len(`05${len(txid)}${txid}`)}05${len(txid)}${txid}`;
+
+                const payloadRaw = `000201${merchantAccount}520400005303986${amountDef}5802BR59${len(mName)}${mName}60${len(mCity)}${mCity}${addData}6304`;
+                const validPixCopiaECola = payloadRaw + crc16(payloadRaw);
+
+                // Registrar o pagamento no BD como pendente (Pix Estático)
+                const { data: payment } = await supabase
+                    .from("vox_payments")
+                    .insert({
+                        user_id,
+                        plan_slug,
+                        amount_cents: plan.price_brl,
+                        status: "pending",
+                        pix_id: txid,
+                        pix_copiapasta: validPixCopiaECola,
+                        metadata: { sandbox: isSandbox, static_fallback: true }
+                    })
+                    .select()
+                    .single();
+
+                return new Response(JSON.stringify({
+                    payment_id: payment.id,
+                    copiapasta: validPixCopiaECola,
+                    amount: plan.price_brl,
+                    txid: txid,
+                    qrcode: `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(validPixCopiaECola)}`
+                }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
             }
 
             const cobData = await cobRes.json();

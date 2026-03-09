@@ -9,6 +9,8 @@ import { ptBR } from "date-fns/locale";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 interface VoxLead {
   id: string;
@@ -50,6 +52,14 @@ const CRM = () => {
   const [leads, setLeads] = useState<VoxLead[]>([]);
   const [loading, setLoading] = useState(true);
   const [draggedId, setDraggedId] = useState<string | null>(null);
+
+  // Estados do Modal de Novo Cliente Manual
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newLeadName, setNewLeadName] = useState("");
+  const [newLeadPhone, setNewLeadPhone] = useState("");
+  const [newLeadEmail, setNewLeadEmail] = useState("");
+  const [newLeadStatus, setNewLeadStatus] = useState("novo");
+  const [isSavingLead, setIsSavingLead] = useState(false);
 
   const fetchLeads = useCallback(async () => {
     if (!user) return;
@@ -106,6 +116,35 @@ const CRM = () => {
     if (draggedId) { updateStatus(draggedId, status); setDraggedId(null); }
   };
 
+  const handleCreateLead = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newLeadName.trim() || !user) return;
+    setIsSavingLead(true);
+
+    const { error } = await supabase.from("vox_leads").insert([{
+      user_id: user.id,
+      name: newLeadName,
+      phone: newLeadPhone || null,
+      email: newLeadEmail || null,
+      status: newLeadStatus,
+    }]);
+
+    setIsSavingLead(false);
+
+    if (error) {
+      toast({ title: "Erro ao cadastrar lead", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    toast({ title: "Cliente adicionado com sucesso!" });
+    setIsModalOpen(false);
+    setNewLeadName("");
+    setNewLeadPhone("");
+    setNewLeadEmail("");
+    setNewLeadStatus("novo");
+    fetchLeads(); // Recarregar Kanban
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 min-h-[50vh]">
@@ -120,9 +159,53 @@ const CRM = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:bg-clip-text dark:text-transparent dark:bg-gradient-to-r dark:from-white dark:to-white/60">CRM e Vendas</h1>
-        <p className="text-sm text-slate-500 dark:text-white/40 mt-1">Arraste e solte os leads entre as colunas para atualizar seu status de pré-vendas.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:bg-clip-text dark:text-transparent dark:bg-gradient-to-r dark:from-white dark:to-white/60">CRM e Vendas</h1>
+          <p className="text-sm text-slate-500 dark:text-white/40 mt-1">Arraste e solte os leads entre as colunas para atualizar seu status de pré-vendas.</p>
+        </div>
+
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-primary text-black hover:bg-primary/90 font-bold shadow-[0_0_15px_rgba(0,255,157,0.3)]">
+              <Plus size={16} className="mr-2" />
+              Novo Cliente
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Cadastrar Novo Cliente</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleCreateLead} className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <Label>Nome Completo *</Label>
+                <Input value={newLeadName} onChange={(e) => setNewLeadName(e.target.value)} required placeholder="Ex: João Silva" />
+              </div>
+              <div className="space-y-2">
+                <Label>WhatsApp (Telefone)</Label>
+                <Input value={newLeadPhone} onChange={(e) => setNewLeadPhone(e.target.value)} placeholder="Ex: 11999999999" />
+              </div>
+              <div className="space-y-2">
+                <Label>E-mail</Label>
+                <Input type="email" value={newLeadEmail} onChange={(e) => setNewLeadEmail(e.target.value)} placeholder="Ex: joao@email.com" />
+              </div>
+              <div className="space-y-2">
+                <Label>Fase no Funil</Label>
+                <select
+                  className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  value={newLeadStatus}
+                  onChange={(e) => setNewLeadStatus(e.target.value)}
+                >
+                  {COLUMNS.map(c => <option key={c.status} value={c.status}>{c.label}</option>)}
+                </select>
+              </div>
+              <Button type="submit" className="w-full mt-2" disabled={isSavingLead}>
+                {isSavingLead ? <Loader2 size={16} className="animate-spin mr-2" /> : null}
+                {isSavingLead ? "Salvando..." : "Salvar Cliente"}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pb-10">
@@ -162,7 +245,7 @@ const CRM = () => {
           );
         })}
       </div>
-    </div>
+    </div >
   );
 };
 
