@@ -81,37 +81,8 @@ serve(async (req) => {
             });
         }
 
-        const authUrl = isSandbox
-            ? "https://pix-h.gerencianet.com.br/oauth/token"
-            : "https://pix.gerencianet.com.br/oauth/token";
-
-        const apiBaseUrl = isSandbox
-            ? "https://pix-h.gerencianet.com.br"
-            : "https://pix.gerencianet.com.br";
-
-        // 3. Autenticação OAuth (Basic Auth)
-        const authHeader = `Basic ${btoa(`${clientId}:${clientSecret}`)}`;
-
-        console.log(`[vox-payments] Autenticando com Efí: CID=${clientId.substring(0, 10)}... URL=${authUrl}`);
-
-        const tokenRes = await fetch(authUrl, {
-            method: "POST",
-            headers: {
-                "Authorization": authHeader,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ grant_type: "client_credentials" })
-        });
-
-        if (!tokenRes.ok) {
-            const errBody = await tokenRes.text();
-            console.error(`[vox-payments] Erro na autenticação Efí: ${tokenRes.status} - ${errBody}`);
-            throw new Error(`Falha na autenticação Efí: ${errBody}`);
-        }
-
-        const tokenData: TokenResponse = await tokenRes.json();
-        const accessToken = tokenData.access_token;
-        console.log("[vox-payments] Token obtido com sucesso.");
+        // NOTA: Geração de Pix Estático não exige autenticação mTLS na API Efí. Escapamos esse fluxo e usamos apenas a Chave Pix.
+        console.log("[vox-payments] Modo Pix Master Estático Ativado. Ignorando chamada OAuth para evitar erro de mTLS 403.");
 
         // 4. Fluxo Pix Master (Forçado Estático para Estabilidade de Lançamento)
         if (method === "pix") {

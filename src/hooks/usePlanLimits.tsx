@@ -43,7 +43,7 @@ export const usePlanLimits = (): PlanInfo => {
         .from("profiles")
         .select("plan")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
       const planSlug = (profile as any)?.plan || "free";
 
