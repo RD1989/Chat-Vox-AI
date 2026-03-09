@@ -1054,6 +1054,18 @@ const PublicChat = () => {
                       <div className="mt-2 space-y-1.5">
                         {(msg.interactive?.data.buttons || msg.injectedInteractive?.data.buttons)?.map((btn, i) => {
                           const isAnswered = msg.interactive?.answered || msg.injectedInteractive?.answered;
+                          // Cores adaptativas para o tema claro/escuro
+                          const btnBg = isAnswered
+                            ? isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)"
+                            : isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)";
+                          const btnBorder = isAnswered
+                            ? isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"
+                            : accentColor + "80";
+                          const btnColor = isAnswered
+                            ? isDark ? `${aiBubbleText}60` : `${aiBubbleText}80`
+                            : accentColor;
+                          const btnHoverBg = isDark ? accentColor + "20" : accentColor + "15";
+
                           return (
                             <button
                               key={i}
@@ -1068,19 +1080,19 @@ const PublicChat = () => {
                               disabled={isAnswered || isLoading}
                               className="w-full text-left px-3 py-2 rounded-lg text-[13.5px] font-medium transition-all duration-150 border"
                               style={{
-                                backgroundColor: isAnswered ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.08)",
-                                borderColor: isAnswered ? "rgba(255,255,255,0.08)" : accentColor + "60",
-                                color: isAnswered ? `${aiBubbleText}80` : accentColor,
+                                backgroundColor: btnBg,
+                                borderColor: btnBorder,
+                                color: btnColor,
                                 cursor: isAnswered ? "default" : "pointer",
                               }}
                               onMouseEnter={(e) => {
                                 if (!isAnswered) {
-                                  (e.target as HTMLButtonElement).style.backgroundColor = accentColor + "20";
+                                  (e.target as HTMLButtonElement).style.backgroundColor = btnHoverBg;
                                 }
                               }}
                               onMouseLeave={(e) => {
                                 if (!isAnswered) {
-                                  (e.target as HTMLButtonElement).style.backgroundColor = "rgba(255,255,255,0.08)";
+                                  (e.target as HTMLButtonElement).style.backgroundColor = btnBg;
                                 }
                               }}
                             >

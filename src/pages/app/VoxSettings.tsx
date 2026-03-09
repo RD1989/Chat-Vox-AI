@@ -14,7 +14,7 @@ import {
   Loader2, Save, Copy, ExternalLink, Palette, Bot, Code2,
   Facebook, BarChart3, ShoppingBag, Megaphone, Target,
   Webhook, Braces, MessageSquareCode, Sparkles, Bell, BookOpen,
-  TrendingUp, Clock, Users,
+  TrendingUp, Clock, Users, Sun, Moon, Monitor,
 } from "lucide-react";
 import { ChatThemeSelector, type ChatTheme } from "@/components/settings/ChatThemeSelector";
 import { AvatarUpload } from "@/components/settings/AvatarUpload";
@@ -54,6 +54,7 @@ const VoxSettings = () => {
     inputBarBg: "#1a2228",
     fontFamily: "sans-serif",
   });
+  const [appearanceMode, setAppearanceMode] = useState<"light" | "dark" | "auto">("dark");
   const [form, setForm] = useState<VoxForm>({
     ai_name: "Chat Vox",
     ai_avatar_url: "",
@@ -92,6 +93,7 @@ const VoxSettings = () => {
         });
         // Restore theme mode & config
         if (d.chat_theme) setChatThemeMode(d.chat_theme as any);
+        if (d.chat_appearance_mode) setAppearanceMode(d.chat_appearance_mode);
         if (d.chat_theme_config && typeof d.chat_theme_config === "object" && d.chat_theme_config.name) {
           setChatThemeConfig(d.chat_theme_config as ChatTheme);
         }
@@ -108,7 +110,7 @@ const VoxSettings = () => {
     const { error } = await supabase
       .from("vox_settings")
       .upsert(
-        { user_id: user.id, ...form, chat_theme: chatThemeMode, chat_theme_config: chatThemeConfig, updated_at: new Date().toISOString() } as any,
+        { user_id: user.id, ...form, chat_theme: chatThemeMode, chat_appearance_mode: appearanceMode, chat_theme_config: chatThemeConfig, updated_at: new Date().toISOString() } as any,
         { onConflict: "user_id" }
       );
 
@@ -367,6 +369,35 @@ const VoxSettings = () => {
                         <div className="flex-1 bg-primary/30"></div>
                       </div>
                     </div>
+                  </CardContent>
+                </Card>
+
+                {/* Modo de Aparência Claro/Escuro */}
+                <Card className="bg-white dark:bg-transparent border-slate-200 dark:border-white/5 rounded-3xl p-6">
+                  <CardHeader className="px-0 pt-0">
+                    <CardTitle className="text-sm font-bold flex items-center gap-2">
+                      <Monitor size={16} className="text-primary" /> Modo de Aparência
+                    </CardTitle>
+                    <p className="text-[11px] text-muted-foreground">Define se o chat público será Claro, Escuro ou seguirá o sistema do visitante.</p>
+                  </CardHeader>
+                  <CardContent className="px-0 space-y-2">
+                    {([
+                      { key: "dark" as const, label: "Escuro (WhatsApp Dark)", icon: Moon },
+                      { key: "light" as const, label: "Claro (WhatsApp Light)", icon: Sun },
+                      { key: "auto" as const, label: "Automático (Sistema)", icon: Monitor },
+                    ]).map((m) => (
+                      <button
+                        key={m.key}
+                        onClick={() => setAppearanceMode(m.key)}
+                        className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${appearanceMode === m.key
+                            ? "border-primary bg-primary/5 text-primary"
+                            : "border-border hover:border-primary/30 text-muted-foreground"
+                          }`}
+                      >
+                        <m.icon size={16} />
+                        <span className="text-[13px] font-semibold">{m.label}</span>
+                      </button>
+                    ))}
                   </CardContent>
                 </Card>
 
