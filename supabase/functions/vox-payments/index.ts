@@ -173,7 +173,7 @@ serve(async (req) => {
                 const validPixCopiaECola = payloadRaw + crc16(payloadRaw);
 
                 // Registrar o pagamento no BD como pendente (Pix Estático)
-                const { data: payment } = await supabase
+                const { data: payment, error: insertError } = await supabase
                     .from("vox_payments")
                     .insert({
                         user_id,
@@ -186,6 +186,11 @@ serve(async (req) => {
                     })
                     .select()
                     .single();
+
+                if (insertError || !payment) {
+                    console.error("[vox-payments] Erro ao inserir fallback no banco:", insertError);
+                    throw new Error(`Erro ao registrar pagamento fallback: ${insertError?.message || 'Sem dados'}`);
+                }
 
                 return new Response(JSON.stringify({
                     payment_id: payment.id,
@@ -206,7 +211,7 @@ serve(async (req) => {
             const qrcodeData = await qrcodeRes.json();
 
             // Salvar no Banco
-            const { data: payment } = await supabase
+            const { data: payment, error: insertError } = await supabase
                 .from("vox_payments")
                 .insert({
                     user_id,
@@ -220,6 +225,11 @@ serve(async (req) => {
                 })
                 .select()
                 .single();
+
+            if (insertError || !payment) {
+                console.error("[vox-payments] Erro ao inserir cobrança dinâmica no banco:", insertError);
+                throw new Error(`Erro ao registrar pagamento dinâmico: ${insertError?.message || 'Sem dados'}`);
+            }
 
             return new Response(JSON.stringify({
                 payment_id: payment.id,
