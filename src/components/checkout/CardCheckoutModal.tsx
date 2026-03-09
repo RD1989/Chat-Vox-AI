@@ -26,6 +26,11 @@ export const CardCheckoutModal = ({ isOpen, onClose, planSlug, planName, userId,
         cpf: ""
     });
 
+    // Reset loading if plan changes
+    useEffect(() => {
+        setLoading(false);
+    }, [planSlug, coupon]);
+
     const handleSumbit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);

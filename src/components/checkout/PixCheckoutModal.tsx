@@ -20,6 +20,14 @@ export const PixCheckoutModal = ({ isOpen, onClose, planSlug, planName, userId, 
     const [status, setStatus] = useState<"pending" | "paid" | "expired">("pending");
     const [timeLeft, setTimeLeft] = useState(1800); // 30 minutes
 
+    // Reset state when plan changes
+    useEffect(() => {
+        setPixData(null);
+        setLoading(true);
+        setStatus("pending");
+        setTimeLeft(1800);
+    }, [planSlug, coupon]);
+
     // 1. Generate Pix
     useEffect(() => {
         if (isOpen && !pixData) {
