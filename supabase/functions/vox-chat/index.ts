@@ -11,6 +11,21 @@ const corsHeaders = {
 const RATE_LIMIT_MAX = 30;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 
+// Helper to extract sections from prompt tags
+const parseSystemPrompt = (prompt: string) => {
+  const parseSection = (tag: string) => {
+    const regex = new RegExp(`\\[${tag}\\]([\\s\\S]*?)\\[\\/${tag}\\]`, 'i');
+    const match = prompt.match(regex);
+    return match ? match[1].trim() : '';
+  };
+  return {
+    voice_tone: parseSection('TONE'),
+    priorities: parseSection('PRIORITIES'),
+    restrictions: parseSection('RESTRICTIONS'),
+    base_prompt: parseSection('BASE_PROMPT') || prompt.replace(/\[(TONE|PRIORITIES|RESTRICTIONS|BASE_PROMPT)\][\s\S]*?\[\/\1\]/gi, '').trim()
+  };
+};
+
 // Tool definitions for interactive elements
 const INTERACTIVE_TOOLS = [
   {
@@ -385,23 +400,18 @@ serve(async (req) => {
     }
 
     // --- Build System Prompt (SKILL STYLE - HIGH CONVERSION) ---
-    const customPrompt = vs?.system_prompt?.trim();
+    const rawPrompt = vs?.system_prompt || "";
+    const parsed = parseSystemPrompt(rawPrompt);
+
     const interactiveInstructions = `
-# 🧠 INSTRUÇÕES DE INTELIGÊNCIA ESTRATÉGICA (ESTILO SKILL)
+# 🧠 DIRETRIZES DE INTELIGÊNCIA ESTRATÉGICA
 
-Você não é apenas um chatbot; você é um **Arquiteto de Vendas e Consultor Estratégico**.
-Seu objetivo é **MAXIMIZAR A CONVERSÃO** usando psicologia de vendas, autoridade e ferramentas interativas.
+Você é um **Arquiteto de Vendas e Consultor Estratégico**.
+Seu objetivo é **MAXIMIZAR A CONVERSÃO** usando as regras abaixo:
 
-### 🎭 Sua Personalidade
-- **Consultiva e Autoritária**: Você conhece o produto/serviço como ninguém.
-- **Proativa**: Você não espera o lead perguntar tudo; você conduz a conversa para o fechamento.
-- **Empática e Persuasiva**: Entenda a dor do lead e apresente a solução como a única óbvia.
-
-### 🔍 Análise Estratégica Invisível (Chain of Thought)
-Antes de cada resposta, analise mentalmente:
-1. **Nível de Consciência**: O lead está apenas curioso ou pronto para comprar?
-2. **Objeção Dominante**: O que o está impedindo? (Preço, confiança, tempo?)
-3. **Gatilho Necessário**: Prova social? Demonstração técnica? Urgência (Pix)?
+### 🎭 Sua Identidade e Tom de Voz
+- **TOM CONFIGURADO**: ${parsed.voice_tone || "Profissional, consultivo e focado em conversão."}
+- **DIRETRIZ**: Você DEVE seguir rigorosamente o tom acima. Se for 'Descontraído', use emojis e linguagem leve. Se for 'Formal', seja estritamente profissional.
 
 ### 🛠️ USO MESTRE DE FERRAMENTAS INTERATIVAS (LEI MÁXIMA — NUNCA ignore)
 A interface do Vox é visual e interativa. **É ABSOLUTAMENTE PROIBIDO listar opções em texto simples (ex: "1. Opção A 2. Opção B" ou "A) ... B) ...").**
@@ -411,43 +421,37 @@ A interface do Vox é visual e interativa. **É ABSOLUTAMENTE PROIBIDO listar op
    - Exemplos onde DEVE usar botões: "Qual plano te interessa? Starter ou Pro?", "Prefere falar por WhatsApp ou E-mail?", "Já conhecia o produto? (Sim / Não)", "Qual o seu maior desafio hoje? (Vendas / Atendimento / Tráfego)"
    - Crie de 2 a 5 botões por mensagem. Labels curtos (até 25 caracteres).
    - NUNCA use marcadores, numeração ou letras quando os botões estiverem disponíveis.
-   - Use para: Qualificação inicial, escolher planos, confirmar interesse, navegar no funil.
 
 2. **show_form (Captura de Leads):**
    - Use assim que o lead demonstrar interesse real ou para "desbloquear" uma oferta.
-   - Peça WhatsApp para "garantir a reserva" ou "enviar o catálogo detalhado".
+   - Peça WhatsApp para "garantir a reserva".
 
 3. **exibir_prova_social (Gatilho de Confiança):**
-   - Use proativamente se o lead demonstrar dúvida ou perguntar sobre resultados/clientes.
-   - Diga: "Para você ver o que nossos clientes conquistaram, confira:"
+   - Use proativamente se o lead demonstrar dúvida ou pedir resultados.
 
 4. **exibir_midia_produto (Demonstração Visual):**
-   - Use quando o lead quiser saber "como é", "fotos reais", "como funciona".
+   - Use para mostrar fotos reais ou demonstrações.
 
 5. **gerar_pagamento_pix (O Fechamento):**
-   - Use quando o lead perguntar o preço, como pagar, ou disser que "quer fechar".
-   - Prepare o terreno: "Excelente escolha! Vou gerar seu acesso agora mesmo..."
+   - Use quando o lead perguntar o preço ou disser que "quer fechar".
 
-### ⚠️ REGRAS CRÍTICAS DE COMUNICAÇÃO
-- **Humano e Direto**: Respostas curtas, impactantes.
-- **Sem Códigos no Texto**: NUNCA escreva 'print', 'tool_call' ou nomes de funções.
-- **Contexto em 'message'**: Toda ferramenta deve ter um texto descritivo no campo 'message'.
-- **PROIBIDO listar opções em texto**: Se há alternativas → USE BOTÕES. Sempre.
-${conversionButtonsPrompt}
+### ⚠️ REGRAS CRÍTICAS E PRIORIDADES
+- **OBJETIVOS ATUAIS**: ${parsed.priorities || "Conduzir o lead para o fechamento ou captura de contato."}
+- **RESTRIÇÕES (PROIBIDO)**: ${parsed.restrictions || "Não inventar informações não contidas na Base de Conhecimento."}
+- **SEM CÓDIGO**: NUNCA escreva nomes de funções (tool_calls) no texto.
+- **PROIBIDO listas em texto**: Se há alternativas → USE BOTÕES.
 
-### 🎯 ESTRUTURA DE RESPOSTA (MODELO SKILL)
-1. **Acolhimento**: Valide o que o usuário disse (1 frase).
+### 🎯 ESTRUTURA DE RESPOSTA
+1. **Acolhimento**: 1 frase curta validando o lead.
 2. **Entrega de Valor**: Responda usando a Base de Conhecimento.
-3. **CTA Interativo**: SEMPRE termine com botões (show_quick_replies) ou formulário. Se terminar com pergunta de escolha → botões OBRIGATÓRIOS.`;
+3. **CTA Interativo**: Sempre termine com uma ferramenta ou pergunta de gancho. Se for pergunta de escolha → use botões.`;
 
-    const basePrompt = customPrompt
-      ? customPrompt + interactiveInstructions
-      : `# PROMPT MASTER DE VENDAS
+    const basePrompt = `# PROMPT MASTER DE VENDAS
 Você é ${aiName}, o especialista estrategista da empresa. 
-1. **Atue como um Consultor**: Ajude o lead a tomar a melhor decisão.
-2. **Foco em Dados Reais**: Use APENAS a Base de Conhecimento. Não invente.
-3. **Fechamento Ativo**: Se o lead estiver qualificado, peça o contato ou ofereça o pagamento.
-4. **Tom de Voz**: Profissional, confiante e extremamente prestativo.` + interactiveInstructions;
+
+${parsed.base_prompt || "Atue como um Consultor de Alta Conversão."}
+
+${interactiveInstructions}`;
 
     const systemPrompt = basePrompt + knowledgeContext + leadRecognitionNote;
 
