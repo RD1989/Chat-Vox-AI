@@ -30,6 +30,12 @@ import {
   GripVertical,
 } from "lucide-react";
 import { motion, useScroll, useTransform } from "framer-motion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import ChatPreview from "@/components/landing/ChatPreview";
 import CookieConsent from "@/components/CookieConsent";
 import { useRef } from "react";
@@ -179,6 +185,56 @@ const testimonials = [
     name: "Thiago A.",
     role: "Infoprodutor • High Ticket",
     photo: "/testimonials/thiago.jpg",
+  },
+];
+
+const targetAudience = [
+  {
+    icon: Users,
+    title: "Infoprodutores & Especialistas",
+    description: "Para quem vende cursos, mentorias e e-books e precisa escalar o atendimento sem depender de equipe ou ficar 24h no celular.",
+  },
+  {
+    icon: Rocket,
+    title: "Agências de Lançamento",
+    description: "Aumente a conversão dos lançamentos capturando e aquecendo leads em grupos ou 1x1 de forma 100% automatizada.",
+  },
+  {
+    icon: TrendingUp,
+    title: "Afiliados (Black e White)",
+    description: "Escale suas campanhas de tráfego pago com um funil de chat que não sofre bloqueios e converte visitantes frios em compradores.",
+  },
+  {
+    icon: MessageSquare,
+    title: "Copywriters e Gestores",
+    description: "Ofereça um serviço de automação inteligente para seus clientes, aumentando o ROI das campanhas e o valor do seu serviço.",
+  },
+];
+
+const faqs = [
+  {
+    question: "Como o Chat Vox IA funciona na prática?",
+    answer: "Você recebe um link exclusivo do seu Chat. Ao clicar, o seu cliente abre uma tela idêntica ao WhatsApp. Nossa IA, previamente treinada com os dados do seu produto, atende a pessoa, tira dúvidas, quebra objeções e manda o link de checkout para finalizar a venda.",
+  },
+  {
+    question: "Preciso ter conhecimento em programação para configurar?",
+    answer: "Não! O Chat Vox foi criado para ser extremamente simples. Com o nosso Onboarding de 3 passos, você configura seu agente, define o comportamento dele e ativa o sistema em menos de 5 minutos, sem escrever uma única linha de código.",
+  },
+  {
+    question: "E se a IA não souber responder alguma pergunta do cliente?",
+    answer: "Nos planos premium, fornecemos a função 'Transbordo Humano'. Caso a IA encontre uma pergunta fora do escopo ou o lead insista para falar com um atendente real, você ou sua equipe podem intervir no painel de controle e assumir a conversa ao vivo.",
+  },
+  {
+    question: "O Chat Vox usa o WhatsApp oficial ou WhatsApp Web?",
+    answer: "Não, essa é a nossa maior vantagem estratégica! Usamos uma interface própria e criptografada (Web App) que imita visualmente a experiência do WhatsApp. Isso significa que você tem ZERO riscos de bloqueios, banimentos de chip ou perdas de números.",
+  },
+  {
+    question: "Como funciona a integração com as plataformas de vendas das comissões?",
+    answer: "Possuímos integração via Webhook com Hotmart, Kiwify, PerfectPay, Braip, Eduzz, Monetizze e Ticto. O sistema identifica quando a venda ocorre nessas plataformas e registra diretamente no seu dashboard do Chat Vox.",
+  },
+  {
+    question: "Posso cancelar a assinatura quando eu quiser?",
+    answer: "Sim, nossos planos não possuem nenhum tipo de fidelidade e não cobram multa. Você pode cancelar a renovação a qualquer momento diretamente pelo painel do seu plano em poucos cliques.",
   },
 ];
 
@@ -657,6 +713,46 @@ const Index = () => {
         </div>
       </section>
 
+      {/* ═══════════════ TARGET AUDIENCE (Para quem é) ═══════════════ */}
+      <section className="py-20 lg:py-28 relative overflow-hidden">
+        {/* Decorative background */}
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-radial from-primary/[0.04] to-transparent pointer-events-none rounded-full blur-3xl" />
+
+        <div className="container mx-auto px-6 relative">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center mb-14">
+            <p className="text-[11px] font-semibold text-primary uppercase tracking-[0.2em] mb-2">Público-Alvo</p>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground tracking-tight">
+              Para quem é o{" "}
+              <span className="text-primary">Chat Vox AI</span>?
+            </h2>
+            <p className="text-muted-foreground mt-4 max-w-lg mx-auto text-[15px]">
+              Especialmente projetado para quem trabalha no mercado de marketing digital e precisa escalar vendas sem dor de cabeça.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-5xl mx-auto">
+            {targetAudience.map((audience, i) => (
+              <motion.div
+                key={audience.title}
+                initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}
+                className="border border-border bg-card p-6 sm:p-8 rounded-2xl flex items-start gap-4 hover:border-primary/30 transition-colors group relative overflow-hidden"
+              >
+                {/* Subtle gradient hover */}
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                <div className="w-14 h-14 shrink-0 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors relative z-10">
+                  <audience.icon size={28} className="text-primary group-hover:text-primary-foreground transition-colors" />
+                </div>
+                <div className="relative z-10">
+                  <h3 className="text-lg font-bold text-foreground mb-2">{audience.title}</h3>
+                  <p className="text-[14px] text-muted-foreground leading-relaxed">{audience.description}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ═══════════════ TESTIMONIALS ═══════════════ */}
       <section className="py-20 lg:py-28">
         <div className="container mx-auto px-6">
@@ -933,6 +1029,41 @@ const Index = () => {
                   <p className="text-[12px] text-muted-foreground">Foco em ROI e Escala</p>
                 </div>
               </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════ FAQ (Perguntas Frequentes) ═══════════════ */}
+      <section className="py-20 lg:py-28 border-t border-border">
+        <div className="container mx-auto px-6">
+          <div className="max-w-3xl mx-auto">
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center mb-12">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground tracking-tight">
+                Dúvidas <span className="text-primary">Frequentes</span>
+              </h2>
+              <p className="text-muted-foreground mt-4 text-[15px]">
+                Encontre as respostas para as principais dúvidas sobre nossa plataforma.
+              </p>
+            </motion.div>
+
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
+              <Accordion type="single" collapsible className="w-full space-y-4">
+                {faqs.map((faq, index) => (
+                  <AccordionItem
+                    key={index}
+                    value={`item-${index}`}
+                    className="border border-border bg-card rounded-2xl px-6 data-[state=open]:border-primary/40 data-[state=open]:shadow-md transition-all"
+                  >
+                    <AccordionTrigger className="text-left text-[15px] font-semibold text-foreground hover:no-underline py-5 [&[data-state=open]]:text-primary transition-colors">
+                      {faq.question}
+                    </AccordionTrigger>
+                    <AccordionContent className="text-[15px] text-muted-foreground leading-relaxed pb-5">
+                      {faq.answer}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
             </motion.div>
           </div>
         </div>
