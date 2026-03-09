@@ -630,28 +630,34 @@ const Agents = () => {
                           </Label>
                           <p className="text-[10px] text-slate-500 dark:text-white/40">Pedir número do lead na conversa</p>
                         </div>
-                        <Switch
-                          checked={editAgent.ask_whatsapp}
-                          onCheckedChange={checked => setEditAgent({ ...editAgent, ask_whatsapp: checked })}
-                          className="data-[state=checked]:bg-primary"
-                        />
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
                           <Label className="text-[12px] font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                            <ImagePlus size={14} className="text-primary" /> Imagens com IA
+                            <Bot size={14} className="text-primary" /> Captura Orgânica
                           </Label>
-                          <p className="text-[10px] text-slate-500 dark:text-white/40">Permitir que a IA gere imagens</p>
+                          <p className="text-[10px] text-slate-500 dark:text-white/40">IA "pesca" os dados naturalmente no papo</p>
                         </div>
                         <Switch
-                          checked={editAgent.ai_image_generation}
-                          onCheckedChange={checked => setEditAgent({ ...editAgent, ai_image_generation: checked })}
+                          checked={editAgent.organic_lead_capture}
+                          onCheckedChange={checked => setEditAgent({ ...editAgent, organic_lead_capture: checked })}
                           className="data-[state=checked]:bg-primary"
                         />
                       </div>
                     </div>
 
                     <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
+                          <MessageSquare size={12} className="text-primary" /> Mensagem de Início (WhatsApp Style)
+                        </Label>
+                        <Input
+                          value={editAgent.predefined_message || ""}
+                          onChange={e => setEditAgent({ ...editAgent, predefined_message: e.target.value })}
+                          placeholder="Ex: Quero saber mais sobre o produto..."
+                          className="h-11 bg-slate-50/50 dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-xl focus:ring-primary/20 focus:border-primary/50 text-xs"
+                        />
+                      </div>
                       <div className="space-y-2">
                         <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
                           <ShieldCheck size={12} className="text-primary" /> Meta CAPI Token

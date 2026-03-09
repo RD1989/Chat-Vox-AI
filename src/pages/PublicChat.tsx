@@ -279,6 +279,8 @@ interface VoxConfig {
   checkout_url?: string;
   meta_api_token?: string;
   meta_pixel?: string;
+  predefined_message?: string;
+  organic_lead_capture?: boolean;
   chat_theme_config: {
     headerBg?: string;
     headerText?: string;
@@ -410,7 +412,22 @@ const PublicChat = () => {
           setConfigLoading(false);
           setTimeout(() => {
             setMessages([{ id: "welcome", role: "assistant", content: a.welcome_message || "Olá! Como posso ajudar você hoje?", timestamp: new Date() }]);
-            setTimeout(() => setShowNamePrompt(true), 1000);
+
+            // Lógica de Mensagem Predefinida e Captura Orgânica
+            if (a.predefined_message) {
+              setTimeout(() => {
+                const userPredefinedMsg: Message = {
+                  id: `pre-msg-${Date.now()}`,
+                  role: "user",
+                  content: a.predefined_message,
+                  timestamp: new Date()
+                };
+                setMessages(prev => [...prev, userPredefinedMsg]);
+                sendMessageWithContent(a.predefined_message);
+              }, 1200);
+            } else if (!a.organic_lead_capture) {
+              setTimeout(() => setShowNamePrompt(true), 1500);
+            }
           }, 500);
           return;
         }
@@ -447,20 +464,30 @@ const PublicChat = () => {
           const kbText = kbData.map((k: any) => `[${k.title}]\n${k.content}`).join("\n\n");
           setKnowledgeBase(kbText);
         }
+
+        setTimeout(() => {
+          const welcomeMsg = d.welcome_message || "Olá! Como posso ajudar você hoje?";
+          setMessages([
+            { id: "welcome", role: "assistant", content: welcomeMsg, timestamp: new Date() },
+          ]);
+
+          if (d.predefined_message) {
+            setTimeout(() => {
+              const userPredefinedMsg: Message = {
+                id: `pre-msg-${Date.now()}`,
+                role: "user",
+                content: d.predefined_message,
+                timestamp: new Date()
+              };
+              setMessages(prev => [...prev, userPredefinedMsg]);
+              sendMessageWithContent(d.predefined_message);
+            }, 1200);
+          } else if (!d.organic_lead_capture) {
+            setTimeout(() => setShowNamePrompt(true), 1500);
+          }
+        }, 500);
       }
       setConfigLoading(false);
-
-      setTimeout(() => {
-        const welcomeMsg = data
-          ? (data as any).welcome_message || "Olá! Como posso ajudar você hoje?"
-          : "Olá! Como posso ajudar você hoje?";
-        setMessages([
-          { id: "welcome", role: "assistant", content: welcomeMsg, timestamp: new Date() },
-        ]);
-        setTimeout(() => {
-          setShowNamePrompt(true);
-        }, 1000);
-      }, 500);
     };
     load();
   }, [userId, agentId]);

@@ -33,7 +33,9 @@ interface VoxForm {
   widget_trigger_seconds: number;
   widget_trigger_scroll: number;
   widget_position: string;
-  [key: string]: string | number;
+  predefined_message?: string;
+  organic_lead_capture?: boolean;
+  [key: string]: string | number | boolean | undefined;
 }
 
 const VoxSettings = () => {
@@ -67,8 +69,10 @@ const VoxSettings = () => {
     widget_trigger_scroll: 50,
     widget_position: "bottom-right",
     notify_email: "",
-    notify_on_new_lead: 1,
-    notify_on_qualified: 1,
+    notify_on_new_lead: true,
+    notify_on_qualified: true,
+    predefined_message: "",
+    organic_lead_capture: false,
   });
 
   useEffect(() => {
@@ -145,7 +149,7 @@ const VoxSettings = () => {
     toast({ title: `${label} copiado!` });
   };
 
-  const update = (key: string, value: string | number) =>
+  const update = (key: string, value: string | number | boolean) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
   if (loading) {
@@ -303,6 +307,30 @@ const VoxSettings = () => {
                       className="h-14 bg-slate-50/50 dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 transition-all font-bold text-lg"
                     />
                   </div>
+                  <div className="space-y-3">
+                    <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
+                      <MessageSquareCode size={12} className="text-primary" /> Mensagem de Início (WhatsApp Style)
+                    </Label>
+                    <Input
+                      value={form.predefined_message as string || ""}
+                      onChange={(e) => update("predefined_message", e.target.value)}
+                      placeholder="Ex: Quero saber mais sobre o produto..."
+                      className="h-14 bg-slate-50/50 dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 transition-all text-sm"
+                    />
+                  </div>
+                  <div className="space-y-4 p-4 bg-slate-50/50 dark:bg-black/20 rounded-[1.5rem] border border-slate-200 dark:border-white/5 flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <Bot size={14} className="text-primary" /> Captura Orgânica de Leads
+                      </Label>
+                      <p className="text-[10px] text-slate-500 dark:text-white/40">A IA pergunta o nome naturalmente no diálogo</p>
+                    </div>
+                    <Switch
+                      checked={!!form.organic_lead_capture}
+                      onCheckedChange={(val) => update("organic_lead_capture", val)}
+                      className="data-[state=checked]:bg-primary"
+                    />
+                  </div>
                   {user && (
                     <div className="space-y-3">
                       <Label className="text-xs font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">Avatar Global</Label>
@@ -390,8 +418,8 @@ const VoxSettings = () => {
                         key={m.key}
                         onClick={() => setAppearanceMode(m.key)}
                         className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${appearanceMode === m.key
-                            ? "border-primary bg-primary/5 text-primary"
-                            : "border-border hover:border-primary/30 text-muted-foreground"
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-border hover:border-primary/30 text-muted-foreground"
                           }`}
                       >
                         <m.icon size={16} />
