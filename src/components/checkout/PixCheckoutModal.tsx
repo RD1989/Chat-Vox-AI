@@ -99,15 +99,11 @@ export const PixCheckoutModal = ({ isOpen, onClose, planSlug, planName, userId }
                 className="sm:max-w-[400px] bg-white dark:bg-[#0A0A0A] border-slate-200 dark:border-white/10 p-0 overflow-hidden"
                 aria-describedby="pix-checkout-description"
             >
-                <div className="sr-only">
+                <DialogHeader className="sr-only">
                     <DialogTitle>Checkout de Pagamento Pix</DialogTitle>
                     <DialogDescription id="pix-checkout-description">
                         Interface para geração de QR Code e código Copia e Cola para ativação do plano selecionado.
                     </DialogDescription>
-                </div>
-
-                <DialogHeader className="hidden">
-                    <DialogTitle>Checkout Pix</DialogTitle>
                 </DialogHeader>
                 <div className="bg-primary/10 p-6 flex items-center gap-4">
                     <div className="bg-primary/20 p-2 rounded-xl">
