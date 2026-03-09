@@ -29,6 +29,8 @@ import { OnboardingWizard } from "@/components/agents/OnboardingWizard";
 import { KnowledgeBase } from "@/components/settings/KnowledgeBase";
 import { BookOpen, Link as LinkIcon2, Layers } from "lucide-react";
 import { AgentButtonsManager } from "@/components/agents/AgentButtonsManager";
+import { AvatarUpload } from "@/components/settings/AvatarUpload";
+import { X } from "lucide-react";
 
 interface Agent {
   id: string;
@@ -223,6 +225,7 @@ const Agents = () => {
         name: updatedAgent.name,
         system_prompt: updatedAgent.system_prompt,
         welcome_message: updatedAgent.welcome_message,
+        ai_avatar_url: updatedAgent.ai_avatar_url,
         primary_color: updatedAgent.primary_color,
         is_active: updatedAgent.is_active,
         chat_theme_config: updatedAgent.chat_theme_config,
@@ -244,6 +247,8 @@ const Agents = () => {
         ai_image_generation: editAgent.ai_image_generation,
         product_media: editAgent.product_media,
         social_proof_media: editAgent.social_proof_media,
+        predefined_message: editAgent.predefined_message,
+        organic_lead_capture: editAgent.organic_lead_capture,
       } as any)
       .eq("id", editAgent.id);
 
@@ -805,10 +810,19 @@ const Agents = () => {
                           onChange={e => setEditAgent({ ...editAgent, primary_color: e.target.value })}
                           className="w-10 h-8 rounded-lg border border-slate-200 dark:border-white/20 cursor-pointer overflow-hidden p-0 bg-transparent"
                         />
-                        <span className="text-xs font-mono text-slate-500 dark:text-white/40 font-bold flex-1">{editAgent.primary_color.toUpperCase()}</span>
                       </div>
                     </div>
                   </div>
+
+                  {user && (
+                    <div className="p-5 rounded-2xl bg-slate-50/50 dark:bg-black/20 border border-slate-200 dark:border-white/5">
+                      <AvatarUpload
+                        userId={user.id}
+                        currentUrl={editAgent.ai_avatar_url || ""}
+                        onUrlChange={(url) => setEditAgent({ ...editAgent, ai_avatar_url: url })}
+                      />
+                    </div>
+                  )}
 
                   <div className="space-y-2">
                     <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
