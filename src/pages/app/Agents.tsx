@@ -561,6 +561,55 @@ const Agents = () => {
                   </TabsTrigger>
                 </TabsList>
 
+                <TabsContent value="identity" className="space-y-6 mt-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="bg-slate-50/50 dark:bg-black/20 border border-slate-200 dark:border-white/5 rounded-2xl p-6 flex flex-col md:flex-row gap-8">
+                    <div className="flex flex-col items-center gap-4">
+                      <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest">Avatar da IA</Label>
+                      <AvatarUpload
+                        userId={user?.id || ""}
+                        currentUrl={editAgent.ai_avatar_url || ""}
+                        onUrlChange={(url) => setEditAgent({ ...editAgent, ai_avatar_url: url })}
+                      />
+                      <p className="text-[10px] text-slate-400 text-center max-w-[150px]">Recomendado: 512x512px. Aparecerá no topo do chat.</p>
+                    </div>
+
+                    <div className="flex-1 space-y-6">
+                      <div className="space-y-2">
+                        <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">Nome de Exibição</Label>
+                        <Input
+                          value={editAgent.name}
+                          onChange={(e) => setEditAgent({ ...editAgent, name: e.target.value })}
+                          placeholder="Ex: João, Consultor Digital"
+                          className="h-12 bg-white dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-xl focus:ring-primary/20 focus:border-primary/50 text-sm font-bold"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">Mensagem de Boas-Vindas</Label>
+                        <Textarea
+                          value={editAgent.welcome_message}
+                          onChange={(e) => setEditAgent({ ...editAgent, welcome_message: e.target.value })}
+                          placeholder="Ex: Olá! Como posso ajudar você hoje?"
+                          rows={3}
+                          className="bg-white dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-xl focus:ring-primary/20 focus:border-primary/50 text-sm resize-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-50/50 dark:bg-black/20 border border-slate-200 dark:border-white/5 rounded-2xl p-6 space-y-4">
+                    <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
+                      <BrainCircuit size={14} className="text-primary" /> Prompt de Sistema (Cérebro da IA)
+                    </Label>
+                    <Textarea
+                      value={agentConfig.base_prompt}
+                      onChange={(e) => setAgentConfig({ ...agentConfig, base_prompt: e.target.value })}
+                      placeholder="Descreva o comportamento base da IA..."
+                      className="min-h-[200px] font-mono text-xs bg-white dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-xl"
+                    />
+                  </div>
+                </TabsContent>
+
                 <TabsContent value="sales" className="space-y-6 mt-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
                   <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-2xl p-4 flex items-start gap-4 mb-2">
                     <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">

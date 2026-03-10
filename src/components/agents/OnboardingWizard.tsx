@@ -122,7 +122,10 @@ Você é um **Arquiteto de Vendas Sênior e Closer de Elite** do produto/serviç
                             </div>
 
                             <DialogFooter className="mt-8">
-                                <Button variant="ghost" onClick={() => onOpenChange(false)} className="dark:text-white hover:bg-slate-100 dark:hover:bg-white/5">
+                                <Button variant="ghost" onClick={() => {
+                                    onSuccess("", "");
+                                    onOpenChange(false);
+                                }} className="dark:text-white hover:bg-slate-100 dark:hover:bg-white/5">
                                     Preencher Manualmente
                                 </Button>
                                 <Button
