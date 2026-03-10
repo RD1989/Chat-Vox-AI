@@ -30,7 +30,7 @@ export const ExitIntentPopup = () => {
 
     const handleClaimOffer = () => {
         setIsOpen(false);
-        navigate("/pricing?coupon=OFF50");
+        navigate("/pricing?coupon=OFF30");
     };
 
     return (
@@ -78,7 +78,7 @@ export const ExitIntentPopup = () => {
                                 <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                                 <p className="text-sm font-bold text-primary uppercase tracking-widest mb-1">Cupom Exclusivo</p>
                                 <div className="text-5xl font-black text-white tracking-tighter">
-                                    50% OFF
+                                    30% OFF
                                 </div>
                                 <p className="text-slate-400 text-xs mt-2 italic">Válido para o primeiro mês em qualquer plano</p>
                             </div>
