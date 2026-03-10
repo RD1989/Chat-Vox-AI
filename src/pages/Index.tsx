@@ -341,12 +341,23 @@ const Index = () => {
             ))}
           </motion.div>
 
+        </motion.div>
+      </section>
+
+      {/* ═══════════════ VIDEO SHOWCASE ═══════════════ */}
+      <section className="py-10 pb-20 relative overflow-hidden">
+        {/* Background flares for the video section */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-primary/10 blur-[120px] rounded-full pointer-events-none" />
+
+        <div className="container mx-auto px-6 relative z-10">
           <motion.div
-            initial="hidden" animate="visible" variants={fadeUp} custom={5}
-            className="w-full max-w-5xl mx-auto mt-16 md:mt-24 px-4 relative z-10"
+            initial={{ opacity: 0, scale: 0.95, y: 30 }}
+            whileInView={{ opacity: 1, scale: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="w-full max-w-5xl mx-auto"
           >
             <div className="rounded-[2rem] p-3 sm:p-4 bg-white/10 dark:bg-white/5 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-2xl relative">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-primary/20 blur-[100px] rounded-full -z-10 pointer-events-none" />
               <div className="aspect-video w-full rounded-2xl overflow-hidden border border-white/10 relative shadow-inner">
                 <iframe
                   src="https://www.youtube.com/embed/D4edhwgy_qI?rel=0&modestbranding=1"
@@ -358,7 +369,7 @@ const Index = () => {
               </div>
             </div>
           </motion.div>
-        </motion.div>
+        </div>
       </section>
 
       {/* ═══════════════ INTEGRATIONS MARQUEE ═══════════════ */}
