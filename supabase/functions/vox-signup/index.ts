@@ -34,8 +34,14 @@ serve(async (req) => {
 
         console.log(`[vox-signup] Nova tentativa de registro. IP: ${clientIp} - Email: ${email}`);
 
-        // VERIFICAÇÃO ANTI-FRAUDE: 1 CONTA FREE POR IP
-        if (clientIp !== "unknown" && clientIp !== "127.0.0.1" && clientIp !== "::1") {
+        // VERIFICAÇÃO ANTI-FRAUDE: 1 CONTA FREE POR IP (Bypass para IP do administrador)
+        const isWhitelistedIp = clientIp === "138.255.56.168";
+
+        if (isWhitelistedIp) {
+            console.log(`[vox-signup] Whitelist ativada para IP: ${clientIp}. Ignorando trava anti-fraude.`);
+        }
+
+        if (clientIp !== "unknown" && clientIp !== "127.0.0.1" && clientIp !== "::1" && !isWhitelistedIp) {
             const { count } = await supabase
                 .from("profiles")
                 .select("*", { count: "exact", head: true })
@@ -43,7 +49,7 @@ serve(async (req) => {
                 .in("plan", ["free", "trial"]);
 
             if (count && count >= 1) {
-                console.warn(`[vox-signup] BLOQUEIO ANTI-FRAUDE IP: ${clientIp} já possui conta gratuita.`);
+                console.warn(`[vox-signup] BLOQUEIO ANTI-FRAUDE IP: ${clientIp} já possui conta gratuita. Regra: Máximo 1 conta free por IP.`);
                 return new Response(JSON.stringify({
                     error: "Limite de contas atingido.",
                     details: "Já existe uma conta gratuita registrada a partir desta rede/dispositivo. Para criar uma nova conta, assine um de nossos planos Premium."
