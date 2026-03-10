@@ -796,24 +796,35 @@ const PublicChat = () => {
           try {
             const json = JSON.parse(dataStr);
 
-            // Handle regular text content delta
             if (json.choices?.[0]?.delta?.content) {
               const content = json.choices[0].delta.content;
 
-              // Filtro Secundário no Front-end: Ignorar lixo de código
-              if (content.includes("defaultapi") || content.includes("print(")) {
-                console.warn("[Vox] Código alucinado interceptado e filtrado no front-end.");
-              } else {
-                streamContentRef.current += content;
-                if (!assistantMsgAdded) {
-                  setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: "", timestamp: new Date() }]);
-                  assistantMsgAdded = true;
-                }
+              streamContentRef.current += content;
 
-                setMessages(prev => prev.map(m =>
-                  m.id === assistantId ? { ...m, content: streamContentRef.current } : m
-                ));
+              const sanitizeStream = (text: string) => {
+                let cleaned = text;
+                // Remove Arrays de strings e objetos de Quick Replies
+                cleaned = cleaned.replace(/defaultapi\.[a-zA-Z_]+\(\[[^\]]*\]\)/g, "");
+                // Remove listagens literais de Python como [defaultapi.ShowQuickRepliesButtons(...)]
+                cleaned = cleaned.replace(/\[\s*defaultapi\.[a-zA-Z_]+\(.*?\)\s*\]/g, "");
+                // Remove chamadas únicas defaultapi.QualquerCoisa(args)
+                cleaned = cleaned.replace(/defaultapi\.[a-zA-Z_]+\([^)]*\)/g, "");
+                // Remove prints aninhados
+                cleaned = cleaned.replace(/print\(\s*defaultapi\.[a-zA-Z_]+\([^)]*\)\s*\)/g, "");
+                return cleaned.trim();
+              };
+
+              // Filtro Secundário no Front-end: Remover lixo de código/API vazado pela IA
+              let cleanStream = sanitizeStream(streamContentRef.current);
+
+              if (!assistantMsgAdded) {
+                setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: "", timestamp: new Date() }]);
+                assistantMsgAdded = true;
               }
+
+              setMessages(prev => prev.map(m =>
+                m.id === assistantId ? { ...m, content: cleanStream } : m
+              ));
             }
 
             // Handle interactive elements (buttons/forms) sent as special SSE events
@@ -823,11 +834,13 @@ const PublicChat = () => {
                 setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: json.data?.message || "", timestamp: new Date() }]);
                 assistantMsgAdded = true;
                 if (json.data?.message) {
-                  // Filtro para o texto de contexto da ferramenta
-                  const cleanToolMessage = json.data.message
-                    .replace(/print\(defaultapi\..*?\)/g, "")
-                    .replace(/default_api\..*?\(.*?\)/g, "")
-                    .trim();
+                  // Filtro agressivo para o texto de contexto da ferramenta (mesma lógica do stream)
+                  let cleanToolMessage = json.data.message;
+                  cleanToolMessage = cleanToolMessage.replace(/\[\s*defaultapi\.[a-zA-Z_]+\(.*?\)\s*\]/g, "");
+                  cleanToolMessage = cleanToolMessage.replace(/defaultapi\.[a-zA-Z_]+\(\[[^\]]*\]\)/g, "");
+                  cleanToolMessage = cleanToolMessage.replace(/defaultapi\.[a-zA-Z_]+\([^)]*\)/g, "");
+                  cleanToolMessage = cleanToolMessage.replace(/print\(\s*defaultapi\.[a-zA-Z_]+\([^)]*\)\s*\)/g, "");
+                  cleanToolMessage = cleanToolMessage.trim();
 
                   // Se o balão já foi criado (via stream) mas está vazio, preenchemos com o texto da ferramenta
                   setMessages(prev => prev.map(m =>
