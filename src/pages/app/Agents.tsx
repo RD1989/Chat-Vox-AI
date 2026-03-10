@@ -506,7 +506,7 @@ const Agents = () => {
         <DialogContent className="w-[96vw] max-w-[96vw] lg:max-w-[calc(100vw-17rem)] h-[96vh] max-h-[96vh] bg-white dark:bg-[#0a0f16] border border-slate-200 dark:border-white/10 shadow-2xl rounded-3xl p-0 overflow-hidden flex flex-col">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50"></div>
 
-          <div className="p-6 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] shrink-0 flex items-center justify-between">
+          <div className="p-6 pr-14 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] shrink-0 flex items-center justify-between">
             <div>
               <DialogTitle className="flex items-center gap-3 text-xl font-bold text-slate-900 dark:text-white">
                 <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-primary/20 flex items-center justify-center border border-emerald-100 dark:border-primary/30">
@@ -520,10 +520,10 @@ const Agents = () => {
             </div>
 
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" className="text-slate-500 hover:text-slate-900 hover:bg-slate-200 dark:text-white/60 dark:hover:text-white dark:hover:bg-white/5 font-bold rounded-xl h-10" onClick={() => setEditAgent(null)}>Interromper</Button>
+              <Button variant="ghost" size="sm" className="text-slate-500 hover:text-slate-900 hover:bg-slate-200 dark:text-white/60 dark:hover:text-white dark:hover:bg-white/5 font-bold rounded-xl h-10" onClick={() => setEditAgent(null)}>Cancelar</Button>
               <Button onClick={handleSave} disabled={saving} size="sm" className="bg-primary hover:bg-primary/90 text-black font-extrabold rounded-xl px-6 h-10 shadow-[0_0_15px_rgba(0,255,157,0.3)]">
                 {saving ? <Loader2 size={16} className="animate-spin mr-2" /> : <Save size={16} className="mr-2" />}
-                GRAVAR MATRIZ
+                Salvar
               </Button>
             </div>
           </div>
@@ -1232,6 +1232,7 @@ const Agents = () => {
                     </div>
                   </div>
                 </TabsContent>
+              </Tabs>
             </div>
           )}
         </DialogContent>
