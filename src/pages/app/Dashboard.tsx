@@ -1,10 +1,10 @@
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2, Users, UserCheck, MapPin, TrendingUp, MessageSquare, Target, BarChart3, MousePointerClick } from "lucide-react";
 import { format, subDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
-import { useQuery } from "@tanstack/react-query";
 
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import StatCardsGrid from "@/components/dashboard/StatCardsGrid";
@@ -43,22 +43,21 @@ interface DashboardStats {
   engagementData: Array<{ source: string; avgMessages: number; avgScore: number }>;
 }
 
-const defaultStats: DashboardStats = {
-  totalLeads: 0, qualified: 0, topCity: "—", conversionRate: "0%",
-  totalMessages: 0, avgScore: 0, interactiveMessages: 0, avgMessagesPerLead: 0,
-  recentLeads: [], chartData: [], geoData: [], cityData: [],
-  utmRoiData: [], engagementData: []
-};
-
 const Dashboard = () => {
   const { user } = useAuth();
   const plan = usePlanLimits();
+  const [stats, setStats] = useState<DashboardStats>({
+    totalLeads: 0, qualified: 0, topCity: "—", conversionRate: "0%",
+    totalMessages: 0, avgScore: 0, interactiveMessages: 0, avgMessagesPerLead: 0,
+    recentLeads: [], chartData: [], geoData: [], cityData: [],
+    utmRoiData: [], engagementData: [],
+  });
+  const [loading, setLoading] = useState(true);
 
-  const { data: stats = defaultStats, isLoading: loading } = useQuery({
-    queryKey: ['dashboardStats', user?.id],
-    queryFn: async (): Promise<DashboardStats> => {
-      if (!user) return defaultStats;
+  useEffect(() => {
+    if (!user) return;
 
+    const fetchStats = async () => {
       const [{ data: leads }, { count: msgCount }, { data: interactiveMsgs }, { data: allMessages }] = await Promise.all([
         supabase.from("vox_leads").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
         supabase.from("vox_messages").select("*", { count: "exact", head: true }).eq("user_id", user.id),
@@ -157,7 +156,7 @@ const Dashboard = () => {
           ? Math.round((msgCount / leads.length) * 10) / 10
           : 0;
 
-        return {
+        setStats({
           totalLeads: leads.length,
           qualified: qualified.length,
           topCity,
@@ -166,26 +165,26 @@ const Dashboard = () => {
           avgScore,
           interactiveMessages: interactiveMsgs?.length || 0,
           avgMessagesPerLead: avgMsgsPerLead,
-          recentLeads: leads.slice(0, 15) as any,
-          chartData: chartData.reverse(),
+          recentLeads: leads.slice(0, 8) as any,
+          chartData,
           geoData,
           cityData,
           utmRoiData,
-          engagementData
-        };
+          engagementData,
+        });
       }
-      return defaultStats;
-    },
-    enabled: !!user,
-  });
+      setLoading(false);
+    };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="animate-spin text-muted-foreground" size={24} />
-      </div>
-    );
-  }
+    fetchStats();
+
+    const channel = supabase
+      .channel("vox_leads_realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "vox_leads", filter: `user_id=eq.${user.id}` }, () => fetchStats())
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
 
   const statCards = [
     { label: "Total de Leads", value: stats.totalLeads, icon: Users, description: "Leads capturados pelo chat" },

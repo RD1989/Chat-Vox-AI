@@ -182,25 +182,29 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // --- Rate Limiting Profissional via RPC ---
+    // --- Rate Limiting ---
     const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
 
-    const { data: isAllowed, error: rpcError } = await supabase.rpc("check_strict_rate_limit", {
-      p_ip_address: clientIp,
-      p_user_id: user_id,
-      p_max_requests: RATE_LIMIT_MAX,
-      p_window_minutes: 1 // Tempo em minutos de bloqueio da nossa chave RATE_LIMIT_WINDOW_MS original (60s)
-    });
+    const { count: requestCount } = await supabase
+      .from("vox_rate_limits")
+      .select("*", { count: "exact", head: true })
+      .eq("ip_address", clientIp)
+      .eq("user_id", user_id)
+      .gte("window_start", windowStart);
 
-    if (rpcError) {
-      console.warn("[vox-chat] RPC Rate Limit Error (Fallthrough liberado):", rpcError);
-    } else if (isAllowed === false) {
+    if ((requestCount || 0) >= RATE_LIMIT_MAX) {
       return new Response(
-        JSON.stringify({ error: "Limite de proteção excedido. Aguarde um momento antes de enviar novas mensagens." }),
+        JSON.stringify({ error: "Rate limit exceeded. Please wait a moment." }),
         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "60" } }
       );
     }
-    // Record request logic removed because RPC already inserts valid requests.
+
+    await supabase.from("vox_rate_limits").insert({
+      ip_address: clientIp,
+      user_id: user_id,
+      window_start: new Date().toISOString(),
+    });
 
     if (Math.random() < 0.05) {
       supabase.rpc("cleanup_rate_limits").then(() => { }).catch(() => { });

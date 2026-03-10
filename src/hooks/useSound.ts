@@ -9,13 +9,13 @@ const OUTGOING_SOUND = "data:audio/mpeg;base64,//NExAAAAANIAAAAAExBTUUzLjEwMKqqq
 export const playIncomingSound = () => {
     const audio = new Audio("https://actions.google.com/sounds/v1/cartoon/pop.ogg");
     audio.volume = 0.5;
-    audio.play().catch(e => console.log('Autoplay bloqueado pelo navegador', e));
+    audio.play().catch(() => { });
 };
 
 export const playOutgoingSound = () => {
     const audio = new Audio("https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg");
     audio.volume = 0.3;
-    audio.play().catch(e => console.log('Autoplay bloqueado pelo navegador', e));
+    audio.play().catch(() => { });
 };
 
 export const useSound = () => {

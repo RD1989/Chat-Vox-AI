@@ -40,8 +40,6 @@ export const CardCheckoutModal = ({ isOpen, onClose, planSlug, planName, userId,
             // para gerar o payment token de forma segura.
             // Para manter a implementação agnóstica e funcional para o Antigravity:
 
-            console.log("[CardCheckout] Solicitando processamento de cartão...");
-
             const { data, error } = await supabase.functions.invoke("vox-payments", {
                 body: {
                     method: "card",

@@ -12,7 +12,6 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, PieChart, Pie, Cell,
 } from "recharts";
-import { useQuery } from "@tanstack/react-query";
 
 const COLORS = [
   "hsl(var(--primary))",
@@ -25,38 +24,33 @@ const COLORS = [
 
 const Analytics = () => {
   const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [leads, setLeads] = useState<any[]>([]);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [plan, setPlan] = useState<any>(null);
 
-  const { data, isLoading: loading } = useQuery({
-    queryKey: ['analyticsData', user?.id],
-    queryFn: async () => {
-      if (!user) return null;
-
+  useEffect(() => {
+    if (!user) return;
+    const load = async () => {
       const [{ data: l }, { data: m }, { data: profile }] = await Promise.all([
         supabase.from("vox_leads").select("*").eq("user_id", user.id),
         supabase.from("vox_messages").select("*").eq("user_id", user.id),
         supabase.from("profiles").select("plan").eq("id", user.id).single(),
       ]);
 
-      let planData = null;
       if (profile?.plan) {
         const { data: p } = await supabase.from("plans").select("*").eq("slug", profile.plan).single();
-        planData = p;
+        setPlan(p);
       }
 
-      return {
-        leads: l || [],
-        messages: m || [],
-        plan: planData
-      };
-    },
-    enabled: !!user,
-  });
+      setLeads(l || []);
+      setMessages(m || []);
+      setLoading(false);
+    };
+    load();
+  }, [user]);
 
-  const leads = data?.leads || [];
-  const messages = data?.messages || [];
-  const plan = data?.plan || null;
-
-  if (loading || (!data && user)) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="animate-spin text-primary" size={24} />

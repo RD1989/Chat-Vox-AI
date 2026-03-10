@@ -1,73 +1,67 @@
-# Welcome to your Lovable project
+# 🚀 Chat Vox AI - Toolchain & DevEx
 
-## Project info
+Bem-vindo ao ecossistema de desenvolvimento do **Chat Vox AI**. Este projeto utiliza as tecnologias mais modernas de desenvolvimento web e inteligência artificial.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## 🛠️ Toolchain Tecnológica
+- **Frontend**: React 18 + Vite 5 + TypeScript
+- **Backend/DB**: Supabase (PostgreSQL + Edge Functions + RLS)
+- **Estilização**: Tailwind CSS + Shadcn UI
+- **IA**: OpenRouter (Gemini/Claude/GPT-4 via Agentic Flow)
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## 💻 Setup de Desenvolvimento (Local)
 
-**Use Lovable**
+Para manter a consistência e evitar problemas de ambiente, siga este guia:
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### 1. Requisitos
+- Node.js 20+
+- Docker (Para o Supabase Local)
+- [Supabase CLI](https://supabase.com/docs/guides/cli)
 
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
+### 2. Instalação
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Clone o repositório
+git clone <URL_DO_REPO>
+cd sistema-chat-vox
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Instale as dependências
+npm install
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Inicie o Supabase Local (Opcional, mas recomendado)
+npx supabase start
+```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+### 3. Execução
+```sh
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 🛰️ Ciclo de Vida & CI/CD (GitHub Actions)
 
-**Use GitHub Codespaces**
+O projeto possui uma esteira de **Integração Contínua (CI)** que roda automaticamente em todo Pull Request para a `main`.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### O que o CI verifica?
+1. **Linting**: Garante que o código segue os padrões do ESLint.
+2. **Build**: Verifica se a aplicação compila sem erros.
+3. **Tests**: Executa os testes unitários via Vitest.
 
-## What technologies are used for this project?
+> [!IMPORTANT]
+> Nunca faça merge de código que falhou no CI. Isso garante a estabilidade de produção.
 
-This project is built with:
+---
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 🔒 Segurança e Melhores Práticas
+- **RLS (Row Level Security)**: Sempre valide as políticas de segurança ao criar novas tabelas no Supabase.
+- **Edge Functions**: Teste suas funções localmente usando `npx supabase functions serve`.
+- **Variáveis de Ambiente**: Nunca commite arquivos `.env`. Use o `.env.example` como base.
 
-## How can I deploy this project?
+---
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## 📈 Métricas DORA (Foco da Equipe)
+Nosso objetivo é manter o **Lead Time for Changes** baixo e o **Deployment Frequency** alto, sem comprometer a qualidade (baixo **Change Failure Rate**).
 
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+---
+© 2026 Chat Vox AI - Desenvolvido com foco em alta conversão e automação.

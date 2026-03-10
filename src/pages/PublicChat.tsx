@@ -65,8 +65,6 @@ const useBackgroundNotification = () => {
 // Dispara eventos para Meta, TikTok e Google Ads/Analytics
 // -------------------------------------------------------------------------------------
 const trackEvent = (eventName: string, params: Record<string, any> = {}, config?: VoxConfig) => {
-  console.log(`[Rastreio] Disparando evento: ${eventName}`, params);
-
   // 1. Meta (Facebook)
   if ((window as any).fbq) {
     (window as any).fbq('track', eventName, params);
@@ -505,7 +503,6 @@ const PublicChat = () => {
   useEffect(() => {
     const handleTrigger = (event: MessageEvent) => {
       if (event.data?.type === 'vox-trigger-active') {
-        console.log("Chat triggered proactively by widget");
         // Only nudge if no user message yet and it's not already loading
         if (messages.length <= 1 && !isLoading) {
           setIsTyping(true);
