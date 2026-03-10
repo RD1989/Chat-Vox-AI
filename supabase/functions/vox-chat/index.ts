@@ -32,18 +32,18 @@ const INTERACTIVE_TOOLS = [
     type: "function",
     function: {
       name: "show_quick_replies",
-      description: "OBRIGATÓRIO: Exibe botões clicáveis de resposta rápida para o usuário escolher entre opções. DEVE ser chamado SEMPRE que a mensagem contiver uma pergunta com opções (mesmo que implícita). NUNCA liste opções como '1, 2, 3' ou 'A, B, C' em texto puro — isso é proibido. Se você vai oferecer alternativas como 'Plano X ou Plano Y?', 'Prefere WhatsApp ou E-mail?', 'Sim ou Não?', use SEMPRE esta ferramenta para criar os botões. Crie de 2 a 5 botões por mensagem.",
+      description: "OBRIGATÓRIO: Exibe botões clicáveis de resposta rápida para o usuário escolher. REGRA VITAL: Quando você usar esta ferramenta, a sua mensagem em texto NÃO PODE listar, mencionar, ou dar 'spoilers' de quais são as opções. Pergunte apenas a questão (ex: 'Qual área te interessa mais?') e deixe que as opções apareçam EXCLUSIVAMENTE dentro do array 'buttons' desta ferramenta.",
       parameters: {
         type: "object",
         properties: {
-          message: { type: "string", description: "Mensagem de texto que acompanha os botões" },
+          message: { type: "string", description: "Mensagem curta de texto fazendo a pergunta ANTES dos botões. NUNCA cite as opções aqui dentro." },
           buttons: {
             type: "array",
             items: {
               type: "object",
               properties: {
                 label: { type: "string", description: "Texto exibido no botão (máx. 25 caracteres, curto e direto)" },
-                value: { type: "string", description: "Valor enviado quando o botão é clicado (pode ser igual ao label)" },
+                value: { type: "string", description: "Valor enviado internamente (pode ser igual ao label)" },
               },
               required: ["label", "value"],
             },
@@ -420,9 +420,9 @@ A interface do Vox é visual e interativa. **É ABSOLUTAMENTE PROIBIDO listar op
 
 1. **show_quick_replies (Múltipla Escolha — OBRIGATÓRIO):**
    - **REGRA SUPREMA E ABSOLUTA**: Toda vez que você for fazer uma pergunta que tenha 2 ou mais alternativas de resposta, você é **OBRIGADO** a chamar a ferramenta 'show_quick_replies' enviando os botões.
-   - Exemplos onde DEVE usar botões: "Qual plano te interessa? (Starter / Pro)", "Prefere falar por WhatsApp ou E-mail?", "Você é iniciante ou avançado?"
+   - **PROIBIÇÃO DE 'SPOILER'**: No texto da sua resposta, **NUNCA** escreva quais são as opções. Faça apenas a pergunta (ex: "Qual área te interessa mais?") e coloque as opções EXCLUSIVAMENTE dentro do array 'buttons' da ferramenta.
+   - Exemplos de ERRO (que causam seu desligamento): "Escolha uma opção: Vendas, Suporte ou RH." (listar as opções no texto é proibido).
    - Crie de 2 a 5 botões por chamada. Textos curtos.
-   - **AVISO LEGAL**: Se você digitar uma lista numerada ou com letras em vez de gerar os botões, você falhará no seu teste principal.
 
 2. **show_form (Captura de Leads):**
    - Use assim que o lead demonstrar interesse real para "garantir a reserva".
