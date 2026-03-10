@@ -804,13 +804,11 @@ const PublicChat = () => {
               const sanitizeStream = (text: string) => {
                 let cleaned = text;
                 // Remove Arrays de strings e objetos de Quick Replies
-                cleaned = cleaned.replace(/defaultapi\.[a-zA-Z_]+\(\[[^\]]*\]\)/g, "");
-                // Remove listagens literais de Python como [defaultapi.ShowQuickRepliesButtons(...)]
-                cleaned = cleaned.replace(/\[\s*defaultapi\.[a-zA-Z_]+\(.*?\)\s*\]/g, "");
-                // Remove chamadas únicas defaultapi.QualquerCoisa(args)
-                cleaned = cleaned.replace(/defaultapi\.[a-zA-Z_]+\([^)]*\)/g, "");
-                // Remove prints aninhados
-                cleaned = cleaned.replace(/print\(\s*defaultapi\.[a-zA-Z_]+\([^)]*\)\s*\)/g, "");
+                cleaned = cleaned.replace(/defaultapi\.[a-zA-Z_]+\(\[[\s\S]*?\]\)/g, "");
+                // Remove prints inteiros contendo defaultapi. Ex: print(defaultapi.exibirmidia_produto(message='...'))
+                cleaned = cleaned.replace(/print\(\s*defaultapi\.[a-zA-Z_]+\([\s\S]*?\)\s*\)/g, "");
+                // Remove listagens literais e chamadas únicas: defaultapi.ShowQuickRepliesButtons(...) ou [defaultapi.Show(...)]
+                cleaned = cleaned.replace(/\[?\s*defaultapi\.[a-zA-Z_]+\([\s\S]*?\)\s*\]?/g, "");
                 return cleaned.trim();
               };
 
@@ -836,10 +834,9 @@ const PublicChat = () => {
                 if (json.data?.message) {
                   // Filtro agressivo para o texto de contexto da ferramenta (mesma lógica do stream)
                   let cleanToolMessage = json.data.message;
-                  cleanToolMessage = cleanToolMessage.replace(/\[\s*defaultapi\.[a-zA-Z_]+\(.*?\)\s*\]/g, "");
-                  cleanToolMessage = cleanToolMessage.replace(/defaultapi\.[a-zA-Z_]+\(\[[^\]]*\]\)/g, "");
-                  cleanToolMessage = cleanToolMessage.replace(/defaultapi\.[a-zA-Z_]+\([^)]*\)/g, "");
-                  cleanToolMessage = cleanToolMessage.replace(/print\(\s*defaultapi\.[a-zA-Z_]+\([^)]*\)\s*\)/g, "");
+                  cleanToolMessage = cleanToolMessage.replace(/defaultapi\.[a-zA-Z_]+\(\[[\s\S]*?\]\)/g, "");
+                  cleanToolMessage = cleanToolMessage.replace(/print\(\s*defaultapi\.[a-zA-Z_]+\([\s\S]*?\)\s*\)/g, "");
+                  cleanToolMessage = cleanToolMessage.replace(/\[?\s*defaultapi\.[a-zA-Z_]+\([\s\S]*?\)\s*\]?/g, "");
                   cleanToolMessage = cleanToolMessage.trim();
 
                   // Se o balão já foi criado (via stream) mas está vazio, preenchemos com o texto da ferramenta
