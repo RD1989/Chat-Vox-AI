@@ -541,13 +541,13 @@ const Agents = () => {
                     <Palette size={13} /> Aparência
                   </TabsTrigger>
                   <TabsTrigger value="widget" className="rounded-lg text-[11px] font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 px-3 py-2">
-                    <MessageSquareCode size={13} /> Widget
+                    <Code2 size={13} /> Widget
                   </TabsTrigger>
                   <TabsTrigger value="knowledge" className="rounded-lg text-[11px] font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 px-3 py-2">
                     <BookOpen size={13} /> Cérebro
                   </TabsTrigger>
                   <TabsTrigger value="links" className="rounded-lg text-[11px] font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 px-3 py-2">
-                    <LinkIcon2 size={13} /> CTAs
+                    <Link2 size={13} /> CTAs
                   </TabsTrigger>
                 </TabsList>
 
@@ -1094,7 +1094,7 @@ const Agents = () => {
                 <TabsContent value="links" className="mt-0 space-y-4">
                   <div className="bg-gradient-to-br from-primary/20 to-transparent p-6 rounded-3xl border border-primary/20 mb-4 shadow-glass">
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-1">
-                      <LinkIcon2 size={18} className="text-primary" /> Gatilhos de Conversão (CTA)
+                      <Link2 size={18} className="text-primary" /> Gatilhos de Conversão (CTA)
                     </h4>
                     <p className="text-xs text-slate-500 dark:text-white/40 font-medium leading-relaxed">
                       Gerencie botões de alta conversão (WhatsApp, Checkout, Agendamento) que a IA poderá oferecer durante o chat.
