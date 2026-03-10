@@ -29,7 +29,15 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import DataDeletion from "./pages/DataDeletion";
 import { ThemeProvider } from "./components/ThemeProvider";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false, // Prevent redundant requests when switching tabs
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    },
+  },
+});
 
 const App = () => (
   <ThemeProvider defaultTheme="dark" storageKey="chatvox-theme">

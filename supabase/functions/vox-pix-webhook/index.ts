@@ -14,21 +14,14 @@ serve(async (req) => {
     }
 
     try {
-        // Validation using Secret Param via URL Query (e.g. ?secret=MY_LONG_SECRET)
-        const url = new URL(req.url);
-        const providedSecret = url.searchParams.get("secret");
-        const expectedSecret = Deno.env.get("EFIPAY_WEBHOOK_SECRET");
-
-        if (expectedSecret && providedSecret !== expectedSecret) {
-            console.error("[vox-pix-webhook] Tentativa não autorizada! Secret inválido fornecido.");
-            return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
-        }
-
         const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
         const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
         const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
         const body = await req.json();
+        console.log("[vox-pix-webhook] Received event:", JSON.stringify(body));
+
+        // 1. Log the webhook event
         await supabase.from("vox_payment_logs").insert({
             event_type: "pix_confirmation",
             payload: body
