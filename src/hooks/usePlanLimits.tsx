@@ -52,7 +52,7 @@ export const usePlanLimits = (): PlanInfo => {
         .from("plans")
         .select("*")
         .eq("slug", planSlug)
-        .single();
+        .maybeSingle();
 
       // Count current leads
       const { count: leadCount } = await supabase
@@ -81,7 +81,7 @@ export const usePlanLimits = (): PlanInfo => {
         currentRequests,
         canCreateLead: leadLimit === null || currentLeads < leadLimit,
         canSendMessage: requestLimit === null || currentRequests < requestLimit,
-        agentLimit: (plan as any)?.agent_limit ?? 1,
+        agentLimit: planSlug === "free" ? 1 : ((plan as any)?.agent_limit ?? 1),
         loading: false,
       });
     };

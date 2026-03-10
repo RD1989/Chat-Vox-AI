@@ -28,27 +28,27 @@ const plans = [
   },
   {
     slug: "starter", name: "Starter",
-    monthly: { price: "R$97,90", raw: 9790, period: "/mês" },
-    quarterly: { price: "R$234,90", raw: 23490, period: "/tri", perMonth: "R$78,30/mês" },
+    monthly: { price: "R$47,90", raw: 4790, period: "/mês" },
+    quarterly: { price: "R$114,90", raw: 11490, period: "/tri", perMonth: "R$38,30/mês" },
     description: "Para profissionais começando",
     leads: "300 leads/mês",
     highlight: false,
-    features: ["1 Chat IA ativo", "Até 300 leads/mês", "CRM completo", "1 integração", "Suporte por email"],
+    features: ["3 Chats IA ativos", "Até 300 leads/mês", "CRM completo", "1 integração", "Suporte por email"],
   },
   {
     slug: "pro", name: "Pro",
-    monthly: { price: "R$197,90", raw: 19790, period: "/mês" },
-    quarterly: { price: "R$474,90", raw: 47490, period: "/tri", perMonth: "R$158,30/mês" },
+    monthly: { price: "R$97,90", raw: 9790, period: "/mês" },
+    quarterly: { price: "R$234,90", raw: 23490, period: "/tri", perMonth: "R$78,30/mês" },
     description: "Melhor custo-benefício",
     leads: "3.000 leads/mês",
     highlight: true,
     badge: "🔥 MAIS ESCOLHIDO",
-    features: ["3 Chats IA ativos", "Até 3.000 leads/mês", "CRM completo", "Áudios humanizados premium", "Todas as integrações", "Suporte prioritário"],
+    features: ["10 Chats IA ativos", "Até 3.000 leads/mês", "CRM completo", "Áudios humanizados premium", "Todas as integrações", "Suporte prioritário"],
   },
   {
     slug: "scale", name: "Scale",
-    monthly: { price: "R$397,90", raw: 39790, period: "/mês" },
-    quarterly: { price: "R$954,90", raw: 95490, period: "/tri", perMonth: "R$318,30/mês" },
+    monthly: { price: "R$197,90", raw: 19790, period: "/mês" },
+    quarterly: { price: "R$474,90", raw: 47490, period: "/tri", perMonth: "R$158,30/mês" },
     description: "Para alto volume",
     leads: "Leads ilimitados",
     highlight: false,
@@ -60,7 +60,7 @@ const Pricing = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const coupon = searchParams.get("coupon");
-  const isOff50 = coupon === "OFF50";
+  const isOff30 = coupon === "OFF30";
 
   const { user } = useAuth();
   const [billing, setBilling] = useState<"monthly" | "quarterly">("quarterly");
@@ -77,15 +77,15 @@ const Pricing = () => {
 
   const calculateDisplayPrice = (plan: any, type: "monthly" | "quarterly") => {
     const rawPrice = plan[type].raw;
-    if (isOff50 && plan.slug !== "free") {
-      return formatBRL(rawPrice * 0.5);
+    if (isOff30 && plan.slug !== "free") {
+      return formatBRL(rawPrice * 0.7);
     }
     return plan[type].price;
   };
 
   const handleSubscribe = (plan: any) => {
     if (!user) {
-      if (isOff50) navigate(`/signup?coupon=${coupon}`);
+      if (isOff30) navigate(`/signup?coupon=${coupon}`);
       else navigate("/signup");
       return;
     }
@@ -133,7 +133,7 @@ const Pricing = () => {
       {/* Hero */}
       <section className="py-16 lg:py-20 overflow-hidden relative">
         <AnimatePresence>
-          {isOff50 && (
+          {isOff30 && (
             <div className="absolute top-10 left-1/2 -translate-x-1/2 w-full max-w-lg z-10 px-6">
               <motion.div
                 initial={{ y: -50, opacity: 0 }}
@@ -147,7 +147,7 @@ const Pricing = () => {
                   </div>
                   <div className="text-left">
                     <p className="text-sm font-black tracking-tight text-white uppercase leading-none">Cupom Aplicado!</p>
-                    <p className="text-[11px] text-primary font-bold">50% de DESCONTO ativado</p>
+                    <p className="text-[11px] text-primary font-bold">30% de DESCONTO ativado</p>
                   </div>
                 </div>
                 <button onClick={removeCoupon} className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-colors">
@@ -227,13 +227,13 @@ const Pricing = () => {
                       <span className="text-3xl font-bold">{calculateDisplayPrice(plan, billing)}</span>
                       {plan[billing].period && <span className="text-[13px] text-muted-foreground">{plan[billing].period}</span>}
                     </div>
-                    {isOff50 && plan.slug !== "free" && (
+                    {isOff30 && plan.slug !== "free" && (
                       <span className="text-[12px] text-muted-foreground/50 line-through font-medium">
                         de {plan[billing].price}
                       </span>
                     )}
                   </div>
-                  {billing === "quarterly" && "perMonth" in plan.quarterly && plan.quarterly.perMonth && !isOff50 && (
+                  {billing === "quarterly" && "perMonth" in plan.quarterly && plan.quarterly.perMonth && !isOff30 && (
                     <p className="text-[10px] text-muted-foreground mt-0.5">equivale a {plan.quarterly.perMonth}</p>
                   )}
                   <p className="text-[11px] font-medium text-primary mt-1.5">{plan.leads}</p>
