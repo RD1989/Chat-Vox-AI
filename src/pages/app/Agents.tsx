@@ -503,10 +503,10 @@ const Agents = () => {
 
       {/* Modern Edit Dialog */}
       <Dialog open={!!editAgent} onOpenChange={(open) => !open && setEditAgent(null)}>
-        <DialogContent className="max-w-2xl bg-white dark:bg-[#0a0f16] border border-slate-200 dark:border-white/10 shadow-2xl rounded-3xl p-0 overflow-hidden">
+        <DialogContent className="w-[96vw] max-w-[96vw] lg:max-w-[calc(100vw-17rem)] h-[96vh] max-h-[96vh] bg-white dark:bg-[#0a0f16] border border-slate-200 dark:border-white/10 shadow-2xl rounded-3xl p-0 overflow-hidden flex flex-col">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50"></div>
 
-          <div className="p-6 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
+          <div className="p-6 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] shrink-0">
             <DialogTitle className="flex items-center gap-3 text-xl font-bold text-slate-900 dark:text-white">
               <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-primary/20 flex items-center justify-center border border-emerald-100 dark:border-primary/30">
                 <Bot size={18} className="text-emerald-600 dark:text-primary" />
@@ -519,8 +519,8 @@ const Agents = () => {
           </div>
 
           {editAgent && (
-            <div className="px-8 py-6 space-y-6 max-h-[65vh] overflow-y-auto custom-scrollbar">
-              <Tabs defaultValue="identity" className="w-full">
+            <div className="px-8 py-6 flex-1 overflow-y-auto custom-scrollbar">
+              <Tabs defaultValue="identity" className="w-full flex flex-col h-full space-y-4">
                 <TabsList className="w-full flex-wrap h-auto justify-start bg-slate-100 dark:bg-black/40 p-1 mb-6 rounded-xl border border-slate-200 dark:border-white/5 gap-1">
                   <TabsTrigger value="identity" className="rounded-lg text-[11px] font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 px-3 py-2">
                     <Bot size={13} /> Identidade
