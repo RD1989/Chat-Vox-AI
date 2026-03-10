@@ -22,7 +22,7 @@ import {
   Facebook, Megaphone, BarChart3, ShoppingBag, Code2, Clock, RefreshCcw,
   DollarSign, TrendingUp, Wallet, Link2, CreditCard, ImagePlus, UserCheck,
   FileStack, LayoutGrid, Globe, ShieldCheck, HardDrive, FileText, Moon, Sun,
-  X, Palette, Monitor, BookOpen, Layers, Book
+  X, Palette, Monitor, BookOpen, Layers, Book, Terminal, BrainCircuit
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
@@ -520,7 +520,7 @@ const Agents = () => {
 
           {editAgent && (
             <div className="px-8 py-6 space-y-6 max-h-[65vh] overflow-y-auto custom-scrollbar">
-              <Tabs defaultValue="behavior" className="w-full">
+              <Tabs defaultValue="identity" className="w-full">
                 <TabsList className="w-full flex-wrap h-auto justify-start bg-slate-100 dark:bg-black/40 p-1 mb-6 rounded-xl border border-slate-200 dark:border-white/5 gap-1">
                   <TabsTrigger value="identity" className="rounded-lg text-[11px] font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 px-3 py-2">
                     <Bot size={13} /> Identidade
@@ -531,8 +531,8 @@ const Agents = () => {
                   <TabsTrigger value="media" className="rounded-lg text-[11px] font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 px-3 py-2">
                     <ImagePlus size={13} /> Mídias
                   </TabsTrigger>
-                  <TabsTrigger value="pixels" className="rounded-lg text-[11px] font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 px-3 py-2">
-                    <Code2 size={13} /> Pixels
+                  <TabsTrigger value="automation" className="rounded-lg text-[11px] font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 px-3 py-2">
+                    <Target size={13} /> Automação
                   </TabsTrigger>
                   <TabsTrigger value="followup" className="rounded-lg text-[11px] font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 px-3 py-2">
                     <RefreshCcw size={13} /> Follow-up
@@ -825,8 +825,18 @@ const Agents = () => {
                 </TabsContent>
 
                 <TabsContent value="appearance" className="space-y-6 mt-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="bg-purple-500/5 dark:bg-purple-500/10 p-5 rounded-3xl border border-purple-500/20 flex flex-col gap-1 mb-6">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <Palette size={18} className="text-purple-500" /> Identidade Visual e Temas
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-white/60 font-medium">
+                      Configure as cores da marca, o estilo das mensagens e o comportamento visual noturno do robô.
+                    </p>
+                  </div>
+
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2 bg-white dark:bg-transparent border border-slate-200 dark:border-white/5 rounded-3xl p-6">
+                    <div className="lg:col-span-2 bg-slate-50/50 dark:bg-black/20 border border-slate-200 dark:border-white/5 rounded-3xl p-6 shadow-sm relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
                       <ChatThemeSelector
                         activeMode={(editAgent.chat_theme as any) || "whatsapp"}
                         onModeChange={(mode) => setEditAgent({ ...editAgent, chat_theme: mode })}
@@ -837,41 +847,58 @@ const Agents = () => {
                         aiAvatarUrl={editAgent.ai_avatar_url || ""}
                       />
                     </div>
+
                     <div className="space-y-6">
-                      <Card className="bg-white dark:bg-transparent border border-slate-200 dark:border-white/5 rounded-3xl p-6">
-                        <Label className="text-xs font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest mb-4 block">Modo de Exibição</Label>
-                        <div className="space-y-2">
+                      <div className="bg-slate-50/50 dark:bg-black/20 border border-slate-200 dark:border-white/5 rounded-3xl p-6 shadow-sm">
+                        <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest mb-4 block flex items-center gap-2">
+                          <Monitor size={14} className="text-purple-500" /> Esquema de Núcleo
+                        </Label>
+                        <div className="flex flex-col gap-3">
                           {[
-                            { key: "dark" as const, label: "Escuro", icon: Moon },
-                            { key: "light" as const, label: "Claro", icon: Sun },
-                            { key: "auto" as const, label: "Automático", icon: Monitor },
+                            { key: "dark" as const, label: "Forçar Escuro", icon: Moon, color: "text-indigo-400" },
+                            { key: "light" as const, label: "Forçar Claro", icon: Sun, color: "text-amber-500" },
+                            { key: "auto" as const, label: "Interagir Auto", icon: Monitor, color: "text-slate-400" },
                           ].map((m) => (
                             <button
                               key={m.key}
                               onClick={() => setEditAgent({ ...editAgent, chat_appearance_mode: m.key })}
-                              className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${editAgent.chat_appearance_mode === m.key
-                                ? "border-primary bg-primary/5 text-primary"
-                                : "border-border hover:border-primary/30 text-muted-foreground"
+                              className={`w-full flex items-center justify-between p-3.5 rounded-2xl border-2 transition-all text-left group ${editAgent.chat_appearance_mode === m.key
+                                ? "border-purple-500 bg-purple-500/5 shadow-[0_4px_20px_rgba(168,85,247,0.15)]"
+                                : "border-slate-200 dark:border-white/10 hover:border-purple-500/30 hover:bg-white dark:hover:bg-white/5"
                                 }`}
                             >
-                              <m.icon size={14} />
-                              <span className="text-[12px] font-semibold">{m.label}</span>
+                              <div className="flex items-center gap-3">
+                                <div className={`p-2 rounded-xl bg-white dark:bg-black/40 shadow-sm border border-slate-100 dark:border-white/5 ${editAgent.chat_appearance_mode === m.key ? 'text-purple-500' : m.color}`}>
+                                  <m.icon size={16} />
+                                </div>
+                                <span className={`text-[13px] font-bold ${editAgent.chat_appearance_mode === m.key ? 'text-purple-600 dark:text-purple-400' : 'text-slate-600 dark:text-white/70'}`}>{m.label}</span>
+                              </div>
+                              {editAgent.chat_appearance_mode === m.key && (
+                                <div className="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.8)]"></div>
+                              )}
                             </button>
                           ))}
                         </div>
-                      </Card>
-                      <Card className="bg-white dark:bg-transparent border border-slate-200 dark:border-white/5 rounded-3xl p-6">
-                        <Label className="text-xs font-bold text-blue-500 uppercase tracking-widest mb-4 block flex items-center gap-2">
-                          <Code2 size={14} /> Custom CSS
+                      </div>
+
+                      <div className="bg-blue-50/50 dark:bg-blue-500/5 border border-blue-100 dark:border-blue-500/10 rounded-3xl p-6 shadow-sm">
+                        <Label className="text-[11px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-4 block flex items-center gap-2">
+                          <Code2 size={14} className="text-blue-500" /> Folha de Estilos Avançada (CSS)
                         </Label>
-                        <Textarea
-                          value={editAgent.custom_css || ""}
-                          onChange={(e) => setEditAgent({ ...editAgent, custom_css: e.target.value })}
-                          placeholder=".chatvox-bubble { ... }"
-                          className="font-mono text-[10px] bg-black/60 dark:border-white/10 dark:text-blue-400 p-4 rounded-xl resize-none"
-                          rows={6}
-                        />
-                      </Card>
+                        <p className="text-[10px] text-slate-500 dark:text-white/40 mb-3 leading-relaxed">
+                          Injete varáveis gráficas puras. Nível Desenvolvedor.
+                        </p>
+                        <div className="relative group/css">
+                          <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/20 to-transparent rounded-2xl blur opacity-0 group-hover/css:opacity-100 transition duration-500"></div>
+                          <Textarea
+                            value={editAgent.custom_css || ""}
+                            onChange={(e) => setEditAgent({ ...editAgent, custom_css: e.target.value })}
+                            placeholder=".chatvox-bubble { mix-blend-mode: ... }"
+                            className="relative font-mono text-[11px] bg-white dark:bg-[#0a0f16]/90 border-blue-200 dark:border-blue-500/20 text-slate-800 dark:text-blue-400 rounded-2xl focus:ring-blue-500/30 focus:border-blue-500/50 p-4 min-h-[140px] resize-none transition-all shadow-inner custom-scrollbar"
+                            rows={6}
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </TabsContent>
@@ -991,93 +1018,7 @@ const Agents = () => {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="media" className="space-y-6 mt-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                  <div className="bg-slate-50/50 dark:bg-black/20 border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-start gap-4 mb-2">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                      <FileStack size={20} className="text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white">Materiais & Prova Social</h4>
-                      <p className="text-xs text-slate-500 dark:text-white/40 leading-relaxed">Mídias que a IA usará para persuadir e demonstrar o produto.</p>
-                    </div>
-                  </div>
 
-                  <div className="space-y-4">
-                    <div className="p-4 border border-dashed border-slate-300 dark:border-white/10 rounded-2xl text-center space-y-2">
-                      <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center mx-auto mb-2 text-slate-400">
-                        <HardDrive size={20} />
-                      </div>
-                      <h5 className="text-[11px] font-bold text-slate-700 dark:text-white uppercase tracking-wider">Mídias do Produto</h5>
-                      <p className="text-[10px] text-slate-500 dark:text-white/40 max-w-[200px] mx-auto">Fotos e vídeos que a IA usará para demonstrar seu produto.</p>
-
-                      <div className="flex flex-wrap gap-2 mb-3 mt-2 justify-center">
-                        {editAgent.product_media?.map((url, i) => (
-                          <div key={i} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-slate-200 dark:border-white/10">
-                            <img src={url} className="w-full h-full object-cover" />
-                            <button onClick={() => removeMedia(url, 'product')} className="absolute top-0 right-0 p-1 bg-rose-500 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                              <X size={10} />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="relative inline-block mt-2">
-                        <input
-                          type="file"
-                          id="product-media-upload"
-                          className="hidden"
-                          accept="image/*,video/*"
-                          onChange={(e) => handleMediaUpload(e, 'product')}
-                        />
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => document.getElementById('product-media-upload')?.click()}
-                          className="h-8 text-[10px] bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 rounded-xl px-4 font-bold"
-                        >
-                          {saving ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} Fazer Upload
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="p-4 border border-dashed border-slate-300 dark:border-white/10 rounded-2xl text-center space-y-2">
-                      <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center mx-auto mb-2 text-slate-400">
-                        <Sparkles size={20} />
-                      </div>
-                      <h5 className="text-[11px] font-bold text-slate-700 dark:text-white uppercase tracking-wider">Prova Social</h5>
-                      <p className="text-[10px] text-slate-500 dark:text-white/40 max-w-[200px] mx-auto">Prints de depoimentos e resultados para gerar confiança.</p>
-
-                      <div className="flex flex-wrap gap-2 mb-3 mt-2 justify-center">
-                        {editAgent.social_proof_media?.map((url, i) => (
-                          <div key={i} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-slate-200 dark:border-white/10">
-                            <img src={url} className="w-full h-full object-cover" />
-                            <button onClick={() => removeMedia(url, 'social')} className="absolute top-0 right-0 p-1 bg-rose-500 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                              <X size={10} />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="relative inline-block mt-2">
-                        <input
-                          type="file"
-                          id="social-media-upload"
-                          className="hidden"
-                          accept="image/*"
-                          onChange={(e) => handleMediaUpload(e, 'social')}
-                        />
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => document.getElementById('social-media-upload')?.click()}
-                          className="h-8 text-[10px] bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 rounded-xl px-4 font-bold"
-                        >
-                          {saving ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} Fazer Upload
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </TabsContent>
 
                 <TabsContent value="knowledge" className="mt-0 space-y-4">
                   <div className="bg-slate-50 dark:bg-black/40 p-5 rounded-3xl border border-slate-200 dark:border-white/5 mb-4">
@@ -1103,51 +1044,60 @@ const Agents = () => {
                   <AgentButtonsManager agentId={editAgent.id} />
                 </TabsContent>
 
-                <TabsContent value="advanced" className="space-y-6 mt-0 animate-in fade-in duration-300">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
-                        Personalidade e Tom de Voz <Mic size={12} className="text-primary/70" />
-                      </Label>
-                      <Select
-                        value={agentConfig.voice_tone}
-                        onValueChange={(val) => setAgentConfig({ ...agentConfig, voice_tone: val })}
-                      >
-                        <SelectTrigger className="w-full bg-slate-50/50 border-slate-200 text-slate-900 dark:bg-black/40 dark:border-white/10 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 h-12 transition-all">
-                          <SelectValue placeholder="Como o robô deve falar?" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white dark:bg-[#0d121b] border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl">
-                          <SelectItem value="Profissional e Respeitoso">🎩 Profissional e Formal</SelectItem>
-                          <SelectItem value="Amigável e Empático">🤝 Amigável e Empático</SelectItem>
-                          <SelectItem value="Direto e Focado em Conversão">🎯 Direto (Alta Conversão)</SelectItem>
-                          <SelectItem value="Técnico e Analítico">🔬 Técnico e Analítico</SelectItem>
-                          <SelectItem value="Descontraído e Humorístico">⚡ Jovem e Descontraído</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                <TabsContent value="identity" className="space-y-6 mt-0 animate-in fade-in duration-300">
+                  <div className="bg-primary/5 dark:bg-primary/10 p-5 rounded-3xl border border-primary/20 flex flex-col gap-1 mb-6">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <Bot size={18} className="text-primary" /> Matrix de Comportamento
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-white/60 font-medium">
+                      Modele a personalidade, os objetivos e as restrições éticas deste clone de IA.
+                    </p>
+                  </div>
 
-                    <div className="grid grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
-                          Objetivos <Target size={12} className="text-emerald-500/70" />
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="space-y-6">
+                      <div className="p-5 rounded-3xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-black/20 shadow-sm">
+                        <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2 mb-3">
+                          <Mic size={14} className="text-primary" /> Personalidade e Tom de Voz
+                        </Label>
+                        <Select
+                          value={agentConfig.voice_tone}
+                          onValueChange={(val) => setAgentConfig({ ...agentConfig, voice_tone: val })}
+                        >
+                          <SelectTrigger className="w-full bg-white border-slate-200 text-slate-900 dark:bg-black/40 dark:border-white/10 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 h-12 transition-all font-semibold">
+                            <SelectValue placeholder="Como o robô deve falar?" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white dark:bg-[#0d121b] border-slate-200 dark:border-white/10 rounded-2xl shadow-xl">
+                            <SelectItem value="Profissional e Respeitoso">🎩 Profissional e Formal</SelectItem>
+                            <SelectItem value="Amigável e Empático">🤝 Amigável e Empático</SelectItem>
+                            <SelectItem value="Direto e Focado em Conversão">🎯 Direto (Alta Conversão)</SelectItem>
+                            <SelectItem value="Técnico e Analítico">🔬 Técnico e Analítico</SelectItem>
+                            <SelectItem value="Descontraído e Humorístico">⚡ Jovem e Descontraído</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="p-5 rounded-3xl border border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-500/5 shadow-sm">
+                        <Label className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest ml-1 flex items-center gap-2 mb-3">
+                          Objetivos Principais <Target size={14} className="text-emerald-500" />
                         </Label>
                         <Textarea
                           value={agentConfig.priorities}
                           onChange={e => setAgentConfig({ ...agentConfig, priorities: e.target.value })}
                           placeholder="Ex: Coletar WhatsApp primeiro..."
-                          className="bg-slate-50/50 border-slate-200 text-slate-900 dark:bg-black/40 dark:border-white/10 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 text-xs p-4 min-h-[120px] transition-all"
+                          className="bg-white dark:bg-black/40 border-emerald-200 dark:border-emerald-500/10 text-slate-900 dark:text-white rounded-2xl focus:ring-emerald-500/20 focus:border-emerald-500/50 text-xs p-4 min-h-[110px] transition-all"
                         />
                       </div>
 
-                      <div className="space-y-2">
-                        <Label className="text-[11px] font-bold text-rose-500/80 uppercase tracking-widest ml-1 flex items-center gap-2">
-                          Não pode falar sobre <AlertTriangle size={12} className="text-rose-500/70" />
+                      <div className="p-5 rounded-3xl border border-rose-500/20 bg-rose-50/50 dark:bg-rose-500/5 shadow-sm">
+                        <Label className="text-[11px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-widest ml-1 flex items-center gap-2 mb-3">
+                          Regras Intocáveis (Proibições) <AlertTriangle size={14} className="text-rose-500" />
                         </Label>
                         <Textarea
                           value={agentConfig.restrictions}
                           onChange={e => setAgentConfig({ ...agentConfig, restrictions: e.target.value })}
                           placeholder="Ex: Não dar descontos acima de 10%..."
-                          className="bg-rose-50/10 border-slate-200 text-slate-900 dark:bg-rose-500/5 dark:border-rose-500/20 dark:text-white rounded-2xl focus:ring-rose-500/20 focus:border-rose-500/40 text-xs p-4 min-h-[120px] transition-all"
+                          className="bg-white dark:bg-black/40 border-rose-200 dark:border-rose-500/10 text-slate-900 dark:text-white rounded-2xl focus:ring-rose-500/20 focus:border-rose-500/50 text-xs p-4 min-h-[110px] transition-all"
                         />
                       </div>
                     </div>
@@ -1192,19 +1142,27 @@ const Agents = () => {
                       />
                     </div>
 
-                    <div className="space-y-2">
-                      <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
-                        Matriz de Comportamento (Power Prompt) <Bot size={12} className="text-primary/70" />
-                      </Label>
-                      <div className="relative group">
-                        <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-transparent rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-500"></div>
-                        <Textarea
-                          value={agentConfig.base_prompt}
-                          onChange={e => setAgentConfig({ ...agentConfig, base_prompt: e.target.value })}
-                          rows={6}
-                          placeholder="Instruções fundamentais que definem a existência da IA..."
-                          className="relative bg-slate-50/80 border-slate-200 text-slate-800 dark:bg-black/60 dark:border-white/10 dark:text-primary/90 font-mono rounded-2xl focus:ring-primary/20 focus:border-primary/50 text-[13px] leading-relaxed p-5 transition-all"
-                        />
+                    <div className="space-y-6">
+                      <div className="p-6 rounded-3xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-black/20 shadow-sm relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-4 opacity-[0.03] dark:opacity-10 group-hover:scale-110 transition-transform duration-700 pointer-events-none">
+                          <BrainCircuit size={100} className="text-primary" />
+                        </div>
+                        <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2 mb-3 relative z-10">
+                          Matriz de Inteligência (Power Prompt) <Terminal size={14} className="text-primary" />
+                        </Label>
+                        <p className="text-[10px] text-slate-400 dark:text-white/40 mb-3 leading-relaxed relative z-10">
+                          Engenharia de Prompt pura. Aqui você define o cerne cognitivo do robô.
+                        </p>
+                        <div className="relative group/prompt z-10">
+                          <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 via-transparent to-primary/10 rounded-2xl blur opacity-30 group-hover/prompt:opacity-100 transition duration-500"></div>
+                          <Textarea
+                            value={agentConfig.base_prompt}
+                            onChange={e => setAgentConfig({ ...agentConfig, base_prompt: e.target.value })}
+                            rows={15}
+                            placeholder="Instruções fundamentais que definem a existência da IA..."
+                            className="relative bg-white dark:bg-[#0a0f16]/90 border-slate-200 dark:border-primary/20 text-slate-800 dark:text-primary/90 font-mono rounded-2xl focus:ring-primary/30 focus:border-primary/50 text-[12px] leading-relaxed p-5 transition-all shadow-inner custom-scrollbar"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
