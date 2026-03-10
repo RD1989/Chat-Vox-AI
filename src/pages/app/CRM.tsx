@@ -208,7 +208,7 @@ const CRM = () => {
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pb-10">
+      <div className="flex overflow-x-auto md:grid md:grid-cols-4 gap-4 pb-10 snap-x snap-mandatory custom-scrollbar md:snap-none">
         {COLUMNS.map((col) => {
           const colLeads = leads.filter((l) => l.status === col.status);
           return (
@@ -216,7 +216,7 @@ const CRM = () => {
               key={col.status}
               onDragOver={(e) => e.preventDefault()}
               onDrop={() => handleDrop(col.status)}
-              className="bg-white dark:bg-black/20 rounded-2xl p-4 min-h-[400px] flex flex-col transition-all duration-300 border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none"
+              className="bg-white dark:bg-black/20 rounded-2xl p-4 min-h-[400px] max-h-[75vh] flex flex-col transition-all duration-300 border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none min-w-[85vw] sm:min-w-[320px] md:min-w-0 snap-center shrink-0 md:shrink"
             >
               <div className="flex items-center gap-3 mb-5 pb-3 border-b border-slate-100 dark:border-white/10 relative">
                 <div className={`w-3 h-3 rounded-full ${col.dot}`} />

@@ -210,8 +210,8 @@ const Dashboard = () => {
       <DashboardHeader plan={plan} />
 
       {/* Top Value Section: Stats + ROI Thermometer */}
-      <div className="grid grid-cols-12 gap-8">
-        <div className="col-span-12 md:col-span-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+        <div className="lg:col-span-8">
           <StatCardsGrid cards={statCards} />
         </div>
         <RoiThermometer qualifiedLeads={stats.qualified} avgScore={stats.avgScore} />

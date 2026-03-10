@@ -23,7 +23,7 @@ const RoiThermometer = ({ qualifiedLeads, avgScore }: RoiThermometerProps) => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            className="col-span-12 md:col-span-4"
+            className="lg:col-span-4 flex flex-col"
         >
             <Card className="h-full border-0 shadow-2xl relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-black dark:from-[#050B14] dark:via-[#09111E] dark:to-black">
                 {/* Efeito Glow Background */}

@@ -572,7 +572,8 @@ const Agents = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  {/* Colunas Responsivas de Vendas */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
                         <Wallet size={12} className="text-emerald-500" /> Chave PIX
@@ -633,7 +634,7 @@ const Agents = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
                         <LayoutGrid size={12} className="text-emerald-500" /> Cardápio / Catálogo
@@ -670,7 +671,7 @@ const Agents = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4 bg-slate-50/50 dark:bg-black/20 p-4 rounded-2xl border border-slate-200 dark:border-white/5">
                       <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
@@ -723,7 +724,7 @@ const Agents = () => {
 
                   <div className="space-y-4 border-t border-slate-100 dark:border-white/5 pt-4">
                     <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">Configuração do Widget</Label>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label className="text-[11px] font-medium text-slate-500 dark:text-white/40 ml-1">Tempo de Aparição (seg)</Label>
                         <Input
@@ -980,7 +981,7 @@ const Agents = () => {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="p-5 rounded-3xl border border-slate-200 dark:border-white/5 bg-white dark:bg-black/20 space-y-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
@@ -1191,7 +1192,7 @@ const Agents = () => {
                         />
                       </div>
 
-                      <div className="grid grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                           <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
                             Valor Médio de Conversão <DollarSign size={12} className="text-green-500/70" />

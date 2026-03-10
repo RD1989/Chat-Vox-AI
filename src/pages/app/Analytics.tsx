@@ -188,7 +188,7 @@ const Analytics = () => {
       )}
 
       {/* Top metrics */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         {[
           { label: "Leads Hoje", value: todayLeads, icon: Zap, color: "text-primary", bg: "bg-primary/10" },
           { label: "Taxa Conversão", value: convRate, icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/10" },

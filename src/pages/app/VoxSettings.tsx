@@ -146,9 +146,9 @@ const VoxSettings = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500 max-w-5xl mx-auto pb-10">
-      <div className="flex items-center justify-between bg-white dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-glass relative overflow-hidden">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white dark:bg-black/20 p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-glass relative overflow-hidden gap-6 md:gap-0">
         <div className="absolute top-0 right-0 w-80 h-80 bg-primary/5 dark:bg-primary/10 rounded-full blur-[80px] -mr-32 -mt-32 animate-pulse"></div>
-        <div className="relative z-10">
+        <div className="relative z-10 w-full md:w-auto">
           <h1 className="text-3xl font-extrabold text-slate-900 dark:bg-clip-text dark:text-transparent dark:bg-gradient-to-r dark:from-white dark:to-white/70 tracking-tight flex items-center gap-3 mb-2">
             <Bot size={32} className="text-primary dark:drop-shadow-[0_0_15px_rgba(0,255,157,0.5)]" /> Centro de Comando
           </h1>
@@ -156,8 +156,8 @@ const VoxSettings = () => {
             Configurações globais de inteligência, design e rastreamento do seu Ecossistema Chat Vox.
           </p>
         </div>
-        <div className="relative z-10">
-          <Button onClick={handleSave} disabled={saving} className="rounded-2xl h-12 px-8 bg-primary hover:bg-primary/90 text-black shadow-[0_5px_20px_rgba(0,255,157,0.3)] hover:shadow-[0_8px_25px_rgba(0,255,157,0.5)] transition-all font-black gap-2">
+        <div className="relative z-10 w-full md:w-auto">
+          <Button onClick={handleSave} disabled={saving} className="w-full md:w-auto rounded-2xl h-12 px-8 bg-primary hover:bg-primary/90 text-black shadow-[0_5px_20px_rgba(0,255,157,0.3)] hover:shadow-[0_8px_25px_rgba(0,255,157,0.5)] transition-all font-black gap-2">
             {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
             SALVAR ALTERAÇÕES
           </Button>
