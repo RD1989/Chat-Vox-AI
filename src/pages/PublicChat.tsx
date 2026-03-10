@@ -291,6 +291,7 @@ interface VoxConfig {
     aiBubbleText?: string;
     inputBg?: string;
     inputBarBg?: string;
+    accentColor?: string;
     pixels?: Record<string, string>;
   };
 }
@@ -409,7 +410,6 @@ const PublicChat = () => {
             .eq("is_active", true);
           if (buttonsData) setConversionButtons(buttonsData as unknown as ConversionButton[]);
 
-          setConfigLoading(false);
           setTimeout(() => {
             setMessages([{ id: "welcome", role: "assistant", content: a.welcome_message || "Olá! Como posso ajudar você hoje?", timestamp: new Date() }]);
 
@@ -429,6 +429,12 @@ const PublicChat = () => {
               setTimeout(() => setShowNamePrompt(true), 1500);
             }
           }, 500);
+
+          // Se a captura orgânica estiver ligada, permitimos o chat imediatamente
+          if (a.organic_lead_capture) {
+            setLeadCreated(true);
+          }
+          setConfigLoading(false);
           return;
         }
       }
@@ -484,6 +490,9 @@ const PublicChat = () => {
             }, 1200);
           } else if (!d.organic_lead_capture) {
             setTimeout(() => setShowNamePrompt(true), 1500);
+          } else {
+            // Captura orgânica ativada globalmente
+            setLeadCreated(true);
           }
         }, 500);
       }
@@ -935,7 +944,9 @@ const PublicChat = () => {
   const inputBg = tc.inputBg || (isDark ? "#2a3942" : "#ffffff");
   const inputBarBg = tc.inputBarBg || (isDark ? "#202c33" : "#f0f2f5");
   const secondaryText = isDark ? "#8696a0" : "#667781";
-  const accentColor = isDark ? "#00a884" : "#128c7e";
+
+  // O accentColor agora segue o primary_color do agente se não houver um override específico no theme_config
+  const accentColor = tc.accentColor || config.primary_color || (isDark ? "#00a884" : "#128c7e");
 
   const wallpaperStyle = {
     backgroundColor: chatBg,

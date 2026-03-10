@@ -23,18 +23,10 @@ import { KnowledgeBase } from "@/components/settings/KnowledgeBase";
 
 
 interface VoxForm {
-  ai_name: string;
-  ai_avatar_url: string;
-  primary_color: string;
-  welcome_message: string;
-  system_prompt: string;
   webhook_url: string;
-  custom_css: string;
-  widget_trigger_seconds: number;
-  widget_trigger_scroll: number;
-  widget_position: string;
-  predefined_message?: string;
-  organic_lead_capture?: boolean;
+  notify_email: string;
+  notify_on_new_lead: boolean;
+  notify_on_qualified: boolean;
   [key: string]: string | number | boolean | undefined;
 }
 
@@ -58,21 +50,10 @@ const VoxSettings = () => {
   });
   const [appearanceMode, setAppearanceMode] = useState<"light" | "dark" | "auto">("dark");
   const [form, setForm] = useState<VoxForm>({
-    ai_name: "Chat Vox",
-    ai_avatar_url: "",
-    primary_color: "#6366f1",
-    welcome_message: "Olá! Como posso ajudar você hoje?",
-    system_prompt: "",
     webhook_url: "",
-    custom_css: "",
-    widget_trigger_seconds: 5,
-    widget_trigger_scroll: 50,
-    widget_position: "bottom-right",
     notify_email: "",
     notify_on_new_lead: true,
     notify_on_qualified: true,
-    predefined_message: "",
-    organic_lead_capture: false,
   });
 
   useEffect(() => {
@@ -95,12 +76,15 @@ const VoxSettings = () => {
           }
           return updated;
         });
-        // Restore theme mode & config
-        if (d.chat_theme) setChatThemeMode(d.chat_theme as any);
-        if (d.chat_appearance_mode) setAppearanceMode(d.chat_appearance_mode);
-        if (d.chat_theme_config && typeof d.chat_theme_config === "object" && d.chat_theme_config.name) {
-          setChatThemeConfig(d.chat_theme_config as ChatTheme);
-        }
+        setForm((prev) => {
+          const updated = { ...prev };
+          for (const key of Object.keys(prev)) {
+            if (d[key] !== undefined && d[key] !== null) {
+              updated[key] = d[key];
+            }
+          }
+          return updated;
+        });
       }
       setLoading(false);
     };
@@ -114,7 +98,7 @@ const VoxSettings = () => {
     const { error } = await supabase
       .from("vox_settings")
       .upsert(
-        { user_id: user.id, ...form, chat_theme: chatThemeMode, chat_appearance_mode: appearanceMode, chat_theme_config: chatThemeConfig, updated_at: new Date().toISOString() } as any,
+        { user_id: user.id, ...form, updated_at: new Date().toISOString() } as any,
         { onConflict: "user_id" }
       );
 
@@ -229,284 +213,21 @@ const VoxSettings = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="ai" className="w-full">
+      <Tabs defaultValue="knowledge" className="w-full">
         <TabsList className="w-full justify-start bg-slate-100 dark:bg-black/40 p-1.5 rounded-2xl flex-wrap h-auto gap-1 border border-slate-200 dark:border-white/5 mb-8">
-          <TabsTrigger value="ai" className="gap-2 text-[11px] font-bold uppercase tracking-tight rounded-xl data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:shadow-sm px-4 h-10 transition-all">
-            <Sparkles size={14} className="text-primary" /> IA & Prompt
-          </TabsTrigger>
-          <TabsTrigger value="identity" className="gap-2 text-[11px] font-bold uppercase tracking-tight rounded-xl data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:shadow-sm px-4 h-10 transition-all">
-            <Bot size={14} /> Identidade
-          </TabsTrigger>
-          <TabsTrigger value="appearance" className="gap-2 text-[11px] font-bold uppercase tracking-tight rounded-xl data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:shadow-sm px-4 h-10 transition-all">
-            <Palette size={14} /> Aparência
-          </TabsTrigger>
-          <TabsTrigger value="widget" className="gap-2 text-[11px] font-bold uppercase tracking-tight rounded-xl data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:shadow-sm px-4 h-10 transition-all">
-            <MessageSquareCode size={14} /> Posicionamento
+          <TabsTrigger value="knowledge" className="gap-2 text-[11px] font-bold uppercase tracking-tight rounded-xl data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:shadow-sm px-4 h-10 transition-all">
+            <BookOpen size={14} className="text-primary" /> Cérebro Global
           </TabsTrigger>
           <TabsTrigger value="webhooks" className="gap-2 text-[11px] font-bold uppercase tracking-tight rounded-xl data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:shadow-sm px-4 h-10 transition-all">
-            <Webhook size={14} /> Webhooks
+            <Webhook size={14} /> Integrações API
           </TabsTrigger>
           <TabsTrigger value="notifications" className="gap-2 text-[11px] font-bold uppercase tracking-tight rounded-xl data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:shadow-sm px-4 h-10 transition-all">
-            <Bell size={14} /> Alertas
-          </TabsTrigger>
-          <TabsTrigger value="knowledge" className="gap-2 text-[11px] font-bold uppercase tracking-tight rounded-xl data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:shadow-sm px-4 h-10 transition-all">
-            <BookOpen size={14} /> Base Master
+            <Bell size={14} /> Alertas & Email
           </TabsTrigger>
         </TabsList>
 
         <div className="mt-2 min-h-[400px]">
-          {/* AI & Prompt Tab */}
-          <TabsContent value="ai" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <Card className="bg-white dark:bg-transparent border-slate-200 dark:border-white/5 rounded-3xl shadow-sm dark:shadow-none overflow-hidden">
-              <CardHeader className="bg-slate-50/50 dark:bg-white/[0.02] border-b border-slate-100 dark:border-white/5 p-6">
-                <CardTitle className="text-lg flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                    <Sparkles size={20} />
-                  </div>
-                  Motor de Inteligência Global
-                </CardTitle>
-                <CardDescription className="text-[13px] ml-13">
-                  Estas instruções serão herdadas por todos os agentes que não possuírem um prompt específico. Defina as regras mestras da sua operação.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-8 space-y-6">
-                <div className="space-y-3">
-                  <Label className="text-xs font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">System Prompt (Diretrizes Master)</Label>
-                  <div className="relative group">
-                    <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-transparent rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-500"></div>
-                    <Textarea
-                      value={form.system_prompt as string}
-                      onChange={(e) => update("system_prompt", e.target.value)}
-                      rows={12}
-                      placeholder={`Exemplo: Você é o cérebro central da empresa Alpha. Suas diretrizes fundamentais são:\n1. Sempre seja cordial...\n2. Colete leads qualificados...\n3. Use gatilhos mentais de escassez...`}
-                      className="relative bg-slate-50/80 border-slate-200 text-slate-800 dark:bg-black/60 dark:border-white/10 dark:text-primary/90 font-mono rounded-2xl focus:ring-primary/20 focus:border-primary/50 text-[13px] leading-relaxed p-6 transition-all"
-                    />
-                  </div>
-                  <div className="flex items-start gap-2 p-4 rounded-xl bg-primary/5 border border-primary/10">
-                    <Target size={16} className="text-primary mt-0.5" />
-                    <p className="text-[11px] text-slate-600 dark:text-white/50 leading-relaxed font-medium">
-                      <strong>Dica Pro:</strong> Use este espaço para definir o tom de voz padrão da marca e as restrições éticas de todos os bots.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
-          {/* Identity Tab */}
-          <TabsContent value="identity" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <Card className="bg-white dark:bg-transparent border-slate-200 dark:border-white/5 rounded-3xl shadow-sm dark:shadow-none p-6">
-              <CardContent className="space-y-8 pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-3">
-                    <Label className="text-xs font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">Assinatura do Bot (Nome)</Label>
-                    <Input
-                      value={form.ai_name as string}
-                      onChange={(e) => update("ai_name", e.target.value)}
-                      placeholder="Chat Vox"
-                      className="h-14 bg-slate-50/50 dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 transition-all font-bold text-lg"
-                    />
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
-                      <MessageSquareCode size={12} className="text-primary" /> Mensagem de Início (WhatsApp Style)
-                    </Label>
-                    <Input
-                      value={form.predefined_message as string || ""}
-                      onChange={(e) => update("predefined_message", e.target.value)}
-                      placeholder="Ex: Quero saber mais sobre o produto..."
-                      className="h-14 bg-slate-50/50 dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 transition-all text-sm"
-                    />
-                  </div>
-                  <div className="space-y-4 p-4 bg-slate-50/50 dark:bg-black/20 rounded-[1.5rem] border border-slate-200 dark:border-white/5 flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        <Bot size={14} className="text-primary" /> Captura Orgânica de Leads
-                      </Label>
-                      <p className="text-[10px] text-slate-500 dark:text-white/40">A IA pergunta o nome naturalmente no diálogo</p>
-                    </div>
-                    <Switch
-                      checked={!!form.organic_lead_capture}
-                      onCheckedChange={(val) => update("organic_lead_capture", val)}
-                      className="data-[state=checked]:bg-primary"
-                    />
-                  </div>
-                  {user && (
-                    <div className="space-y-3">
-                      <Label className="text-xs font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">Avatar Global</Label>
-                      <AvatarUpload
-                        userId={user.id}
-                        currentUrl={form.ai_avatar_url as string}
-                        onUrlChange={(url) => update("ai_avatar_url", url)}
-                      />
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-3">
-                  <Label className="text-xs font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">Boas-vindas Padrão</Label>
-                  <Textarea
-                    value={form.welcome_message as string}
-                    onChange={(e) => update("welcome_message", e.target.value)}
-                    rows={4}
-                    className="bg-slate-50/50 border-slate-200 text-slate-900 dark:bg-black/40 dark:border-white/10 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 text-sm p-5 transition-all leading-relaxed"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Appearance Tab */}
-          <TabsContent value="appearance" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card className="lg:col-span-2 bg-white dark:bg-transparent border-slate-200 dark:border-white/5 rounded-3xl p-6 h-full">
-                <CardHeader className="px-0 pt-0">
-                  <CardTitle className="text-lg">Configurador Estético</CardTitle>
-                </CardHeader>
-                <CardContent className="px-0">
-                  <ChatThemeSelector
-                    activeMode={chatThemeMode}
-                    onModeChange={setChatThemeMode}
-                    themeConfig={chatThemeConfig}
-                    onThemeChange={setChatThemeConfig}
-                    primaryColor={form.primary_color as string}
-                    aiName={form.ai_name as string}
-                    aiAvatarUrl={form.ai_avatar_url as string}
-                  />
-                </CardContent>
-              </Card>
-
-              <div className="space-y-6">
-                <Card className="bg-white dark:bg-transparent border-slate-200 dark:border-white/5 rounded-3xl p-6">
-                  <CardHeader className="px-0 pt-0">
-                    <CardTitle className="text-sm">Paleta de Marca</CardTitle>
-                  </CardHeader>
-                  <CardContent className="px-0 space-y-4">
-                    <div className="space-y-3">
-                      <div className="flex gap-3 items-center bg-slate-50 dark:bg-black/40 p-3 rounded-2xl border border-slate-200 dark:border-white/10">
-                        <input
-                          type="color"
-                          value={form.primary_color as string}
-                          onChange={(e) => update("primary_color", e.target.value)}
-                          className="w-12 h-10 rounded-xl border border-slate-200 dark:border-white/20 cursor-pointer overflow-hidden p-0 bg-transparent"
-                        />
-                        <Input value={form.primary_color as string} onChange={(e) => update("primary_color", e.target.value)} className="w-full bg-transparent border-none text-sm font-mono font-bold" />
-                      </div>
-                      <div className="w-full h-3 rounded-full overflow-hidden flex">
-                        <div className="flex-1 bg-primary"></div>
-                        <div className="flex-1 bg-primary/60"></div>
-                        <div className="flex-1 bg-primary/30"></div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Modo de Aparência Claro/Escuro */}
-                <Card className="bg-white dark:bg-transparent border-slate-200 dark:border-white/5 rounded-3xl p-6">
-                  <CardHeader className="px-0 pt-0">
-                    <CardTitle className="text-sm font-bold flex items-center gap-2">
-                      <Monitor size={16} className="text-primary" /> Modo de Aparência
-                    </CardTitle>
-                    <p className="text-[11px] text-muted-foreground">Define se o chat público será Claro, Escuro ou seguirá o sistema do visitante.</p>
-                  </CardHeader>
-                  <CardContent className="px-0 space-y-2">
-                    {([
-                      { key: "dark" as const, label: "Escuro (WhatsApp Dark)", icon: Moon },
-                      { key: "light" as const, label: "Claro (WhatsApp Light)", icon: Sun },
-                      { key: "auto" as const, label: "Automático (Sistema)", icon: Monitor },
-                    ]).map((m) => (
-                      <button
-                        key={m.key}
-                        onClick={() => setAppearanceMode(m.key)}
-                        className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${appearanceMode === m.key
-                          ? "border-primary bg-primary/5 text-primary"
-                          : "border-border hover:border-primary/30 text-muted-foreground"
-                          }`}
-                      >
-                        <m.icon size={16} />
-                        <span className="text-[13px] font-semibold">{m.label}</span>
-                      </button>
-                    ))}
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-white dark:bg-transparent border-slate-200 dark:border-white/5 rounded-3xl p-6">
-                  <CardHeader className="px-0 pt-0">
-                    <CardTitle className="text-sm font-bold flex items-center gap-2">
-                      <Code2 size={16} className="text-blue-500" /> Overwrite CSS
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="px-0">
-                    <Textarea
-                      value={form.custom_css as string}
-                      onChange={(e) => update("custom_css", e.target.value)}
-                      rows={6}
-                      placeholder=".chatvox-bubble { ... }"
-                      className="font-mono text-[11px] bg-black/60 dark:border-white/10 dark:text-blue-400 p-4 rounded-xl"
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* Widget Tab */}
-          <TabsContent value="widget" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <Card className="bg-white dark:bg-transparent border-slate-200 dark:border-white/5 rounded-3xl p-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                      <Clock size={20} />
-                    </div>
-                    <Label className="text-sm font-bold uppercase tracking-widest text-slate-500">Temporizador de Conversão</Label>
-                  </div>
-                  <Input
-                    type="number"
-                    value={form.widget_trigger_seconds}
-                    onChange={(e) => update("widget_trigger_seconds", parseInt(e.target.value) || 0)}
-                    className="h-16 text-center text-2xl font-black bg-slate-50 dark:bg-black/40 border-slate-200 dark:border-white/10 rounded-3xl"
-                  />
-                  <p className="text-xs text-center text-muted-foreground font-medium">Segundos até o widget abrir sozinho (0 = off)</p>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
-                      <TrendingUp size={20} />
-                    </div>
-                    <Label className="text-sm font-bold uppercase tracking-widest text-slate-500">Intenção por Scroll (%)</Label>
-                  </div>
-                  <Input
-                    type="number"
-                    value={form.widget_trigger_scroll}
-                    onChange={(e) => update("widget_trigger_scroll", parseInt(e.target.value) || 0)}
-                    className="h-16 text-center text-2xl font-black bg-slate-50 dark:bg-black/40 border-slate-200 dark:border-white/10 rounded-3xl"
-                  />
-                  <p className="text-xs text-center text-muted-foreground font-medium">Porcentagem de leitura da página para abrir (0 = off)</p>
-                </div>
-              </div>
-
-              <div className="space-y-4 pt-8 border-t border-slate-100 dark:border-white/5">
-                <Label className="text-xs font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">Ancoragem do Widget</Label>
-                <div className="flex gap-4">
-                  {[
-                    { id: "bottom-right", label: "Inferior Direito", icon: "👉" },
-                    { id: "bottom-left", label: "Inferior Esquerdo", icon: "👈" }
-                  ].map((pos) => (
-                    <Button
-                      key={pos.id}
-                      variant={form.widget_position === pos.id ? "default" : "outline"}
-                      size="lg"
-                      onClick={() => update("widget_position", pos.id)}
-                      className={`flex-1 rounded-[1.5rem] h-16 font-bold border-2 transition-all ${form.widget_position === pos.id ? "bg-primary text-black border-primary shadow-[0_5px_20px_rgba(0,255,157,0.3)]" : "dark:bg-black/40 dark:border-white/5"}`}
-                    >
-                      <span className="mr-3 text-2xl">{pos.icon}</span> {pos.label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            </Card>
-          </TabsContent>
 
           {/* Webhooks Tab */}
           <TabsContent value="webhooks" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">

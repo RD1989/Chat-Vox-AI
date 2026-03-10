@@ -21,16 +21,16 @@ import {
   MessageSquare, Users, Sparkles, Lock, Link as LinkIcon, AlertTriangle, Target, Mic,
   Facebook, Megaphone, BarChart3, ShoppingBag, Code2, Clock, RefreshCcw,
   DollarSign, TrendingUp, Wallet, Link2, CreditCard, ImagePlus, UserCheck,
-  FileStack, LayoutGrid, Globe, ShieldCheck, HardDrive, FileText
+  FileStack, LayoutGrid, Globe, ShieldCheck, HardDrive, FileText, Moon, Sun,
+  X, Palette, Monitor, BookOpen, Layers, Book
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
 import { OnboardingWizard } from "@/components/agents/OnboardingWizard";
 import { KnowledgeBase } from "@/components/settings/KnowledgeBase";
-import { BookOpen, Link as LinkIcon2, Layers } from "lucide-react";
 import { AgentButtonsManager } from "@/components/agents/AgentButtonsManager";
 import { AvatarUpload } from "@/components/settings/AvatarUpload";
-import { X } from "lucide-react";
+import { ChatThemeSelector, type ChatTheme } from "@/components/settings/ChatThemeSelector";
 
 interface Agent {
   id: string;
@@ -41,27 +41,30 @@ interface Agent {
   primary_color: string;
   is_active: boolean;
   created_at: string;
-  chat_theme_config?: any;
-  openrouter_model?: string;
-  vision_model?: string;
-  chat_appearance_mode?: "light" | "dark" | "auto";
-  follow_up_enabled?: boolean;
-  follow_up_config?: { id: number; delay_hours: number; message: string; }[];
-  widget_trigger_seconds?: number;
-  widget_trigger_scroll?: number;
-  widget_position?: string;
-  avg_conversion_value?: number;
-  // Campos Comerciais & Master
   pix_key?: string;
   checkout_url?: string;
   product_links?: { id: string; name: string; url: string; }[];
-  catalog_url?: string;
-  site_url?: string;
   meta_api_token?: string;
   ask_whatsapp?: boolean;
   ai_image_generation?: boolean;
   product_media?: string[];
   social_proof_media?: string[];
+  chat_theme?: string;
+  chat_appearance_mode?: "light" | "dark" | "auto";
+  chat_theme_config?: any;
+  custom_css?: string;
+  widget_trigger_seconds?: number;
+  widget_trigger_scroll?: number;
+  widget_position?: string;
+  follow_up_enabled?: boolean;
+  follow_up_config?: { id: number; delay_hours: number; message: string; }[];
+  predefined_message?: string;
+  organic_lead_capture?: boolean;
+  openrouter_model?: string;
+  vision_model?: string;
+  avg_conversion_value?: number;
+  catalog_url?: string;
+  site_url?: string;
 }
 
 const PIXEL_PLATFORMS = [
@@ -86,6 +89,9 @@ interface ParsedPrompt {
   priorities: string;
   restrictions: string;
   base_prompt: string;
+  avg_conversion_value?: number | null;
+  catalog_url?: string;
+  site_url?: string;
 }
 
 const parseSystemPrompt = (prompt: string): ParsedPrompt => {
@@ -138,7 +144,26 @@ const Agents = () => {
       ask_whatsapp: agent.ask_whatsapp ?? false,
       ai_image_generation: agent.ai_image_generation ?? false,
       product_media: agent.product_media || [],
-      social_proof_media: agent.social_proof_media || []
+      social_proof_media: agent.social_proof_media || [],
+      chat_theme: agent.chat_theme || "whatsapp",
+      chat_appearance_mode: agent.chat_appearance_mode || "dark",
+      chat_theme_config: agent.chat_theme_config || {
+        name: "WhatsApp",
+        headerBg: "#00a884",
+        headerText: "#ffffff",
+        chatBg: "#0b141a",
+        userBubbleBg: "#005c4b",
+        userBubbleText: "#e9edef",
+        aiBubbleBg: "#1f2c34",
+        aiBubbleText: "#e9edef",
+        inputBg: "#2a3942",
+        inputBarBg: "#1a2228",
+        fontFamily: "sans-serif",
+      },
+      custom_css: agent.custom_css || "",
+      widget_trigger_seconds: agent.widget_trigger_seconds || 5,
+      widget_trigger_scroll: agent.widget_trigger_scroll || 50,
+      widget_position: agent.widget_position || "bottom-right"
     });
   };
 
@@ -222,26 +247,26 @@ const Agents = () => {
     const { error } = await supabase
       .from("vox_agents")
       .update({
-        name: updatedAgent.name,
-        system_prompt: updatedAgent.system_prompt,
-        welcome_message: updatedAgent.welcome_message,
-        ai_avatar_url: updatedAgent.ai_avatar_url,
-        primary_color: updatedAgent.primary_color,
-        is_active: updatedAgent.is_active,
+        name: editAgent.name,
+        system_prompt: updatedPrompt,
+        welcome_message: editAgent.welcome_message,
+        ai_avatar_url: editAgent.ai_avatar_url,
+        primary_color: editAgent.primary_color,
+        is_active: editAgent.is_active,
         chat_theme_config: updatedAgent.chat_theme_config,
-        openrouter_model: updatedAgent.openrouter_model,
-        vision_model: updatedAgent.vision_model,
+        openrouter_model: editAgent.openrouter_model,
+        vision_model: editAgent.vision_model,
         follow_up_enabled: editAgent.follow_up_enabled,
         follow_up_config: editAgent.follow_up_config,
         widget_trigger_seconds: editAgent.widget_trigger_seconds,
         widget_trigger_scroll: editAgent.widget_trigger_scroll,
         widget_position: editAgent.widget_position,
-        avg_conversion_value: editAgent.avg_conversion_value,
+        avg_conversion_value: agentConfig.avg_conversion_value,
         pix_key: editAgent.pix_key,
         checkout_url: editAgent.checkout_url,
         product_links: editAgent.product_links,
-        catalog_url: editAgent.catalog_url,
-        site_url: editAgent.site_url,
+        catalog_url: agentConfig.catalog_url,
+        site_url: agentConfig.site_url,
         meta_api_token: editAgent.meta_api_token,
         ask_whatsapp: editAgent.ask_whatsapp,
         ai_image_generation: editAgent.ai_image_generation,
@@ -249,6 +274,9 @@ const Agents = () => {
         social_proof_media: editAgent.social_proof_media,
         predefined_message: editAgent.predefined_message,
         organic_lead_capture: editAgent.organic_lead_capture,
+        chat_theme: editAgent.chat_theme,
+        chat_appearance_mode: editAgent.chat_appearance_mode,
+        custom_css: editAgent.custom_css,
       } as any)
       .eq("id", editAgent.id);
 
@@ -494,26 +522,32 @@ const Agents = () => {
             <div className="px-8 py-6 space-y-6 max-h-[65vh] overflow-y-auto custom-scrollbar">
               <Tabs defaultValue="behavior" className="w-full">
                 <TabsList className="w-full flex-wrap h-auto justify-start bg-slate-100 dark:bg-black/40 p-1 mb-6 rounded-xl border border-slate-200 dark:border-white/5 gap-1">
-                  <TabsTrigger value="behavior" className="rounded-lg text-[11px] font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:shadow-sm px-3 py-2">
+                  <TabsTrigger value="identity" className="rounded-lg text-[11px] font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 px-3 py-2">
                     <Bot size={13} /> Identidade
                   </TabsTrigger>
-                  <TabsTrigger value="sales" className="rounded-lg text-[11px] font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:shadow-sm px-3 py-2 text-emerald-600 dark:text-primary">
+                  <TabsTrigger value="sales" className="rounded-lg text-[11px] font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 px-3 py-2 text-emerald-600 dark:text-primary">
                     <Wallet size={13} /> Vendas & Links
                   </TabsTrigger>
-                  <TabsTrigger value="automation" className="rounded-lg text-[11px] font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:shadow-sm px-3 py-2">
-                    <Target size={13} /> Gatilhos Master
+                  <TabsTrigger value="media" className="rounded-lg text-[11px] font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 px-3 py-2">
+                    <ImagePlus size={13} /> Mídias
                   </TabsTrigger>
-                  <TabsTrigger value="media" className="rounded-lg text-[11px] font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:shadow-sm px-3 py-2">
-                    <ImagePlus size={13} /> Mídias & Prova
-                  </TabsTrigger>
-                  <TabsTrigger value="pixels" className="rounded-lg text-[11px] font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:shadow-sm px-3 py-2">
+                  <TabsTrigger value="pixels" className="rounded-lg text-[11px] font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 px-3 py-2">
                     <Code2 size={13} /> Pixels
                   </TabsTrigger>
-                  <TabsTrigger value="followup" className="rounded-lg text-[11px] font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:shadow-sm px-3 py-2">
+                  <TabsTrigger value="followup" className="rounded-lg text-[11px] font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 px-3 py-2">
                     <RefreshCcw size={13} /> Follow-up
                   </TabsTrigger>
-                  <TabsTrigger value="knowledge" className="rounded-lg text-[11px] font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:shadow-sm px-3 py-2">
+                  <TabsTrigger value="appearance" className="rounded-lg text-[11px] font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 px-3 py-2">
+                    <Palette size={13} /> Aparência
+                  </TabsTrigger>
+                  <TabsTrigger value="widget" className="rounded-lg text-[11px] font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 px-3 py-2">
+                    <MessageSquareCode size={13} /> Widget
+                  </TabsTrigger>
+                  <TabsTrigger value="knowledge" className="rounded-lg text-[11px] font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 px-3 py-2">
                     <BookOpen size={13} /> Cérebro
+                  </TabsTrigger>
+                  <TabsTrigger value="links" className="rounded-lg text-[11px] font-bold gap-2 data-[state=active]:bg-white data-[state=active]:dark:bg-white/10 px-3 py-2">
+                    <LinkIcon2 size={13} /> CTAs
                   </TabsTrigger>
                 </TabsList>
 
@@ -790,52 +824,286 @@ const Agents = () => {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="behavior" className="space-y-6 mt-0 animate-in fade-in duration-300">
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">Identidade do Agente (Nome)</Label>
-                      <Input
-                        value={editAgent.name}
-                        onChange={e => setEditAgent({ ...editAgent, name: e.target.value })}
-                        placeholder="Ex: Consultor Especialista..."
-                        className="h-12 bg-slate-50/50 dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 transition-all font-medium"
+                <TabsContent value="appearance" className="space-y-6 mt-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2 bg-white dark:bg-transparent border border-slate-200 dark:border-white/5 rounded-3xl p-6">
+                      <ChatThemeSelector
+                        activeMode={(editAgent.chat_theme as any) || "whatsapp"}
+                        onModeChange={(mode) => setEditAgent({ ...editAgent, chat_theme: mode })}
+                        themeConfig={editAgent.chat_theme_config}
+                        onThemeChange={(config) => setEditAgent({ ...editAgent, chat_theme_config: config })}
+                        primaryColor={editAgent.primary_color}
+                        aiName={editAgent.name}
+                        aiAvatarUrl={editAgent.ai_avatar_url || ""}
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">Assinatura Visual (Cor)</Label>
-                      <div className="flex items-center gap-3 bg-slate-50/50 dark:bg-black/40 p-2 rounded-2xl border border-slate-200 dark:border-white/10 h-12">
-                        <input
-                          type="color"
-                          value={editAgent.primary_color}
-                          onChange={e => setEditAgent({ ...editAgent, primary_color: e.target.value })}
-                          className="w-10 h-8 rounded-lg border border-slate-200 dark:border-white/20 cursor-pointer overflow-hidden p-0 bg-transparent"
+                    <div className="space-y-6">
+                      <Card className="bg-white dark:bg-transparent border border-slate-200 dark:border-white/5 rounded-3xl p-6">
+                        <Label className="text-xs font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest mb-4 block">Modo de Exibição</Label>
+                        <div className="space-y-2">
+                          {[
+                            { key: "dark" as const, label: "Escuro", icon: Moon },
+                            { key: "light" as const, label: "Claro", icon: Sun },
+                            { key: "auto" as const, label: "Automático", icon: Monitor },
+                          ].map((m) => (
+                            <button
+                              key={m.key}
+                              onClick={() => setEditAgent({ ...editAgent, chat_appearance_mode: m.key })}
+                              className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${editAgent.chat_appearance_mode === m.key
+                                ? "border-primary bg-primary/5 text-primary"
+                                : "border-border hover:border-primary/30 text-muted-foreground"
+                                }`}
+                            >
+                              <m.icon size={14} />
+                              <span className="text-[12px] font-semibold">{m.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </Card>
+                      <Card className="bg-white dark:bg-transparent border border-slate-200 dark:border-white/5 rounded-3xl p-6">
+                        <Label className="text-xs font-bold text-blue-500 uppercase tracking-widest mb-4 block flex items-center gap-2">
+                          <Code2 size={14} /> Custom CSS
+                        </Label>
+                        <Textarea
+                          value={editAgent.custom_css || ""}
+                          onChange={(e) => setEditAgent({ ...editAgent, custom_css: e.target.value })}
+                          placeholder=".chatvox-bubble { ... }"
+                          className="font-mono text-[10px] bg-black/60 dark:border-white/10 dark:text-blue-400 p-4 rounded-xl resize-none"
+                          rows={6}
                         />
+                      </Card>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="widget" className="mt-0 space-y-6 animate-in fade-in duration-300">
+                  <div className="bg-slate-50/50 dark:bg-black/40 p-5 rounded-3xl border border-slate-200 dark:border-white/5 flex flex-col gap-1">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <Sparkles size={16} className="text-primary" /> Gatilhos Master Script
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-white/40">
+                      Configure como o widget flutuante deste agente específico se comportará no seu site.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="p-5 rounded-3xl border border-slate-200 dark:border-white/5 bg-white dark:bg-black/20 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                          <Clock size={16} />
+                        </div>
+                        <Label className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-white/40">Tempo na Página</Label>
+                      </div>
+                      <div className="flex items-end gap-2">
+                        <Input
+                          type="number"
+                          value={editAgent.widget_trigger_seconds || 0}
+                          onChange={e => setEditAgent({ ...editAgent, widget_trigger_seconds: parseInt(e.target.value) || 0 })}
+                          className="h-12 bg-slate-50 dark:bg-black/40 border-slate-200 dark:border-white/10 text-center font-bold text-lg rounded-2xl"
+                        />
+                        <span className="mb-3 text-xs font-bold text-muted-foreground">SEG</span>
+                      </div>
+                    </div>
+
+                    <div className="p-5 rounded-3xl border border-slate-200 dark:border-white/5 bg-white dark:bg-black/20 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
+                          <TrendingUp size={16} />
+                        </div>
+                        <Label className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-white/40">Scroll do Site</Label>
+                      </div>
+                      <div className="flex items-end gap-2">
+                        <Input
+                          type="number"
+                          value={editAgent.widget_trigger_scroll || 0}
+                          onChange={e => setEditAgent({ ...editAgent, widget_trigger_scroll: parseInt(e.target.value) || 0 })}
+                          className="h-12 bg-slate-50 dark:bg-black/40 border-slate-200 dark:border-white/10 text-center font-bold text-lg rounded-2xl"
+                        />
+                        <span className="mb-3 text-xs font-bold text-muted-foreground">%</span>
                       </div>
                     </div>
                   </div>
 
-                  {user && (
-                    <div className="p-5 rounded-2xl bg-slate-50/50 dark:bg-black/20 border border-slate-200 dark:border-white/5">
-                      <AvatarUpload
-                        userId={user.id}
-                        currentUrl={editAgent.ai_avatar_url || ""}
-                        onUrlChange={(url) => setEditAgent({ ...editAgent, ai_avatar_url: url })}
-                      />
+                  <div className="space-y-3">
+                    <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">Lado da Exibição</Label>
+                    <div className="flex gap-4">
+                      {[
+                        { id: "bottom-right", label: "Canto Direito", icon: "👉" },
+                        { id: "bottom-left", label: "Canto Esquerdo", icon: "👈" }
+                      ].map((pos) => (
+                        <Button
+                          key={pos.id}
+                          variant={editAgent.widget_position === pos.id ? "default" : "outline"}
+                          size="lg"
+                          onClick={() => setEditAgent({ ...editAgent, widget_position: pos.id })}
+                          className={`flex-1 rounded-2xl h-14 font-bold border-2 transition-all ${editAgent.widget_position === pos.id ? "bg-primary text-black border-primary shadow-[0_5px_15px_rgba(0,255,157,0.3)]" : "dark:border-white/5 dark:bg-black/20"}`}
+                        >
+                          <span className="mr-2 text-xl">{pos.icon}</span> {pos.label}
+                        </Button>
+                      ))}
                     </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
-                      Abordagem Inicial (Boas-vindas) <MessageSquare size={12} className="text-primary/70" />
-                    </Label>
-                    <Textarea
-                      value={editAgent.welcome_message}
-                      onChange={e => setEditAgent({ ...editAgent, welcome_message: e.target.value })}
-                      rows={2}
-                      className="bg-slate-50/50 border-slate-200 text-slate-900 dark:bg-black/40 dark:border-white/10 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 text-sm p-4 transition-all leading-relaxed"
-                    />
                   </div>
 
+                  <div className="p-6 bg-primary/5 dark:bg-black/40 rounded-3xl border border-primary/20 space-y-4 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                      <Code2 size={80} className="text-primary" />
+                    </div>
+                    <Label className="text-xs font-bold text-primary flex items-center gap-2 uppercase tracking-widest relative z-10">
+                      <Code2 size={16} /> Script de Instalação do Agente
+                    </Label>
+                    <div className="bg-black p-4 rounded-2xl font-mono text-[11px] text-white/60 break-all border border-white/5 max-h-[120px] overflow-y-auto leading-relaxed relative z-10">
+                      {`<!-- Chat Vox Agent: ${editAgent.name} -->
+<script>
+(function(){
+  var d=document,s=d.createElement('script');
+  s.src='${import.meta.env.VITE_SUPABASE_URL}/functions/v1/vox-widget?id=${user?.id}&agent=${editAgent.id}';
+  s.setAttribute('data-vox-id','${user?.id}');
+  s.setAttribute('data-vox-agent-id','${editAgent.id}');
+  s.setAttribute('data-vox-origin','${window.location.origin}');
+  s.async=true;
+  d.head.appendChild(s);
+})();
+</script>`}
+                    </div>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="w-full bg-primary/10 hover:bg-primary/20 text-primary border-none text-xs font-bold gap-2 h-10 rounded-xl relative z-10"
+                      onClick={() => {
+                        const code = `<!-- Chat Vox Agent: ${editAgent.name} -->
+<script>
+(function(){
+  var d=document,s=d.createElement('script');
+  s.src='${import.meta.env.VITE_SUPABASE_URL}/functions/v1/vox-widget?id=${user?.id}&agent=${editAgent.id}';
+  s.setAttribute('data-vox-id','${user?.id}');
+  s.setAttribute('data-vox-agent-id','${editAgent.id}');
+  s.setAttribute('data-vox-origin','${window.location.origin}');
+  s.async=true;
+  d.head.appendChild(s);
+})();
+</script>`;
+                        navigator.clipboard.writeText(code);
+                        toast({ title: "Código do Agente copiado!" });
+                      }}
+                    >
+                      <Copy size={14} /> Copiar Código Master
+                    </Button>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="media" className="space-y-6 mt-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="bg-slate-50/50 dark:bg-black/20 border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-start gap-4 mb-2">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                      <FileStack size={20} className="text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white">Materiais & Prova Social</h4>
+                      <p className="text-xs text-slate-500 dark:text-white/40 leading-relaxed">Mídias que a IA usará para persuadir e demonstrar o produto.</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="p-4 border border-dashed border-slate-300 dark:border-white/10 rounded-2xl text-center space-y-2">
+                      <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center mx-auto mb-2 text-slate-400">
+                        <HardDrive size={20} />
+                      </div>
+                      <h5 className="text-[11px] font-bold text-slate-700 dark:text-white uppercase tracking-wider">Mídias do Produto</h5>
+                      <p className="text-[10px] text-slate-500 dark:text-white/40 max-w-[200px] mx-auto">Fotos e vídeos que a IA usará para demonstrar seu produto.</p>
+
+                      <div className="flex flex-wrap gap-2 mb-3 mt-2 justify-center">
+                        {editAgent.product_media?.map((url, i) => (
+                          <div key={i} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-slate-200 dark:border-white/10">
+                            <img src={url} className="w-full h-full object-cover" />
+                            <button onClick={() => removeMedia(url, 'product')} className="absolute top-0 right-0 p-1 bg-rose-500 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                              <X size={10} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="relative inline-block mt-2">
+                        <input
+                          type="file"
+                          id="product-media-upload"
+                          className="hidden"
+                          accept="image/*,video/*"
+                          onChange={(e) => handleMediaUpload(e, 'product')}
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => document.getElementById('product-media-upload')?.click()}
+                          className="h-8 text-[10px] bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 rounded-xl px-4 font-bold"
+                        >
+                          {saving ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} Fazer Upload
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="p-4 border border-dashed border-slate-300 dark:border-white/10 rounded-2xl text-center space-y-2">
+                      <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center mx-auto mb-2 text-slate-400">
+                        <Sparkles size={20} />
+                      </div>
+                      <h5 className="text-[11px] font-bold text-slate-700 dark:text-white uppercase tracking-wider">Prova Social</h5>
+                      <p className="text-[10px] text-slate-500 dark:text-white/40 max-w-[200px] mx-auto">Prints de depoimentos e resultados para gerar confiança.</p>
+
+                      <div className="flex flex-wrap gap-2 mb-3 mt-2 justify-center">
+                        {editAgent.social_proof_media?.map((url, i) => (
+                          <div key={i} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-slate-200 dark:border-white/10">
+                            <img src={url} className="w-full h-full object-cover" />
+                            <button onClick={() => removeMedia(url, 'social')} className="absolute top-0 right-0 p-1 bg-rose-500 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                              <X size={10} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="relative inline-block mt-2">
+                        <input
+                          type="file"
+                          id="social-media-upload"
+                          className="hidden"
+                          accept="image/*"
+                          onChange={(e) => handleMediaUpload(e, 'social')}
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => document.getElementById('social-media-upload')?.click()}
+                          className="h-8 text-[10px] bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 rounded-xl px-4 font-bold"
+                        >
+                          {saving ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} Fazer Upload
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="knowledge" className="mt-0 space-y-4">
+                  <div className="bg-slate-50 dark:bg-black/40 p-5 rounded-3xl border border-slate-200 dark:border-white/5 mb-4">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-1">
+                      <BookOpen size={18} className="text-primary" /> Cérebro Estratégico
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-white/40 font-medium">
+                      Alimente este agente com documentos, FAQs e informações exclusivas para respostas ultra-precisas.
+                    </p>
+                  </div>
+                  {user && <KnowledgeBase userId={user.id} agentId={editAgent.id} />}
+                </TabsContent>
+
+                <TabsContent value="links" className="mt-0 space-y-4">
+                  <div className="bg-gradient-to-br from-primary/20 to-transparent p-6 rounded-3xl border border-primary/20 mb-4 shadow-glass">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-1">
+                      <LinkIcon2 size={18} className="text-primary" /> Gatilhos de Conversão (CTA)
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-white/40 font-medium leading-relaxed">
+                      Gerencie botões de alta conversão (WhatsApp, Checkout, Agendamento) que a IA poderá oferecer durante o chat.
+                    </p>
+                  </div>
+                  <AgentButtonsManager agentId={editAgent.id} />
+                </TabsContent>
+
+                <TabsContent value="advanced" className="space-y-6 mt-0 animate-in fade-in duration-300">
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
@@ -884,6 +1152,46 @@ const Agents = () => {
                       </div>
                     </div>
 
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
+                          Valor Médio de Conversão <DollarSign size={12} className="text-green-500/70" />
+                        </Label>
+                        <Input
+                          type="number"
+                          value={agentConfig.avg_conversion_value || ''}
+                          onChange={e => setAgentConfig({ ...agentConfig, avg_conversion_value: parseFloat(e.target.value) || null })}
+                          placeholder="Ex: 150.00"
+                          className="bg-slate-50/50 border-slate-200 text-slate-900 dark:bg-black/40 dark:border-white/10 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 h-12 text-xs p-4 transition-all"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
+                          URL do Catálogo <Book size={12} className="text-blue-500/70" />
+                        </Label>
+                        <Input
+                          type="url"
+                          value={agentConfig.catalog_url || ''}
+                          onChange={e => setAgentConfig({ ...agentConfig, catalog_url: e.target.value })}
+                          placeholder="Ex: https://seusite.com/catalogo"
+                          className="bg-slate-50/50 border-slate-200 text-slate-900 dark:bg-black/40 dark:border-white/10 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 h-12 text-xs p-4 transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
+                        URL do Site <Globe size={12} className="text-purple-500/70" />
+                      </Label>
+                      <Input
+                        type="url"
+                        value={agentConfig.site_url || ''}
+                        onChange={e => setAgentConfig({ ...agentConfig, site_url: e.target.value })}
+                        placeholder="Ex: https://seusite.com"
+                        className="bg-slate-50/50 border-slate-200 text-slate-900 dark:bg-black/40 dark:border-white/10 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 h-12 text-xs p-4 transition-all"
+                      />
+                    </div>
+
                     <div className="space-y-2">
                       <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
                         Matriz de Comportamento (Power Prompt) <Bot size={12} className="text-primary/70" />
@@ -901,272 +1209,16 @@ const Agents = () => {
                     </div>
                   </div>
                 </TabsContent>
-
-                <TabsContent value="pixels" className="mt-0 space-y-6">
-                  <div className="bg-primary/5 dark:bg-primary/10 p-5 rounded-2xl border border-primary/20 flex flex-col gap-1">
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                      <Code2 size={16} className="text-primary" /> Tracking de Performance
-                    </h4>
-                    <p className="text-xs text-slate-500 dark:text-white/50">
-                      Rastreie eventos de chat (lead capturado, qualificação, botões clicados) em tempo real.
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {PIXEL_PLATFORMS.map((platform) => (
-                      <div key={platform.key} className="p-4 rounded-2xl border border-slate-200 dark:border-white/5 bg-slate-50/30 dark:bg-white/[0.02] flex items-center gap-4 group hover:bg-white/[0.05] transition-all duration-300">
-                        <div className={`w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center shrink-0 border border-slate-200 dark:border-white/10 ${platform.color} group-hover:scale-110 transition-transform`}>
-                          <platform.icon size={20} />
-                        </div>
-                        <div className="flex-1 space-y-1">
-                          <Label className="text-[10px] font-bold uppercase tracking-widest opacity-60">{platform.label}</Label>
-                          <Input
-                            value={pixelsConfig[platform.key] || ""}
-                            onChange={(e) => setPixelsConfig({ ...pixelsConfig, [platform.key]: e.target.value })}
-                            placeholder={platform.placeholder}
-                            className="h-8 text-xs bg-white dark:bg-black/40 border-slate-200 dark:border-white/10 rounded-lg focus:border-primary/50"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20">
-                    <p className="text-[11px] text-amber-500/80 font-medium flex items-center gap-2">
-                      <AlertTriangle size={14} /> Os eventos de 'Lead Capturado' e 'Qualificado' são enviados automaticamente para todos os pixels ativos.
-                    </p>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="followup" className="mt-0 space-y-6">
-                  <div className="bg-primary/5 dark:bg-primary/10 p-6 rounded-3xl border border-primary/20 flex items-center justify-between relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
-                    <div className="space-y-1 relative z-10">
-                      <h4 className="text-md font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        <RefreshCcw size={18} className="text-primary animate-spin-slow" /> Recuperação Ativa (Follow-up)
-                      </h4>
-                      <p className="text-xs text-slate-500 dark:text-white/40 max-w-md">
-                        IA reengaja leads automaticamente em intervalos estratégicos.
-                      </p>
-                    </div>
-                    <Switch
-                      checked={editAgent.follow_up_enabled || false}
-                      onCheckedChange={(val) => setEditAgent({ ...editAgent, follow_up_enabled: val })}
-                      className="data-[state=checked]:bg-primary shadow-[0_0_15px_rgba(0,255,157,0.4)] relative z-10"
-                    />
-                  </div>
-
-                  <div className="relative pl-8 space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-gradient-to-b before:from-primary/50 before:via-slate-200 before:to-transparent dark:before:via-white/5">
-                    {(editAgent.follow_up_config || [
-                      { id: 1, delay_hours: 2, message: "" },
-                      { id: 2, delay_hours: 24, message: "" },
-                      { id: 3, delay_hours: 48, message: "" }
-                    ]).map((step, idx) => (
-                      <div key={step.id} className="relative group animate-in slide-in-from-left duration-500" style={{ animationDelay: `${idx * 0.1}s` }}>
-                        <div className="absolute -left-10 top-2 w-6 h-6 rounded-full bg-slate-100 dark:bg-black border-2 border-primary/50 flex items-center justify-center z-10 shadow-sm group-hover:scale-110 transition-transform">
-                          <span className="text-[10px] font-black text-primary">{idx + 1}</span>
-                        </div>
-                        <div className="p-5 rounded-2xl border border-slate-200 dark:border-white/5 bg-white dark:bg-black/40 shadow-sm dark:shadow-glass hover:border-primary/30 transition-all">
-                          <div className="flex gap-4 items-start">
-                            <div className="space-y-2 flex-1">
-                              <Label className="text-[10px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">Delay (Horas)</Label>
-                              <Input
-                                type="number"
-                                value={step.delay_hours}
-                                onChange={e => {
-                                  const newCfg = [...(editAgent.follow_up_config || [])];
-                                  newCfg[idx].delay_hours = Number(e.target.value);
-                                  setEditAgent({ ...editAgent, follow_up_config: newCfg });
-                                }}
-                                className="h-10 bg-slate-50 dark:bg-black/40 border-slate-200 dark:border-white/10 text-xs rounded-xl"
-                              />
-                            </div>
-                            <div className="space-y-2 flex-[3]">
-                              <Label className="text-[10px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">Mensagem de Ativação</Label>
-                              <Textarea
-                                value={step.message}
-                                onChange={e => {
-                                  const newCfg = [...(editAgent.follow_up_config || [])];
-                                  newCfg[idx].message = e.target.value;
-                                  setEditAgent({ ...editAgent, follow_up_config: newCfg });
-                                }}
-                                placeholder="Olá, vi que paramos por aqui..."
-                                className="h-20 bg-slate-50 dark:bg-black/40 border-slate-200 dark:border-white/10 text-xs rounded-xl resize-none"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        const current = editAgent.follow_up_config || [];
-                        if (current.length < 5) {
-                          setEditAgent({
-                            ...editAgent,
-                            follow_up_config: [...current, { id: Date.now(), delay_hours: 24, message: "" }]
-                          });
-                        }
-                      }}
-                      className="w-full border-2 border-dashed border-slate-200 dark:border-white/5 text-slate-400 dark:text-white/30 text-xs font-bold hover:bg-primary/5 hover:text-primary hover:border-primary/30 rounded-2xl h-12 transition-all"
-                    >
-                      <Plus size={16} className="mr-2" /> Expandir Fluxo de Recuperação (Máx 5)
-                    </Button>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="widget" className="mt-0 space-y-6">
-                  <div className="bg-slate-50/50 dark:bg-black/40 p-5 rounded-3xl border border-slate-200 dark:border-white/5 flex flex-col gap-1">
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                      <Sparkles size={16} className="text-primary" /> Abordagem Pró-ativa
-                    </h4>
-                    <p className="text-xs text-slate-500 dark:text-white/40">
-                      Configure o gatilho automático para que o widget se abra sozinho e inicie a conversão.
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="p-5 rounded-3xl border border-slate-200 dark:border-white/5 bg-white dark:bg-black/20 space-y-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                          <Clock size={16} />
-                        </div>
-                        <Label className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-white/40">Tempo na Página</Label>
-                      </div>
-                      <div className="flex items-end gap-2">
-                        <Input
-                          type="number"
-                          value={editAgent.widget_trigger_seconds || 0}
-                          onChange={e => setEditAgent({ ...editAgent, widget_trigger_seconds: parseInt(e.target.value) || 0 })}
-                          className="h-12 bg-slate-50 dark:bg-black/40 border-slate-200 dark:border-white/10 text-center font-bold text-lg rounded-2xl"
-                        />
-                        <span className="mb-3 text-xs font-bold text-muted-foreground">SEG</span>
-                      </div>
-                    </div>
-
-                    <div className="p-5 rounded-3xl border border-slate-200 dark:border-white/5 bg-white dark:bg-black/20 space-y-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
-                          <TrendingUp size={16} />
-                        </div>
-                        <Label className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-white/40">Scroll do Site</Label>
-                      </div>
-                      <div className="flex items-end gap-2">
-                        <Input
-                          type="number"
-                          value={editAgent.widget_trigger_scroll || 0}
-                          onChange={e => setEditAgent({ ...editAgent, widget_trigger_scroll: parseInt(e.target.value) || 0 })}
-                          className="h-12 bg-slate-50 dark:bg-black/40 border-slate-200 dark:border-white/10 text-center font-bold text-lg rounded-2xl"
-                        />
-                        <span className="mb-3 text-xs font-bold text-muted-foreground">%</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">Posição Flutuante</Label>
-                    <div className="flex gap-4">
-                      {[
-                        { id: "bottom-right", label: "Direita", icon: "👉" },
-                        { id: "bottom-left", label: "Esquerda", icon: "👈" }
-                      ].map((pos) => (
-                        <Button
-                          key={pos.id}
-                          variant={editAgent.widget_position === pos.id ? "default" : "outline"}
-                          size="lg"
-                          onClick={() => setEditAgent({ ...editAgent, widget_position: pos.id })}
-                          className={`flex-1 rounded-2xl h-14 font-bold border-2 transition-all ${editAgent.widget_position === pos.id ? "bg-primary text-black border-primary shadow-[0_5px_15px_rgba(0,255,157,0.3)]" : "dark:border-white/5 dark:bg-black/20"}`}
-                        >
-                          <span className="mr-2 text-xl">{pos.icon}</span> {pos.label}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="p-6 bg-primary/5 dark:bg-black/40 rounded-3xl border border-primary/20 space-y-4 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-4 opacity-10">
-                      <Code2 size={80} className="text-primary" />
-                    </div>
-                    <Label className="text-xs font-bold text-primary flex items-center gap-2 uppercase tracking-widest relative z-10">
-                      <Code2 size={16} /> Script de Instalação (Agente)
-                    </Label>
-                    <div className="bg-black p-4 rounded-2xl font-mono text-[11px] text-white/60 break-all border border-white/5 max-h-[120px] overflow-y-auto leading-relaxed relative z-10">
-                      {`<!-- Chat Vox Agent: ${editAgent.name} -->
-<script>
-(function(){
-  var d=document,s=d.createElement('script');
-  s.src='${import.meta.env.VITE_SUPABASE_URL}/functions/v1/vox-widget?id=${user?.id}&agent=${editAgent.id}';
-  s.setAttribute('data-vox-id','${user?.id}');
-  s.setAttribute('data-vox-agent-id','${editAgent.id}');
-  s.setAttribute('data-vox-origin','${window.location.origin}');
-  s.async=true;
-  d.head.appendChild(s);
-})();
-</script>`}
-                    </div>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="w-full bg-primary/10 hover:bg-primary/20 text-primary border-none text-xs font-bold gap-2 h-10 rounded-xl relative z-10"
-                      onClick={() => {
-                        const code = `<!-- Chat Vox Agent: ${editAgent.name} -->
-<script>
-(function(){
-  var d=document,s=d.createElement('script');
-  s.src='${import.meta.env.VITE_SUPABASE_URL}/functions/v1/vox-widget?id=${user?.id}&agent=${editAgent.id}';
-  s.setAttribute('data-vox-id','${user?.id}');
-  s.setAttribute('data-vox-agent-id','${editAgent.id}');
-  s.setAttribute('data-vox-origin','${window.location.origin}');
-  s.async=true;
-  d.head.appendChild(s);
-})();
-</script>`;
-                        navigator.clipboard.writeText(code);
-                        toast({ title: "Código do Agente copiado!" });
-                      }}
-                    >
-                      <Copy size={14} /> Copiar Código Master
-                    </Button>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="knowledge" className="mt-0 space-y-4">
-                  <div className="bg-slate-50 dark:bg-black/40 p-5 rounded-3xl border border-slate-200 dark:border-white/5 mb-4">
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-1">
-                      <BookOpen size={18} className="text-primary" /> Cérebro Estratégico
-                    </h4>
-                    <p className="text-xs text-slate-500 dark:text-white/40 font-medium">
-                      Alimente este agente com documentos, FAQs e informações exclusivas para respostas ultra-precisas.
-                    </p>
-                  </div>
-                  {user && <KnowledgeBase userId={user.id} agentId={editAgent.id} />}
-                </TabsContent>
-
-                <TabsContent value="links" className="mt-0 space-y-4">
-                  <div className="bg-gradient-to-br from-primary/20 to-transparent p-6 rounded-3xl border border-primary/20 mb-4 shadow-glass">
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-1">
-                      <LinkIcon2 size={18} className="text-primary" /> Gatilhos de Conversão (CTA)
-                    </h4>
-                    <p className="text-xs text-slate-500 dark:text-white/40 font-medium leading-relaxed">
-                      Gerencie botões de alta conversão (WhatsApp, Checkout, Agendamento) que a IA poderá oferecer durante o chat.
-                    </p>
-                  </div>
-                  <AgentButtonsManager agentId={editAgent.id} />
-                </TabsContent>
               </Tabs>
+              <div className="px-6 py-4 border-t border-slate-200 bg-slate-100 dark:border-white/5 dark:bg-black/40 flex justify-end gap-3 rounded-b-3xl">
+                <Button variant="ghost" className="text-slate-500 hover:text-slate-900 hover:bg-slate-200 dark:text-white/60 dark:hover:text-white dark:hover:bg-white/5 font-bold rounded-xl" onClick={() => setEditAgent(null)}>Interromper</Button>
+                <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/90 text-black font-extrabold rounded-xl px-8 shadow-[0_0_15px_rgba(0,255,157,0.3)]">
+                  {saving ? <Loader2 size={16} className="animate-spin mr-2" /> : <Save size={16} className="mr-2" />}
+                  GRAVAR MATRIZ
+                </Button>
+              </div>
             </div>
           )}
-
-          <div className="px-6 py-4 border-t border-slate-200 bg-slate-100 dark:border-white/5 dark:bg-black/40 flex justify-end gap-3 rounded-b-3xl">
-            <Button variant="ghost" className="text-slate-500 hover:text-slate-900 hover:bg-slate-200 dark:text-white/60 dark:hover:text-white dark:hover:bg-white/5 font-bold rounded-xl" onClick={() => setEditAgent(null)}>Interromper</Button>
-            <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/90 text-black font-extrabold rounded-xl px-8 shadow-[0_0_15px_rgba(0,255,157,0.3)]">
-              {saving ? <Loader2 size={16} className="animate-spin mr-2" /> : <Save size={16} className="mr-2" />}
-              GRAVAR MATRIZ
-            </Button>
-          </div>
         </DialogContent>
       </Dialog>
 
@@ -1186,7 +1238,7 @@ const Agents = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div >
+    </div>
   );
 };
 
