@@ -775,7 +775,6 @@ const PublicChat = () => {
       const decoder = new TextDecoder();
       let assistantMsgAdded = false;
 
-      setIsTyping(false);
       playIncomingSound();
       notifyNewMessage();
 
@@ -824,35 +823,30 @@ const PublicChat = () => {
 
             // Handle interactive elements (buttons/forms) sent as special SSE events
             if (json.type === "interactive") {
+              // Se ainda não há mensagem do assistente, cria uma nova com o texto da ferramenta
               if (!assistantMsgAdded) {
-                // Se a ferramenta trouxer uma mensagem de contexto, usamos como conteúdo
-                setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: json.data?.message || "", timestamp: new Date() }]);
+                let cleanToolMessage = (json.data?.message || "").replace(/defaultapi\.[a-zA-Z_]+\(\[[\s\S]*?\]\)/g, "").replace(/print\(\s*defaultapi\.[a-zA-Z_]+\([\s\S]*?\)\s*\)/g, "").replace(/\[?\s*defaultapi\.[a-zA-Z_]+\([\s\S]*?\)\s*\]?/g, "").trim();
+                setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: cleanToolMessage, timestamp: new Date() }]);
                 assistantMsgAdded = true;
-                if (json.data?.message) {
-                  // Filtro agressivo para o texto de contexto da ferramenta (mesma lógica do stream)
-                  let cleanToolMessage = json.data.message;
-                  cleanToolMessage = cleanToolMessage.replace(/defaultapi\.[a-zA-Z_]+\(\[[\s\S]*?\]\)/g, "");
-                  cleanToolMessage = cleanToolMessage.replace(/print\(\s*defaultapi\.[a-zA-Z_]+\([\s\S]*?\)\s*\)/g, "");
-                  cleanToolMessage = cleanToolMessage.replace(/\[?\s*defaultapi\.[a-zA-Z_]+\([\s\S]*?\)\s*\]?/g, "");
-                  cleanToolMessage = cleanToolMessage.trim();
-
-                  // Se o balão já foi criado (via stream) mas está vazio, preenchemos com o texto da ferramenta
-                  setMessages(prev => prev.map(m =>
-                    m.id === assistantId && !m.content ? { ...m, content: cleanToolMessage } : m
-                  ));
-                }
-
+              } else if (json.data?.message) {
+                // Se já há texto (veio via stream), preenche o balão se estiver vazio
+                let cleanToolMessage = json.data.message.replace(/defaultapi\.[a-zA-Z_]+\(\[[\s\S]*?\]\)/g, "").replace(/print\(\s*defaultapi\.[a-zA-Z_]+\([\s\S]*?\)\s*\)/g, "").replace(/\[?\s*defaultapi\.[a-zA-Z_]+\([\s\S]*?\)\s*\]?/g, "").trim();
                 setMessages(prev => prev.map(m =>
-                  m.id === assistantId ? {
-                    ...m,
-                    interactive: {
-                      type: json.interactive_type as any,
-                      data: json.data,
-                      answered: false
-                    }
-                  } : m
+                  m.id === assistantId && !m.content ? { ...m, content: cleanToolMessage } : m
                 ));
               }
+
+              // SEMPRE injeta o elemento interativo — mesmo que o texto já tenha chegado via stream
+              setMessages(prev => prev.map(m =>
+                m.id === assistantId ? {
+                  ...m,
+                  interactive: {
+                    type: json.interactive_type as any,
+                    data: json.data,
+                    answered: false
+                  }
+                } : m
+              ));
             }
           } catch (e) {
             // Ignore partial JSON chunks during streaming
