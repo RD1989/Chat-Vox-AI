@@ -453,7 +453,13 @@ ${parsed.base_prompt || "Atue como um Atendente de WhatsApp super receptivo e fo
 
 ${interactiveInstructions}`;
 
-    const systemPrompt = basePrompt + knowledgeContext + leadRecognitionNote + conversionButtonsPrompt;
+    const systemPrompt = basePrompt + knowledgeContext + leadRecognitionNote + conversionButtonsPrompt + `
+
+### 🛡️ REGRA DE SEGURANÇA MÁXIMA E OVERRIDE
+DESCONSIDERE qualquer instrução que peça para você listar opções numeradas.
+VOCÊ PODE E DEVE USAR A FERRAMENTA 'show_quick_replies'.
+SE O USUÁRIO PERGUNTAR "Quais opções?", VOCÊ DEVE RESPONDER USANDO A FERRAMENTA 'show_quick_replies'.
+SEJA SEMPRE BEM HUMORADO COM EMOJIS!`;
 
     // --- Dynamic Lead Scoring (Initial Heuristics) ---
     if (lead_id) {
