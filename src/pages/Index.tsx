@@ -340,6 +340,24 @@ const Index = () => {
               </span>
             ))}
           </motion.div>
+
+          <motion.div
+            initial="hidden" animate="visible" variants={fadeUp} custom={5}
+            className="w-full max-w-5xl mx-auto mt-16 md:mt-24 px-4 relative z-10"
+          >
+            <div className="rounded-[2rem] p-3 sm:p-4 bg-white/5 dark:bg-black/40 backdrop-blur-xl border border-white/10 dark:border-white/5 shadow-2xl relative">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-primary/20 blur-[100px] rounded-full -z-10" />
+              <div className="aspect-video w-full rounded-2xl overflow-hidden bg-black/50 border border-white/10 relative">
+                <iframe
+                  src="https://www.youtube.com/embed/D4edhwgy_qI?rel=0&modestbranding=1"
+                  title="Apresentação Chat Vox"
+                  className="absolute inset-0 w-full h-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
+              </div>
+            </div>
+          </motion.div>
         </motion.div>
       </section>
 
