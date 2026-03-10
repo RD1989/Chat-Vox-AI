@@ -8,7 +8,8 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const RATE_LIMIT_MAX = 30;
+const RATE_LIMIT_PER_IP = 30; // Max requests per IP per minute
+const RATE_LIMIT_GLOBAL = 150; // Max requests overall per user_id per minute (DDoS mitigation)
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 
 // Helper to extract sections from prompt tags
@@ -182,20 +183,32 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // --- Rate Limiting ---
-    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
+    // Check Global request count for this user
+    const { count: globalRequestCount } = await supabase
+      .from("vox_rate_limits")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user_id)
+      .gte("window_start", windowStart);
 
-    const { count: requestCount } = await supabase
+    if ((globalRequestCount || 0) >= RATE_LIMIT_GLOBAL) {
+      console.warn(`[vox-chat] GLOBAL Rate limit exceeded for user ${user_id}. Count: ${globalRequestCount}`);
+      return new Response(
+        JSON.stringify({ error: "Capacidade máxima de atendimento atingida no momento. Tente novamente mais tarde." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "60" } }
+      );
+    }
+
+    // Check IP specific request count
+    const { count: ipRequestCount } = await supabase
       .from("vox_rate_limits")
       .select("*", { count: "exact", head: true })
       .eq("ip_address", clientIp)
       .eq("user_id", user_id)
       .gte("window_start", windowStart);
 
-    if ((requestCount || 0) >= RATE_LIMIT_MAX) {
+    if ((ipRequestCount || 0) >= RATE_LIMIT_PER_IP) {
       return new Response(
-        JSON.stringify({ error: "Rate limit exceeded. Please wait a moment." }),
+        JSON.stringify({ error: "Por favor, aguarde um instante antes de enviar mais mensagens." }),
         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "60" } }
       );
     }
