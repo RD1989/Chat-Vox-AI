@@ -89,9 +89,6 @@ interface ParsedPrompt {
   priorities: string;
   restrictions: string;
   base_prompt: string;
-  avg_conversion_value?: number | null;
-  catalog_url?: string;
-  site_url?: string;
 }
 
 const parseSystemPrompt = (prompt: string): ParsedPrompt => {
@@ -124,7 +121,7 @@ const Agents = () => {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [editAgent, setEditAgent] = useState<Agent | null>(null);
-  const [agentConfig, setAgentConfig] = useState<ParsedPrompt>({ voice_tone: "", priorities: "", restrictions: "", base_prompt: "" });
+  const [agentConfig, setAgentConfig] = useState<ParsedPrompt>({ voice_tone: "Amigável e Empático", priorities: "", restrictions: "", base_prompt: "" });
   const [pixelsConfig, setPixelsConfig] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Agent | null>(null);
@@ -261,12 +258,12 @@ const Agents = () => {
         widget_trigger_seconds: editAgent.widget_trigger_seconds,
         widget_trigger_scroll: editAgent.widget_trigger_scroll,
         widget_position: editAgent.widget_position,
-        avg_conversion_value: agentConfig.avg_conversion_value,
+        avg_conversion_value: editAgent.avg_conversion_value,
         pix_key: editAgent.pix_key,
         checkout_url: editAgent.checkout_url,
         product_links: editAgent.product_links,
-        catalog_url: agentConfig.catalog_url,
-        site_url: agentConfig.site_url,
+        catalog_url: editAgent.catalog_url,
+        site_url: editAgent.site_url,
         meta_api_token: editAgent.meta_api_token,
         ask_whatsapp: editAgent.ask_whatsapp,
         ai_image_generation: editAgent.ai_image_generation,
@@ -597,16 +594,85 @@ const Agents = () => {
                     </div>
                   </div>
 
-                  <div className="bg-slate-50/50 dark:bg-black/20 border border-slate-200 dark:border-white/5 rounded-2xl p-6 space-y-4">
-                    <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
-                      <BrainCircuit size={14} className="text-primary" /> Prompt de Sistema (Cérebro da IA)
-                    </Label>
-                    <Textarea
-                      value={agentConfig.base_prompt}
-                      onChange={(e) => setAgentConfig({ ...agentConfig, base_prompt: e.target.value })}
-                      placeholder="Descreva o comportamento base da IA..."
-                      className="min-h-[200px] font-mono text-xs bg-white dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-xl"
-                    />
+                  <div className="bg-primary/5 dark:bg-primary/10 p-5 rounded-3xl border border-primary/20 flex flex-col gap-1 mb-2 mt-4">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <Bot size={18} className="text-primary" /> Matrix de Comportamento
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-white/60 font-medium">
+                      Modele a personalidade, os objetivos e as restrições éticas deste clone de IA.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full min-h-[400px]">
+                    <div className="flex flex-col h-full">
+                      <div className="flex-1 p-6 rounded-3xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-black/20 shadow-sm relative overflow-hidden group flex flex-col">
+                        <div className="absolute top-0 right-0 p-4 opacity-[0.03] dark:opacity-10 group-hover:scale-110 transition-transform duration-700 pointer-events-none">
+                          <BrainCircuit size={100} className="text-primary" />
+                        </div>
+                        <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2 mb-3 relative z-10">
+                          Matriz de Inteligência (Power Prompt) <Terminal size={14} className="text-primary" />
+                        </Label>
+                        <p className="text-[10px] text-slate-400 dark:text-white/40 mb-3 leading-relaxed relative z-10">
+                          Engenharia de Prompt pura. Aqui você define o cerne cognitivo do robô.
+                        </p>
+                        <div className="relative group/prompt z-10 flex-1 flex flex-col">
+                          <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 via-transparent to-primary/10 rounded-2xl blur opacity-30 group-hover/prompt:opacity-100 transition duration-500"></div>
+                          <Textarea
+                            value={agentConfig.base_prompt}
+                            onChange={e => setAgentConfig({ ...agentConfig, base_prompt: e.target.value })}
+                            placeholder="Instruções fundamentais que definem a existência da IA..."
+                            className="flex-1 relative bg-white dark:bg-[#0a0f16]/90 border-slate-200 dark:border-primary/20 text-slate-800 dark:text-primary/90 font-mono rounded-2xl focus:ring-primary/30 focus:border-primary/50 text-[12px] leading-relaxed p-5 transition-all shadow-inner custom-scrollbar resize-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-6 flex flex-col">
+                      <div className="p-5 rounded-3xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-black/20 shadow-sm">
+                        <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2 mb-3">
+                          <Mic size={14} className="text-primary" /> Personalidade e Tom de Voz
+                        </Label>
+                        <Select
+                          value={agentConfig.voice_tone}
+                          onValueChange={(val) => setAgentConfig({ ...agentConfig, voice_tone: val })}
+                        >
+                          <SelectTrigger className="w-full bg-white border-slate-200 text-slate-900 dark:bg-black/40 dark:border-white/10 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 h-12 transition-all font-semibold">
+                            <SelectValue placeholder="Como o robô deve falar?" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white dark:bg-[#0d121b] border-slate-200 dark:border-white/10 rounded-2xl shadow-xl">
+                            <SelectItem value="Profissional e Respeitoso">🎩 Profissional e Formal</SelectItem>
+                            <SelectItem value="Amigável e Empático">🤝 Amigável e Empático</SelectItem>
+                            <SelectItem value="Direto e Focado em Conversão">🎯 Direto (Alta Conversão)</SelectItem>
+                            <SelectItem value="Técnico e Analítico">🔬 Técnico e Analítico</SelectItem>
+                            <SelectItem value="Descontraído e Humorístico">⚡ Jovem e Descontraído</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="p-5 rounded-3xl border border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-500/5 shadow-sm">
+                        <Label className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest ml-1 flex items-center gap-2 mb-3">
+                          Objetivos Principais <Target size={14} className="text-emerald-500" />
+                        </Label>
+                        <Textarea
+                          value={agentConfig.priorities}
+                          onChange={e => setAgentConfig({ ...agentConfig, priorities: e.target.value })}
+                          placeholder="Ex: Coletar WhatsApp primeiro..."
+                          className="bg-white dark:bg-black/40 border-emerald-200 dark:border-emerald-500/10 text-slate-900 dark:text-white rounded-2xl focus:ring-emerald-500/20 focus:border-emerald-500/50 text-xs p-4 min-h-[90px] transition-all"
+                        />
+                      </div>
+
+                      <div className="p-5 rounded-3xl border border-rose-500/20 bg-rose-50/50 dark:bg-rose-500/5 shadow-sm">
+                        <Label className="text-[11px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-widest ml-1 flex items-center gap-2 mb-3">
+                          Regras Intocáveis (Proibições) <AlertTriangle size={14} className="text-rose-500" />
+                        </Label>
+                        <Textarea
+                          value={agentConfig.restrictions}
+                          onChange={e => setAgentConfig({ ...agentConfig, restrictions: e.target.value })}
+                          placeholder="Ex: Não dar descontos acima de 10%..."
+                          className="bg-white dark:bg-black/40 border-rose-200 dark:border-rose-500/10 text-slate-900 dark:text-white rounded-2xl focus:ring-rose-500/20 focus:border-rose-500/50 text-xs p-4 min-h-[90px] transition-all"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </TabsContent>
 
@@ -622,13 +688,13 @@ const Agents = () => {
                   </div>
 
                   {/* Colunas Responsivas de Vendas */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
                         <Wallet size={12} className="text-emerald-500" /> Chave PIX
                       </Label>
                       <Input
-                        value={editAgent.pix_key}
+                        value={editAgent.pix_key || ''}
                         onChange={e => setEditAgent({ ...editAgent, pix_key: e.target.value })}
                         placeholder="Email, CPF, Telefone ou Aleatória"
                         className="h-11 bg-slate-50/50 dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-xl focus:ring-primary/20 focus:border-primary/50 text-xs font-medium"
@@ -639,9 +705,21 @@ const Agents = () => {
                         <DollarSign size={12} className="text-emerald-500" /> Link de Checkout
                       </Label>
                       <Input
-                        value={editAgent.checkout_url}
+                        value={editAgent.checkout_url || ''}
                         onChange={e => setEditAgent({ ...editAgent, checkout_url: e.target.value })}
                         placeholder="https://seucheckout.com"
+                        className="h-11 bg-slate-50/50 dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-xl focus:ring-primary/20 focus:border-primary/50 text-xs font-medium"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
+                        Ticket Médio <DollarSign size={12} className="text-emerald-500" />
+                      </Label>
+                      <Input
+                        type="number"
+                        value={editAgent.avg_conversion_value || ''}
+                        onChange={e => setEditAgent({ ...editAgent, avg_conversion_value: parseFloat(e.target.value) || 0 })}
+                        placeholder="Ex: 150.00"
                         className="h-11 bg-slate-50/50 dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-xl focus:ring-primary/20 focus:border-primary/50 text-xs font-medium"
                       />
                     </div>
@@ -689,7 +767,7 @@ const Agents = () => {
                         <LayoutGrid size={12} className="text-emerald-500" /> Cardápio / Catálogo
                       </Label>
                       <Input
-                        value={editAgent.catalog_url}
+                        value={editAgent.catalog_url || ""}
                         onChange={e => setEditAgent({ ...editAgent, catalog_url: e.target.value })}
                         placeholder="https://seucardapio.com"
                         className="h-11 bg-slate-50/50 dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-xl focus:ring-primary/20 focus:border-primary/50 text-xs font-medium"
@@ -700,7 +778,7 @@ const Agents = () => {
                         <Globe size={12} className="text-emerald-500" /> Site / Landing Page
                       </Label>
                       <Input
-                        value={editAgent.site_url}
+                        value={editAgent.site_url || ""}
                         onChange={e => setEditAgent({ ...editAgent, site_url: e.target.value })}
                         placeholder="https://seusite.com.br"
                         className="h-11 bg-slate-50/50 dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-xl focus:ring-primary/20 focus:border-primary/50 text-xs font-medium"
@@ -1161,127 +1239,7 @@ const Agents = () => {
                   <AgentButtonsManager agentId={editAgent.id} />
                 </TabsContent>
 
-                <TabsContent value="identity" className="space-y-6 mt-0 animate-in fade-in duration-300">
-                  <div className="bg-primary/5 dark:bg-primary/10 p-5 rounded-3xl border border-primary/20 flex flex-col gap-1 mb-6">
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                      <Bot size={18} className="text-primary" /> Matrix de Comportamento
-                    </h4>
-                    <p className="text-xs text-slate-500 dark:text-white/60 font-medium">
-                      Modele a personalidade, os objetivos e as restrições éticas deste clone de IA.
-                    </p>
-                  </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full min-h-[500px]">
-                    <div className="flex flex-col h-full">
-                      <div className="flex-1 p-6 rounded-3xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-black/20 shadow-sm relative overflow-hidden group flex flex-col">
-                        <div className="absolute top-0 right-0 p-4 opacity-[0.03] dark:opacity-10 group-hover:scale-110 transition-transform duration-700 pointer-events-none">
-                          <BrainCircuit size={100} className="text-primary" />
-                        </div>
-                        <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2 mb-3 relative z-10">
-                          Matriz de Inteligência (Power Prompt) <Terminal size={14} className="text-primary" />
-                        </Label>
-                        <p className="text-[10px] text-slate-400 dark:text-white/40 mb-3 leading-relaxed relative z-10">
-                          Engenharia de Prompt pura. Aqui você define o cerne cognitivo do robô.
-                        </p>
-                        <div className="relative group/prompt z-10 flex-1 flex flex-col">
-                          <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 via-transparent to-primary/10 rounded-2xl blur opacity-30 group-hover/prompt:opacity-100 transition duration-500"></div>
-                          <Textarea
-                            value={agentConfig.base_prompt}
-                            onChange={e => setAgentConfig({ ...agentConfig, base_prompt: e.target.value })}
-                            placeholder="Instruções fundamentais que definem a existência da IA..."
-                            className="flex-1 relative bg-white dark:bg-[#0a0f16]/90 border-slate-200 dark:border-primary/20 text-slate-800 dark:text-primary/90 font-mono rounded-2xl focus:ring-primary/30 focus:border-primary/50 text-[12px] leading-relaxed p-5 transition-all shadow-inner custom-scrollbar resize-none"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-6 flex flex-col">
-                      <div className="p-5 rounded-3xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-black/20 shadow-sm">
-                        <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2 mb-3">
-                          <Mic size={14} className="text-primary" /> Personalidade e Tom de Voz
-                        </Label>
-                        <Select
-                          value={agentConfig.voice_tone}
-                          onValueChange={(val) => setAgentConfig({ ...agentConfig, voice_tone: val })}
-                        >
-                          <SelectTrigger className="w-full bg-white border-slate-200 text-slate-900 dark:bg-black/40 dark:border-white/10 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 h-12 transition-all font-semibold">
-                            <SelectValue placeholder="Como o robô deve falar?" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-white dark:bg-[#0d121b] border-slate-200 dark:border-white/10 rounded-2xl shadow-xl">
-                            <SelectItem value="Profissional e Respeitoso">🎩 Profissional e Formal</SelectItem>
-                            <SelectItem value="Amigável e Empático">🤝 Amigável e Empático</SelectItem>
-                            <SelectItem value="Direto e Focado em Conversão">🎯 Direto (Alta Conversão)</SelectItem>
-                            <SelectItem value="Técnico e Analítico">🔬 Técnico e Analítico</SelectItem>
-                            <SelectItem value="Descontraído e Humorístico">⚡ Jovem e Descontraído</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="p-5 rounded-3xl border border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-500/5 shadow-sm">
-                        <Label className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest ml-1 flex items-center gap-2 mb-3">
-                          Objetivos Principais <Target size={14} className="text-emerald-500" />
-                        </Label>
-                        <Textarea
-                          value={agentConfig.priorities}
-                          onChange={e => setAgentConfig({ ...agentConfig, priorities: e.target.value })}
-                          placeholder="Ex: Coletar WhatsApp primeiro..."
-                          className="bg-white dark:bg-black/40 border-emerald-200 dark:border-emerald-500/10 text-slate-900 dark:text-white rounded-2xl focus:ring-emerald-500/20 focus:border-emerald-500/50 text-xs p-4 min-h-[90px] transition-all"
-                        />
-                      </div>
-
-                      <div className="p-5 rounded-3xl border border-rose-500/20 bg-rose-50/50 dark:bg-rose-500/5 shadow-sm">
-                        <Label className="text-[11px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-widest ml-1 flex items-center gap-2 mb-3">
-                          Regras Intocáveis (Proibições) <AlertTriangle size={14} className="text-rose-500" />
-                        </Label>
-                        <Textarea
-                          value={agentConfig.restrictions}
-                          onChange={e => setAgentConfig({ ...agentConfig, restrictions: e.target.value })}
-                          placeholder="Ex: Não dar descontos acima de 10%..."
-                          className="bg-white dark:bg-black/40 border-rose-200 dark:border-rose-500/10 text-slate-900 dark:text-white rounded-2xl focus:ring-rose-500/20 focus:border-rose-500/50 text-xs p-4 min-h-[90px] transition-all"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
-                            Valor Médio de Conversão <DollarSign size={12} className="text-green-500/70" />
-                          </Label>
-                          <Input
-                            type="number"
-                            value={agentConfig.avg_conversion_value || ''}
-                            onChange={e => setAgentConfig({ ...agentConfig, avg_conversion_value: parseFloat(e.target.value) || null })}
-                            placeholder="Ex: 150.00"
-                            className="bg-slate-50/50 border-slate-200 text-slate-900 dark:bg-black/40 dark:border-white/10 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 h-12 text-xs p-4 transition-all"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
-                            URL do Catálogo <Book size={12} className="text-blue-500/70" />
-                          </Label>
-                          <Input
-                            type="url"
-                            value={agentConfig.catalog_url || ''}
-                            onChange={e => setAgentConfig({ ...agentConfig, catalog_url: e.target.value })}
-                            placeholder="Ex: https://seusite.com/catalogo"
-                            className="bg-slate-50/50 border-slate-200 text-slate-900 dark:bg-black/40 dark:border-white/10 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 h-12 text-xs p-4 transition-all"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
-                          URL do Site <Globe size={12} className="text-purple-500/70" />
-                        </Label>
-                        <Input
-                          type="url"
-                          placeholder="Ex: https://seusite.com"
-                          className="bg-slate-50/50 border-slate-200 text-slate-900 dark:bg-black/40 dark:border-white/10 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 h-12 text-xs p-4 transition-all"
-                        />
-                      </div>
-
-                    </div>
-                  </div>
-                </TabsContent>
               </Tabs>
             </div>
           )}
