@@ -185,7 +185,7 @@ const OnboardingWizard = ({ userId, onComplete }: OnboardingWizardProps) => {
               <SelectTrigger className="h-11 bg-slate-50 dark:bg-black/50 border-slate-200 dark:border-white/10">
                 <SelectValue placeholder="Selecione o tom de voz" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[110]">
                 <SelectItem value="Direto, cordial e focado em converter. Use de gatilhos de urgência, mas com elegância.">Profissional & Direto</SelectItem>
                 <SelectItem value="Amigável e empático, utilizando emojis pontuais e demonstrando compreensão das dores.">Amigável & Empático (Com emojis)</SelectItem>
                 <SelectItem value="Autoritário e Consultivo. Transmita confiança absoluta e recomende como um excelente especialista.">Consultivo & Especialista</SelectItem>
