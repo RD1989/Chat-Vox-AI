@@ -824,6 +824,63 @@ const Agents = () => {
                   </div>
                 </TabsContent>
 
+                <TabsContent value="followup" className="mt-0 space-y-6 animate-in fade-in duration-300">
+                  <div className="bg-amber-500/5 dark:bg-amber-500/10 p-5 rounded-3xl border border-amber-500/20 flex flex-col gap-1 mb-6">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <RefreshCcw size={18} className="text-amber-500" /> Gatilhos de Retenção
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-white/60 font-medium">
+                      Ative respostas automáticas após horas de inatividade do cliente. Exemplo: "Oi, conseguiu olhar?"
+                    </p>
+                  </div>
+
+                  <div className="p-6 bg-slate-50/50 dark:bg-black/20 border border-slate-200 dark:border-white/5 rounded-3xl space-y-6">
+                    <div className="flex items-center justify-between p-4 bg-white dark:bg-black/40 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
+                      <div className="space-y-1">
+                        <Label className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                          Lógica de Recuperação <Power size={14} className={editAgent.follow_up_enabled ? "text-primary" : "text-slate-400"} />
+                        </Label>
+                        <p className="text-[11px] text-slate-500 dark:text-white/40">Habilita a reativação de leads "esfriados"</p>
+                      </div>
+                      <Switch
+                        checked={editAgent.follow_up_enabled || false}
+                        onCheckedChange={checked => setEditAgent({ ...editAgent, follow_up_enabled: checked })}
+                        className="data-[state=checked]:bg-primary"
+                      />
+                    </div>
+
+                    <div className={editAgent.follow_up_enabled ? "opacity-100" : "opacity-40 pointer-events-none transition-opacity"}>
+                      <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2 mb-4">
+                        Fluxo Exato <Layers size={14} className="text-amber-500" />
+                      </Label>
+
+                      <div className="p-5 rounded-2xl bg-white dark:bg-[#0d121b] border border-amber-200 dark:border-amber-500/20 shadow-sm space-y-4">
+                        <div className="flex items-center gap-4 border-b border-slate-100 dark:border-white/5 pb-4">
+                          <div className="space-y-1 flex-1">
+                            <Label className="text-xs font-bold text-slate-700 dark:text-white/70">Tempo após inatividade (Horas)</Label>
+                            <div className="flex items-center gap-2">
+                              <Clock size={16} className="text-amber-500" />
+                              <Input
+                                type="number"
+                                className="w-24 h-9 bg-slate-50 dark:bg-black/60 rounded-xl"
+                                placeholder="24"
+                                defaultValue={24}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs font-bold text-slate-700 dark:text-white/70">Mensagem de Resgate</Label>
+                          <Textarea
+                            className="h-24 bg-slate-50 dark:bg-black/60 rounded-xl transition-all focus:ring-amber-500/20 focus:border-amber-500/50"
+                            placeholder="Olá! Vi que você não me respondeu mais. Ficou com alguma dúvida?"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+
                 <TabsContent value="appearance" className="space-y-6 mt-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
                   <div className="bg-purple-500/5 dark:bg-purple-500/10 p-5 rounded-3xl border border-purple-500/20 flex flex-col gap-1 mb-6">
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -1054,8 +1111,31 @@ const Agents = () => {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="space-y-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full min-h-[500px]">
+                    <div className="flex flex-col h-full">
+                      <div className="flex-1 p-6 rounded-3xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-black/20 shadow-sm relative overflow-hidden group flex flex-col">
+                        <div className="absolute top-0 right-0 p-4 opacity-[0.03] dark:opacity-10 group-hover:scale-110 transition-transform duration-700 pointer-events-none">
+                          <BrainCircuit size={100} className="text-primary" />
+                        </div>
+                        <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2 mb-3 relative z-10">
+                          Matriz de Inteligência (Power Prompt) <Terminal size={14} className="text-primary" />
+                        </Label>
+                        <p className="text-[10px] text-slate-400 dark:text-white/40 mb-3 leading-relaxed relative z-10">
+                          Engenharia de Prompt pura. Aqui você define o cerne cognitivo do robô.
+                        </p>
+                        <div className="relative group/prompt z-10 flex-1 flex flex-col">
+                          <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 via-transparent to-primary/10 rounded-2xl blur opacity-30 group-hover/prompt:opacity-100 transition duration-500"></div>
+                          <Textarea
+                            value={agentConfig.base_prompt}
+                            onChange={e => setAgentConfig({ ...agentConfig, base_prompt: e.target.value })}
+                            placeholder="Instruções fundamentais que definem a existência da IA..."
+                            className="flex-1 relative bg-white dark:bg-[#0a0f16]/90 border-slate-200 dark:border-primary/20 text-slate-800 dark:text-primary/90 font-mono rounded-2xl focus:ring-primary/30 focus:border-primary/50 text-[12px] leading-relaxed p-5 transition-all shadow-inner custom-scrollbar resize-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-6 flex flex-col">
                       <div className="p-5 rounded-3xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-black/20 shadow-sm">
                         <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2 mb-3">
                           <Mic size={14} className="text-primary" /> Personalidade e Tom de Voz
@@ -1085,7 +1165,7 @@ const Agents = () => {
                           value={agentConfig.priorities}
                           onChange={e => setAgentConfig({ ...agentConfig, priorities: e.target.value })}
                           placeholder="Ex: Coletar WhatsApp primeiro..."
-                          className="bg-white dark:bg-black/40 border-emerald-200 dark:border-emerald-500/10 text-slate-900 dark:text-white rounded-2xl focus:ring-emerald-500/20 focus:border-emerald-500/50 text-xs p-4 min-h-[110px] transition-all"
+                          className="bg-white dark:bg-black/40 border-emerald-200 dark:border-emerald-500/10 text-slate-900 dark:text-white rounded-2xl focus:ring-emerald-500/20 focus:border-emerald-500/50 text-xs p-4 min-h-[90px] transition-all"
                         />
                       </div>
 
@@ -1097,73 +1177,48 @@ const Agents = () => {
                           value={agentConfig.restrictions}
                           onChange={e => setAgentConfig({ ...agentConfig, restrictions: e.target.value })}
                           placeholder="Ex: Não dar descontos acima de 10%..."
-                          className="bg-white dark:bg-black/40 border-rose-200 dark:border-rose-500/10 text-slate-900 dark:text-white rounded-2xl focus:ring-rose-500/20 focus:border-rose-500/50 text-xs p-4 min-h-[110px] transition-all"
+                          className="bg-white dark:bg-black/40 border-rose-200 dark:border-rose-500/10 text-slate-900 dark:text-white rounded-2xl focus:ring-rose-500/20 focus:border-rose-500/50 text-xs p-4 min-h-[90px] transition-all"
                         />
                       </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
-                          Valor Médio de Conversão <DollarSign size={12} className="text-green-500/70" />
-                        </Label>
-                        <Input
-                          type="number"
-                          value={agentConfig.avg_conversion_value || ''}
-                          onChange={e => setAgentConfig({ ...agentConfig, avg_conversion_value: parseFloat(e.target.value) || null })}
-                          placeholder="Ex: 150.00"
-                          className="bg-slate-50/50 border-slate-200 text-slate-900 dark:bg-black/40 dark:border-white/10 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 h-12 text-xs p-4 transition-all"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
-                          URL do Catálogo <Book size={12} className="text-blue-500/70" />
-                        </Label>
-                        <Input
-                          type="url"
-                          value={agentConfig.catalog_url || ''}
-                          onChange={e => setAgentConfig({ ...agentConfig, catalog_url: e.target.value })}
-                          placeholder="Ex: https://seusite.com/catalogo"
-                          className="bg-slate-50/50 border-slate-200 text-slate-900 dark:bg-black/40 dark:border-white/10 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 h-12 text-xs p-4 transition-all"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
-                        URL do Site <Globe size={12} className="text-purple-500/70" />
-                      </Label>
-                      <Input
-                        type="url"
-                        value={agentConfig.site_url || ''}
-                        onChange={e => setAgentConfig({ ...agentConfig, site_url: e.target.value })}
-                        placeholder="Ex: https://seusite.com"
-                        className="bg-slate-50/50 border-slate-200 text-slate-900 dark:bg-black/40 dark:border-white/10 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 h-12 text-xs p-4 transition-all"
-                      />
-                    </div>
-
-                    <div className="space-y-6">
-                      <div className="p-6 rounded-3xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-black/20 shadow-sm relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-4 opacity-[0.03] dark:opacity-10 group-hover:scale-110 transition-transform duration-700 pointer-events-none">
-                          <BrainCircuit size={100} className="text-primary" />
+                      <div className="grid grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
+                            Valor Médio de Conversão <DollarSign size={12} className="text-green-500/70" />
+                          </Label>
+                          <Input
+                            type="number"
+                            value={agentConfig.avg_conversion_value || ''}
+                            onChange={e => setAgentConfig({ ...agentConfig, avg_conversion_value: parseFloat(e.target.value) || null })}
+                            placeholder="Ex: 150.00"
+                            className="bg-slate-50/50 border-slate-200 text-slate-900 dark:bg-black/40 dark:border-white/10 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 h-12 text-xs p-4 transition-all"
+                          />
                         </div>
-                        <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2 mb-3 relative z-10">
-                          Matriz de Inteligência (Power Prompt) <Terminal size={14} className="text-primary" />
-                        </Label>
-                        <p className="text-[10px] text-slate-400 dark:text-white/40 mb-3 leading-relaxed relative z-10">
-                          Engenharia de Prompt pura. Aqui você define o cerne cognitivo do robô.
-                        </p>
-                        <div className="relative group/prompt z-10">
-                          <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 via-transparent to-primary/10 rounded-2xl blur opacity-30 group-hover/prompt:opacity-100 transition duration-500"></div>
-                          <Textarea
-                            value={agentConfig.base_prompt}
-                            onChange={e => setAgentConfig({ ...agentConfig, base_prompt: e.target.value })}
-                            rows={15}
-                            placeholder="Instruções fundamentais que definem a existência da IA..."
-                            className="relative bg-white dark:bg-[#0a0f16]/90 border-slate-200 dark:border-primary/20 text-slate-800 dark:text-primary/90 font-mono rounded-2xl focus:ring-primary/30 focus:border-primary/50 text-[12px] leading-relaxed p-5 transition-all shadow-inner custom-scrollbar"
+                        <div className="space-y-2">
+                          <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
+                            URL do Catálogo <Book size={12} className="text-blue-500/70" />
+                          </Label>
+                          <Input
+                            type="url"
+                            value={agentConfig.catalog_url || ''}
+                            onChange={e => setAgentConfig({ ...agentConfig, catalog_url: e.target.value })}
+                            placeholder="Ex: https://seusite.com/catalogo"
+                            className="bg-slate-50/50 border-slate-200 text-slate-900 dark:bg-black/40 dark:border-white/10 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 h-12 text-xs p-4 transition-all"
                           />
                         </div>
                       </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2">
+                          URL do Site <Globe size={12} className="text-purple-500/70" />
+                        </Label>
+                        <Input
+                          type="url"
+                          placeholder="Ex: https://seusite.com"
+                          className="bg-slate-50/50 border-slate-200 text-slate-900 dark:bg-black/40 dark:border-white/10 dark:text-white rounded-2xl focus:ring-primary/20 focus:border-primary/50 h-12 text-xs p-4 transition-all"
+                        />
+                      </div>
+
                     </div>
                   </div>
                 </TabsContent>
