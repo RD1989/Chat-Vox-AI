@@ -884,13 +884,13 @@ const Index = () => {
               <h3 className="text-base font-bold text-foreground">Starter</h3>
               <p className="text-[13px] text-muted-foreground mt-0.5 mb-6">Ideal para testar</p>
               <div className="mb-1">
-                <span className="text-4xl font-extrabold text-foreground">{billing === "monthly" ? "R$97,90" : "R$234,90"}</span>
+                <span className="text-4xl font-extrabold text-foreground">{billing === "monthly" ? "R$47,90" : "R$114,90"}</span>
                 <span className="text-muted-foreground text-sm">{billing === "monthly" ? "/mês" : "/tri"}</span>
               </div>
-              {billing === "quarterly" && <p className="text-[11px] text-muted-foreground mb-5">equivale a R$78,30/mês</p>}
+              {billing === "quarterly" && <p className="text-[11px] text-muted-foreground mb-5">equivale a R$38,30/mês</p>}
               {billing === "monthly" && <div className="mb-5" />}
               <ul className="space-y-2.5 mb-8 flex-1">
-                {["300 leads/mês", "1 agente IA", "CRM básico", "Dashboard de métricas", "Suporte por email"].map((item) => (
+                {["300 leads/mês", "3 agentes IA", "CRM básico", "Dashboard de métricas", "Suporte por email"].map((item) => (
                   <li key={item} className="flex items-center gap-2.5 text-[14px] text-muted-foreground">
                     <CheckCircle2 size={15} className="text-primary shrink-0" />
                     {item}
@@ -911,13 +911,13 @@ const Index = () => {
               <h3 className="text-base font-bold text-foreground">Pro</h3>
               <p className="text-[13px] text-muted-foreground mt-0.5 mb-6">Para escalar vendas</p>
               <div className="mb-1">
-                <span className="text-4xl font-extrabold text-foreground">{billing === "monthly" ? "R$197,90" : "R$474,90"}</span>
+                <span className="text-4xl font-extrabold text-foreground">{billing === "monthly" ? "R$97,90" : "R$234,90"}</span>
                 <span className="text-muted-foreground text-sm">{billing === "monthly" ? "/mês" : "/tri"}</span>
               </div>
-              {billing === "quarterly" && <p className="text-[11px] text-muted-foreground mb-5">equivale a R$158,30/mês</p>}
+              {billing === "quarterly" && <p className="text-[11px] text-muted-foreground mb-5">equivale a R$78,30/mês</p>}
               {billing === "monthly" && <div className="mb-5" />}
               <ul className="space-y-2.5 mb-8 flex-1">
-                {["2.000 leads/mês", "3 agentes IA", "CRM completo", "Métricas avançadas", "Pixels Meta & TikTok", "Transbordo humano", "Suporte prioritário"].map((item) => (
+                {["3.000 leads/mês", "10 agentes IA", "CRM completo", "Métricas avançadas", "Pixels Meta & TikTok", "Transbordo humano", "Suporte prioritário"].map((item) => (
                   <li key={item} className="flex items-center gap-2.5 text-[14px] text-foreground">
                     <CheckCircle2 size={15} className="text-primary shrink-0" />
                     {item}
@@ -936,10 +936,10 @@ const Index = () => {
               <h3 className="text-base font-bold text-foreground">Scale</h3>
               <p className="text-[13px] text-muted-foreground mt-0.5 mb-6">Alto volume</p>
               <div className="mb-1">
-                <span className="text-4xl font-extrabold text-foreground">{billing === "monthly" ? "R$397,90" : "R$954,90"}</span>
+                <span className="text-4xl font-extrabold text-foreground">{billing === "monthly" ? "R$197,90" : "R$474,90"}</span>
                 <span className="text-muted-foreground text-sm">{billing === "monthly" ? "/mês" : "/tri"}</span>
               </div>
-              {billing === "quarterly" && <p className="text-[11px] text-muted-foreground mb-5">equivale a R$318,30/mês</p>}
+              {billing === "quarterly" && <p className="text-[11px] text-muted-foreground mb-5">equivale a R$158,30/mês</p>}
               {billing === "monthly" && <div className="mb-5" />}
               <ul className="space-y-2.5 mb-8 flex-1">
                 {["Leads ilimitados", "Agentes ilimitados", "CRM + API", "Relatórios exportáveis", "White-label", "Notificações push", "Suporte VIP"].map((item) => (
