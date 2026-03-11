@@ -979,7 +979,16 @@ const PublicChat = () => {
               {config.ai_name}
             </h1>
             <p className="text-[13px] leading-tight" style={{ color: `${headerText}99` }}>
-              {isTyping ? "digitando..." : "online"}
+              {isTyping ? (
+                <span className="flex items-center gap-0.5">
+                  digitando
+                  <span className="flex gap-0.5 mt-1">
+                    <span className="w-1 h-1 rounded-full bg-current animate-bounce [animation-delay:-0.3s]"></span>
+                    <span className="w-1 h-1 rounded-full bg-current animate-bounce [animation-delay:-0.15s]"></span>
+                    <span className="w-1 h-1 rounded-full bg-current animate-bounce"></span>
+                  </span>
+                </span>
+              ) : "online"}
             </p>
           </div>
         </div>

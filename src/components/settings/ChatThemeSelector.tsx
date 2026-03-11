@@ -136,7 +136,10 @@ const ChatPreviewMini = ({ theme, aiName, aiAvatarUrl }: { theme: ChatTheme; aiN
           <Bot size={12} style={{ color: theme.headerText }} />
         )}
       </div>
-      <span className="font-semibold text-[11px]">{aiName}</span>
+      <div className="flex flex-col">
+        <span className="font-semibold text-[11px] leading-tight">{aiName}</span>
+        <span className="text-[9px] opacity-70 leading-tight">online</span>
+      </div>
     </div>
     {/* Messages */}
     <div className="px-2 py-3 space-y-1.5" style={{ backgroundColor: theme.chatBg, minHeight: 80 }}>
