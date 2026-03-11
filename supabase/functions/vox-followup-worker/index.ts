@@ -64,10 +64,13 @@ serve(async (req) => {
 
                 // Use the latest between last user activity and last follow-up sent
                 const referenceTime = Math.max(lastActivity, lastFollowUp);
-                const hoursInactive = (Date.now() - referenceTime) / (1000 * 60 * 60);
+                const minutesInactive = (Date.now() - referenceTime) / (1000 * 60); // Em minutos
 
-                if (hoursInactive >= currentStep.delay_hours) {
-                    console.log(`[followup-worker] Sending step ${currentStepIdx + 1} to lead ${lead.id}`);
+                // Compatibilidade com cadastros antigos: se tem delay_minutes usa, senão multiplica hours por 60
+                const requiredDelay = currentStep.delay_minutes !== undefined ? currentStep.delay_minutes : (currentStep.delay_hours * 60 || 0);
+
+                if (minutesInactive >= requiredDelay) {
+                    console.log(`[followup-worker] Sending step ${currentStepIdx + 1} to lead ${lead.id} after ${minutesInactive.toFixed(1)} mins`);
 
                     // 3. Send message (insert into vox_messages)
                     const { error: msgError } = await supabase

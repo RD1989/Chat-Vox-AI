@@ -57,7 +57,7 @@ interface Agent {
   widget_trigger_scroll?: number;
   widget_position?: string;
   follow_up_enabled?: boolean;
-  follow_up_config?: { id: number; delay_hours: number; message: string; }[];
+  follow_up_config?: { id: number; delay_minutes: number; message: string; }[];
   predefined_message?: string;
   organic_lead_capture?: boolean;
   openrouter_model?: string;
@@ -159,7 +159,18 @@ const Agents = () => {
       },
       custom_css: agent.custom_css || "",
       widget_trigger_seconds: agent.widget_trigger_seconds || 5,
-      widget_trigger_scroll: agent.widget_trigger_scroll || 50,
+      follow_up_enabled: agent.follow_up_enabled || false,
+      follow_up_config: agent.follow_up_config && agent.follow_up_config.length > 0 ? 
+        // Se vier de versão antiga com delay_hours, migra em memória multiplicando por 60
+        agent.follow_up_config.map(f => ({
+          id: f.id,
+          delay_minutes: (f as any).delay_minutes !== undefined ? (f as any).delay_minutes : ((f as any).delay_hours * 60 || 0),
+          message: f.message || ""
+        })) : [
+        { id: 1, delay_minutes: 30, message: "Oi, você ainda está aí?" },
+        { id: 2, delay_minutes: 60, message: "Ainda aguardando seu retorno para continuarmos!" },
+        { id: 3, delay_minutes: 120, message: "Como não tive resposta, estou encerrando o atendimento, mas fico à disposição." }
+      ],
       widget_position: agent.widget_position || "bottom-right"
     });
   };
@@ -989,31 +1000,70 @@ const Agents = () => {
 
                     <div className={editAgent.follow_up_enabled ? "opacity-100" : "opacity-40 pointer-events-none transition-opacity"}>
                       <Label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 flex items-center gap-2 mb-4">
-                        Fluxo Exato <Layers size={14} className="text-amber-500" />
+                        Fluxo Exato (3 Mensagens Max) <Layers size={14} className="text-amber-500" />
                       </Label>
 
-                      <div className="p-5 rounded-2xl bg-white dark:bg-[#0d121b] border border-amber-200 dark:border-amber-500/20 shadow-sm space-y-4">
-                        <div className="flex items-center gap-4 border-b border-slate-100 dark:border-white/5 pb-4">
-                          <div className="space-y-1 flex-1">
-                            <Label className="text-xs font-bold text-slate-700 dark:text-white/70">Tempo após inatividade (Horas)</Label>
-                            <div className="flex items-center gap-2">
-                              <Clock size={16} className="text-amber-500" />
-                              <Input
-                                type="number"
-                                className="w-24 h-9 bg-slate-50 dark:bg-black/60 rounded-xl"
-                                placeholder="24"
-                                defaultValue={24}
+                      <div className="space-y-4">
+                        {editAgent.follow_up_config?.map((step, index) => (
+                          <div key={step.id} className="p-5 rounded-2xl bg-white dark:bg-[#0d121b] border border-amber-200 dark:border-amber-500/20 shadow-sm space-y-4">
+                            <div className="flex items-center gap-4 border-b border-slate-100 dark:border-white/5 pb-4">
+                              <div className="w-8 h-8 rounded-full bg-amber-500/10 text-amber-500 font-bold flex items-center justify-center shrink-0">
+                                {index + 1}
+                              </div>
+                              <div className="space-y-1 flex-1">
+                                <Label className="text-xs font-bold text-slate-700 dark:text-white/70">Tempo Após Inatividade</Label>
+                                <div className="flex items-center gap-2">
+                                  <Clock size={16} className="text-amber-500" />
+                                  <Input
+                                    type="number"
+                                    className="w-24 h-9 bg-slate-50 dark:bg-black/60 rounded-xl"
+                                    placeholder="Ex: 30"
+                                    value={step.delay_minutes || ''}
+                                    onChange={(e) => {
+                                      const newConfig = [...(editAgent.follow_up_config || [])];
+                                      newConfig[index] = { ...step, delay_minutes: Number(e.target.value) };
+                                      setEditAgent({ ...editAgent, follow_up_config: newConfig });
+                                    }}
+                                  />
+                                  <span className="text-xs font-bold text-slate-500">Minutos</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs font-bold text-slate-700 dark:text-white/70">Mensagem de Resgate</Label>
+                              <Textarea
+                                className="h-20 bg-slate-50 dark:bg-black/60 rounded-xl transition-all focus:ring-amber-500/20 focus:border-amber-500/50 resize-none text-xs"
+                                placeholder={`Ex: Retorno da mensagem ${index + 1}...`}
+                                value={step.message}
+                                onChange={(e) => {
+                                  const newConfig = [...(editAgent.follow_up_config || [])];
+                                  newConfig[index] = { ...step, message: e.target.value };
+                                  setEditAgent({ ...editAgent, follow_up_config: newConfig });
+                                }}
                               />
                             </div>
                           </div>
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs font-bold text-slate-700 dark:text-white/70">Mensagem de Resgate</Label>
-                          <Textarea
-                            className="h-24 bg-slate-50 dark:bg-black/60 rounded-xl transition-all focus:ring-amber-500/20 focus:border-amber-500/50"
-                            placeholder="Olá! Vi que você não me respondeu mais. Ficou com alguma dúvida?"
-                          />
-                        </div>
+                        ))}
+
+                        {(!editAgent.follow_up_config || editAgent.follow_up_config.length < 3) && (
+                          <Button
+                            variant="outline"
+                            className="w-full border-dashed border-amber-500/30 text-amber-600 hover:bg-amber-500/10 rounded-2xl h-12"
+                            onClick={() => {
+                              const newConfig = [...(editAgent.follow_up_config || [])];
+                              if (newConfig.length < 3) {
+                                newConfig.push({
+                                  id: Math.max(...(newConfig.map(s => s.id) || [0]), 0) + 1,
+                                  delay_minutes: 60,
+                                  message: ""
+                                });
+                                setEditAgent({ ...editAgent, follow_up_config: newConfig });
+                              }
+                            }}
+                          >
+                            <Plus size={16} className="mr-2" /> Adicionar Estágio de Follow-up
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>
