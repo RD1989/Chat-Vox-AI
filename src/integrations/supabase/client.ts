@@ -115,6 +115,34 @@ export const supabase: any = new Proxy(originalSupabase, {
       };
     }
 
+    // Interceptar FUNCTIONS (invoke)
+    if (prop === 'functions') {
+      return {
+        invoke: async (functionName: string, options?: any) => {
+          const token = localStorage.getItem('local_auth_token');
+          const headers = {
+            ...options?.headers,
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          };
+
+          const res = await fetch(`${SUPABASE_URL}/functions/v1/${functionName}`, {
+            method: options?.method || 'POST',
+            headers,
+            body: JSON.stringify(options?.body)
+          });
+
+          if (!res.ok) {
+            const error = await res.json().catch(() => ({ error: 'Unknown error' }));
+            return { data: null, error };
+          }
+
+          const data = await res.json();
+          return { data, error: null };
+        }
+      };
+    }
+
     return (target as any)[prop];
   }
 });

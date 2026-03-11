@@ -20,6 +20,7 @@ serve(async (req) => {
     // Verify caller is admin
     const authHeader = req.headers.get("authorization");
     if (!authHeader) {
+      console.error("[admin-users] Header de autorização ausente");
       return new Response(JSON.stringify({ error: "No auth header" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -30,9 +31,16 @@ serve(async (req) => {
     const callerClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { authorization: authHeader } },
     });
-    const { data: { user: caller } } = await callerClient.auth.getUser();
-    if (!caller) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+
+    const { data: { user: caller }, error: authError } = await callerClient.auth.getUser();
+    
+    if (authError || !caller) {
+      console.error(`[admin-users] Falha na autenticação do chamador. Erro: ${authError?.message || "User not found"}. Header: ${authHeader.substring(0, 15)}...`);
+      return new Response(JSON.stringify({ 
+        error: "Unauthorized", 
+        details: authError?.message || "Token inválido ou expirado",
+        header_start: authHeader.substring(0, 15) 
+      }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -179,9 +187,25 @@ serve(async (req) => {
         };
       });
 
+      const debug_info = {
+        caller_id: caller.id,
+        caller_email: caller.email,
+        is_admin_check: isAdmin,
+        counts: {
+          auth_users: users?.length || 0,
+          profiles: profiles?.length || 0,
+          leads: allLeads?.length || 0,
+          messages: allMessages?.length || 0,
+          roles: roles?.length || 0,
+          plans: plans?.length || 0,
+          fin_stats: finStats?.length || 0
+        }
+      };
+
       return new Response(JSON.stringify({
         users: enrichedUsers,
-        financials: finStats
+        financials: finStats,
+        debug: debug_info
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -195,7 +219,10 @@ serve(async (req) => {
       
       if (geoError) console.error(`[admin-users] Erro geo_stats: ${geoError.message}`);
 
-      return new Response(JSON.stringify({ leads: leads || [] }), {
+      return new Response(JSON.stringify({ 
+        leads: leads || [],
+        debug: { count: leads?.length || 0, error: geoError?.message }
+      }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

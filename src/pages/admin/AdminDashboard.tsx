@@ -95,25 +95,24 @@ const AdminDashboard = () => {
 
   const loadStats = async () => {
     setLoading(true);
-    const { data: session } = await supabase.auth.getSession();
-    const token = session?.session?.access_token;
 
     const [usersRes, geoRes] = await Promise.all([
-      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-users`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: "list_users" }),
-      }).then(r => r.json()).catch(() => ({ users: [] })),
-
-      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-users`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: "get_geo_stats" }),
-      }).then(r => r.json()).catch(() => ({ leads: [] })),
+      supabase.functions.invoke("admin-users", {
+        body: { action: "list_users" },
+      }),
+      supabase.functions.invoke("admin-users", {
+        body: { action: "get_geo_stats" },
+      }),
     ]);
 
-    const users: UserPerformance[] = usersRes.users || [];
-    const allGeoLeads = geoRes.leads || [];
+    const usersResData = usersRes.data || { users: [] };
+    const geoResData = geoRes.data || { leads: [] };
+
+    if (usersRes.error) console.error("Erro ao buscar usuários admin:", usersRes.error);
+    if (geoRes.error) console.error("Erro ao buscar geo stats admin:", geoRes.error);
+
+    const users: UserPerformance[] = usersResData.users || [];
+    const allGeoLeads = geoResData.leads || [];
     const geoLeads = filterByDate(allGeoLeads, timeFilter);
 
     const totalLeads = users.reduce((s, u) => s + u.leads_count, 0);
