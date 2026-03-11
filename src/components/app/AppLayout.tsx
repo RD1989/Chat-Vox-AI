@@ -3,6 +3,7 @@ import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import AppSidebar from "./AppSidebar";
 import OnboardingWizard from "./OnboardingWizard";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useAuth } from "@/hooks/useAuth";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { Loader2, Bell, Settings, LogOut, CreditCard, Sparkles } from "lucide-react";
@@ -78,9 +79,10 @@ const AppLayout = () => {
   const username = user.email?.split("@")[0] || "";
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-background dark:bg-transparent transition-colors duration-300">
-        <AppSidebar />
+    <ErrorBoundary>
+      <SidebarProvider>
+        <div className="flex min-h-screen w-full bg-background dark:bg-transparent transition-colors duration-300">
+          <AppSidebar />
         <main className="flex-1 flex flex-col min-w-0 bg-slate-50 dark:bg-transparent">
 
           <header className="h-14 border-b border-primary/50 bg-white dark:bg-black/20 dark:backdrop-blur-xl dark:border-primary flex items-center justify-between px-6 sticky top-0 z-30 transition-all">
@@ -200,7 +202,8 @@ const AppLayout = () => {
           </div>
         </main>
       </div>
-    </SidebarProvider>
+      </SidebarProvider>
+    </ErrorBoundary>
   );
 };
 
