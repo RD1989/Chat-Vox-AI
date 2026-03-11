@@ -93,15 +93,15 @@ const INTERACTIVE_TOOLS = [
     type: "function",
     function: {
       name: "exibir_prova_social",
-      description: "Envia provas sociais, depoimentos e resultados de clientes para o lead. Use quando o lead estiver indeciso ou precisar de mais confiança para fechar.",
+      description: "Envia provas sociais, depoimentos e resultados específicos. USE PROATIVAMENTE: Identifique a melhor prova pelo [Nome] na lista abaixo (ex: se o lead for de 'Emagrecimento', escolha provas com esse nome). Use para quebrar objeções de confiança ou quando o lead pedir resultados.",
       parameters: {
         type: "object",
         properties: {
-          message: { type: "string", description: "Mensagem persuasiva que acompanha as provas sociais" },
+          message: { type: "string", description: "Mensagem persuasiva e contextualizada que explica por que você está enviando esses resultados específicos." },
           media_urls: { 
             type: "array", 
             items: { type: "string" }, 
-            description: "Lista de URLs das provas sociais selecionadas para envio. Obrigatório copiar URLs da lista 'PROVAS SOCIAIS DISPONÍVEIS'." 
+            description: "Lista de URLs das provas sociais selecionadas. Analise os [Nomes] disponíveis e escolha as mais relevantes para o momento da conversa." 
           }
         },
         required: ["message", "media_urls"],
@@ -112,15 +112,15 @@ const INTERACTIVE_TOOLS = [
     type: "function",
     function: {
       name: "exibir_midia_produto",
-      description: "Exibe fotos ou vídeos demonstrativos do produto ou serviço. Use quando o lead pedir para ver fotos, como funciona, ou demonstrar qualidade.",
+      description: "Exibe mídias específicas do produto/serviço (fotos reais, vídeos demonstrativos). USE O CONTEXTO: Analise os [Nomes] das mídias disponíveis e envie a que melhor atende à dúvida do lead (ex: se ele pedir 'foto da sala', envie a mídia nomeada como 'sala').",
       parameters: {
         type: "object",
         properties: {
-          message: { type: "string", description: "Mensagem descritiva das mídias enviadas" },
+          message: { type: "string", description: "Mensagem descritiva que comunica o que o lead está prestes a ver." },
           media_urls: { 
             type: "array", 
             items: { type: "string" }, 
-            description: "Lista de URLs das mídias selecionadas para envio. Obrigatório copiar URLs da lista 'MÍDIAS DE PRODUTO DISPONÍVEIS'." 
+            description: "Lista de URLs das mídias de produto selecionadas. Escolha baseado na relevância com o pedido do lead ou etapa da venda." 
           }
         },
         required: ["message", "media_urls"],
