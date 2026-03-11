@@ -907,33 +907,37 @@ const Agents = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="p-4 border border-dashed border-slate-300 dark:border-white/10 rounded-2xl text-center space-y-2">
-                      <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center mx-auto mb-2 text-slate-400">
-                        <HardDrive size={20} />
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* 📦 Mídias do Produto */}
+                    <div className="p-6 bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 rounded-[2.5rem] shadow-sm flex flex-col items-center text-center space-y-4 transition-all hover:shadow-md">
+                      <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500 shadow-inner">
+                        <HardDrive size={24} />
                       </div>
-                      <h5 className="text-[11px] font-bold text-slate-700 dark:text-white uppercase tracking-wider">Mídias do Produto</h5>
-                      <p className="text-[10px] text-slate-500 dark:text-white/40 max-w-[200px] mx-auto">Fotos e vídeos que a IA usará para demonstrar seu produto.</p>
+                      <div className="space-y-1">
+                        <h5 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-widest">Mídias do Produto</h5>
+                        <p className="text-[10px] text-slate-500 dark:text-white/40 leading-relaxed px-4">Fotos e vídeos para demonstração técnica do produto.</p>
+                      </div>
 
-                      <div className="flex flex-wrap gap-3 mb-3 mt-4 justify-center">
+                      <div className="w-full flex flex-wrap gap-3 py-2 justify-center min-h-[100px]">
+                        {editAgent.product_media?.length === 0 && (
+                          <div className="text-[10px] text-slate-400 dark:text-white/20 italic self-center">Nenhuma mídia enviada</div>
+                        )}
                         {editAgent.product_media?.map((media: any, i) => {
                           const url = media?.url || media;
                           const name = media?.name || '';
                           return (
-                            <div key={i} className="relative group w-32 rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 bg-white dark:bg-black/20 flex flex-col shadow-sm">
-                              <div className="relative h-24 w-full">
-                                <img src={url} className="w-full h-full object-cover" />
-                                <button onClick={() => removeMedia(url, 'product')} className="absolute top-1 right-1 p-1.5 rounded-full bg-rose-500 hover:bg-rose-600 text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
-                                  <X size={12} />
-                                </button>
-                              </div>
-                              <div className="p-1.5 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
+                            <div key={i} className="relative group w-28 h-28 rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/40 flex flex-col shadow-sm transition-transform hover:scale-[1.02]">
+                              <img src={url} className="w-full h-full object-cover" />
+                              <button onClick={() => removeMedia(url, 'product')} className="absolute top-1 right-1 p-1.5 rounded-full bg-rose-500/90 backdrop-blur-sm hover:bg-rose-600 text-white opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                <X size={10} />
+                              </button>
+                              <div className="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-md p-1 border-t border-white/10">
                                 <input
                                   type="text"
-                                  placeholder="Nome da mídia..."
+                                  placeholder="Nome..."
                                   value={name}
                                   onChange={(e) => updateMediaName(url, e.target.value, 'product')}
-                                  className="w-full bg-transparent text-[10px] text-center outline-none border-none text-slate-700 dark:text-white/80 placeholder:text-slate-400 dark:placeholder:text-white/30"
+                                  className="w-full bg-transparent text-[9px] text-center text-white outline-none border-none placeholder:text-white/40"
                                 />
                               </div>
                             </div>
@@ -941,7 +945,7 @@ const Agents = () => {
                         })}
                       </div>
 
-                      <div className="relative inline-block mt-2">
+                      <div className="relative pt-2">
                         <input
                           type="file"
                           id="product-media-upload"
@@ -951,41 +955,44 @@ const Agents = () => {
                         />
                         <Button
                           size="sm"
-                          variant="outline"
                           onClick={() => document.getElementById('product-media-upload')?.click()}
-                          className="h-8 text-[10px] bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 rounded-xl px-4 font-bold"
+                          className="h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl px-6 font-bold shadow-lg shadow-blue-500/20 gap-2 text-[11px]"
                         >
-                          {saving ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} Fazer Upload
+                          {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Fazer Upload
                         </Button>
                       </div>
                     </div>
 
-                    <div className="p-4 border border-dashed border-slate-300 dark:border-white/10 rounded-2xl text-center space-y-2">
-                      <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center mx-auto mb-2 text-slate-400">
-                        <Sparkles size={20} />
+                    {/* ✨ Prova Social */}
+                    <div className="p-6 bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 rounded-[2.5rem] shadow-sm flex flex-col items-center text-center space-y-4 transition-all hover:shadow-md">
+                      <div className="w-14 h-14 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 shadow-inner">
+                        <Sparkles size={24} />
                       </div>
-                      <h5 className="text-[11px] font-bold text-slate-700 dark:text-white uppercase tracking-wider">Prova Social</h5>
-                      <p className="text-[10px] text-slate-500 dark:text-white/40 max-w-[200px] mx-auto">Prints de depoimentos e resultados para gerar confiança.</p>
+                      <div className="space-y-1">
+                        <h5 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-widest">Prova Social</h5>
+                        <p className="text-[10px] text-slate-500 dark:text-white/40 leading-relaxed px-4">Depoimentos e prints de resultados dos clientes.</p>
+                      </div>
 
-                      <div className="flex flex-wrap gap-3 mb-3 mt-4 justify-center">
+                      <div className="w-full flex flex-wrap gap-3 py-2 justify-center min-h-[100px]">
+                        {editAgent.social_proof_media?.length === 0 && (
+                          <div className="text-[10px] text-slate-400 dark:text-white/20 italic self-center">Nenhuma prova enviada</div>
+                        )}
                         {editAgent.social_proof_media?.map((media: any, i) => {
                           const url = media?.url || media;
                           const name = media?.name || '';
                           return (
-                            <div key={i} className="relative group w-32 rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 bg-white dark:bg-black/20 flex flex-col shadow-sm">
-                              <div className="relative h-24 w-full">
-                                <img src={url} className="w-full h-full object-cover" />
-                                <button onClick={() => removeMedia(url, 'social')} className="absolute top-1 right-1 p-1.5 rounded-full bg-rose-500 hover:bg-rose-600 text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
-                                  <X size={12} />
-                                </button>
-                              </div>
-                              <div className="p-1.5 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
+                            <div key={i} className="relative group w-28 h-28 rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/40 flex flex-col shadow-sm transition-transform hover:scale-[1.02]">
+                              <img src={url} className="w-full h-full object-cover" />
+                              <button onClick={() => removeMedia(url, 'social')} className="absolute top-1 right-1 p-1.5 rounded-full bg-rose-500/90 backdrop-blur-sm hover:bg-rose-600 text-white opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                <X size={10} />
+                              </button>
+                              <div className="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-md p-1 border-t border-white/10">
                                 <input
                                   type="text"
-                                  placeholder="Ex: Aluno XYZ"
+                                  placeholder="Nome..."
                                   value={name}
                                   onChange={(e) => updateMediaName(url, e.target.value, 'social')}
-                                  className="w-full bg-transparent text-[10px] text-center outline-none border-none text-slate-700 dark:text-white/80 placeholder:text-slate-400 dark:placeholder:text-white/30"
+                                  className="w-full bg-transparent text-[9px] text-center text-white outline-none border-none placeholder:text-white/40"
                                 />
                               </div>
                             </div>
@@ -993,7 +1000,7 @@ const Agents = () => {
                         })}
                       </div>
 
-                      <div className="relative inline-block mt-2">
+                      <div className="relative pt-2">
                         <input
                           type="file"
                           id="social-media-upload"
@@ -1003,11 +1010,10 @@ const Agents = () => {
                         />
                         <Button
                           size="sm"
-                          variant="outline"
                           onClick={() => document.getElementById('social-media-upload')?.click()}
-                          className="h-8 text-[10px] bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 rounded-xl px-4 font-bold"
+                          className="h-10 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl px-6 font-bold shadow-lg shadow-amber-500/20 gap-2 text-[11px]"
                         >
-                          {saving ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} Fazer Upload
+                          {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Fazer Upload
                         </Button>
                       </div>
                     </div>
