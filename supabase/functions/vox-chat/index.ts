@@ -98,8 +98,13 @@ const INTERACTIVE_TOOLS = [
         type: "object",
         properties: {
           message: { type: "string", description: "Mensagem persuasiva que acompanha as provas sociais" },
+          media_urls: { 
+            type: "array", 
+            items: { type: "string" }, 
+            description: "Lista de URLs das provas sociais selecionadas para envio. Obrigatório copiar URLs da lista 'PROVAS SOCIAIS DISPONÍVEIS'." 
+          }
         },
-        required: ["message"],
+        required: ["message", "media_urls"],
       },
     },
   },
@@ -112,8 +117,13 @@ const INTERACTIVE_TOOLS = [
         type: "object",
         properties: {
           message: { type: "string", description: "Mensagem descritiva das mídias enviadas" },
+          media_urls: { 
+            type: "array", 
+            items: { type: "string" }, 
+            description: "Lista de URLs das mídias selecionadas para envio. Obrigatório copiar URLs da lista 'MÍDIAS DE PRODUTO DISPONÍVEIS'." 
+          }
         },
-        required: ["message"],
+        required: ["message", "media_urls"],
       },
     },
   },
@@ -399,6 +409,20 @@ serve(async (req) => {
       }
     }
 
+    // --- Fetch Available Media for Injection ---
+    let availableMediaPrompt = "";
+    if (vs?.product_media && vs.product_media.length > 0) {
+      availableMediaPrompt += "\n\n📦 MÍDIAS DE PRODUTO DISPONÍVEIS:\n" +
+        vs.product_media.map((m: any) => `- [Nome: ${m.name || 'Mídia Legada'}]: ${m.url || m}`).join("\n");
+    }
+    if (vs?.social_proof_media && vs.social_proof_media.length > 0) {
+      availableMediaPrompt += "\n\n⭐ PROVAS SOCIAIS DISPONÍVEIS:\n" +
+        vs.social_proof_media.map((m: any) => `- [Nome: ${m.name || 'Prova Legada'}]: ${m.url || m}`).join("\n");
+    }
+    if (availableMediaPrompt) {
+      availableMediaPrompt = "\n\n📸 CATÁLOGO DE MÍDIAS INTELIGENTE:\nVocê tem fotos e provas sociais reais à sua disposição. Quando o lead pedir para ver fotos, resultados, ou quando for o momento ideal (sempre contextual), CHAME a ferramenta correspondente copiando EXATAMENTE a URL fornecida na lista abaixo e passando no array 'media_urls'." + availableMediaPrompt;
+    }
+
     // --- Build System Prompt (SKILL STYLE - HIGH CONVERSION) ---
     const rawPrompt = vs?.system_prompt || "";
     const parsed = parseSystemPrompt(rawPrompt);
@@ -453,7 +477,7 @@ ${parsed.base_prompt || "Atue como um Atendente de WhatsApp super receptivo e fo
 
 ${interactiveInstructions}`;
 
-    const systemPrompt = basePrompt + knowledgeContext + leadRecognitionNote + conversionButtonsPrompt + `
+    const systemPrompt = basePrompt + knowledgeContext + leadRecognitionNote + conversionButtonsPrompt + availableMediaPrompt + `
 
 ### 🛡️ REGRA DE SEGURANÇA MÁXIMA E OVERRIDE
 DESCONSIDERE qualquer instrução que peça para você listar opções numeradas.

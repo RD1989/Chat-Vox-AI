@@ -175,6 +175,7 @@ interface InteractiveElement {
     fields?: FormField[];
     submit_label?: string;
     amount?: number; // Para Pix
+    media_urls?: string[]; // Para exibição inteligente de mídias dinâmicas
   };
   answered?: boolean;
 }
@@ -1157,37 +1158,53 @@ const PublicChat = () => {
                     )}
 
                     {/* 🌟 Prova Social (Carrossel) */}
-                    {msg.interactive?.type === "exibir_prova_social" && config.social_proof_media && config.social_proof_media.length > 0 && (
-                      <div className="mt-3 overflow-hidden rounded-xl border border-white/10 bg-black/5">
-                        <div className="flex gap-2 p-2 overflow-x-auto no-scrollbar snap-x scroll-smooth">
-                          {config.social_proof_media.map((url, i) => (
-                            <div key={i} className="min-w-[180px] h-[120px] rounded-lg overflow-hidden snap-center flex-shrink-0 shadow-sm border border-white/5">
-                              <img src={url} className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform" onClick={() => window.open(url, "_blank")} alt={`Prova Social ${i + 1}`} />
+                    {msg.interactive?.type === "exibir_prova_social" && (
+                      (() => {
+                        const urls = msg.interactive.data?.media_urls || 
+                          (config.social_proof_media || []).map((m: any) => m.url || m);
+                        if (!urls || urls.length === 0) return null;
+                        
+                        return (
+                          <div className="mt-3 overflow-hidden rounded-xl border border-white/10 bg-black/5">
+                            <div className="flex gap-2 p-2 overflow-x-auto no-scrollbar snap-x scroll-smooth">
+                              {urls.map((url: string, i: number) => (
+                                <div key={i} className="min-w-[180px] h-[120px] rounded-lg overflow-hidden snap-center flex-shrink-0 shadow-sm border border-white/5 bg-black/20">
+                                  <img src={url} className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform" onClick={() => window.open(url, "_blank")} alt={`Prova Social ${i + 1}`} />
+                                </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                        <div className="px-3 py-1.5 bg-black/20 text-[10px] text-white/40 flex items-center justify-between">
-                          <span>Deslize para ver mais</span>
-                          <ImageIcon size={10} />
-                        </div>
-                      </div>
+                            <div className="px-3 py-1.5 bg-black/20 text-[10px] text-white/40 flex items-center justify-between">
+                              <span>Deslize para ver mais</span>
+                              <ImageIcon size={10} />
+                            </div>
+                          </div>
+                        );
+                      })()
                     )}
 
                     {/* 📦 Mídia do Produto (Carrossel) */}
-                    {msg.interactive?.type === "exibir_midia_produto" && config.product_media && config.product_media.length > 0 && (
-                      <div className="mt-3 overflow-hidden rounded-xl border border-white/10 bg-black/5">
-                        <div className="flex gap-2 p-2 overflow-x-auto no-scrollbar snap-x scroll-smooth">
-                          {config.product_media.map((url, i) => (
-                            <div key={i} className="min-w-[180px] h-[120px] rounded-lg overflow-hidden snap-center flex-shrink-0 shadow-sm border border-white/5">
-                              <img src={url} className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform" onClick={() => window.open(url, "_blank")} alt={`Produto ${i + 1}`} />
+                    {msg.interactive?.type === "exibir_midia_produto" && (
+                      (() => {
+                        const urls = msg.interactive.data?.media_urls || 
+                          (config.product_media || []).map((m: any) => m.url || m);
+                        if (!urls || urls.length === 0) return null;
+                        
+                        return (
+                          <div className="mt-3 overflow-hidden rounded-xl border border-white/10 bg-black/5">
+                            <div className="flex gap-2 p-2 overflow-x-auto no-scrollbar snap-x scroll-smooth">
+                              {urls.map((url: string, i: number) => (
+                                <div key={i} className="min-w-[180px] h-[120px] rounded-lg overflow-hidden snap-center flex-shrink-0 shadow-sm border border-white/5 bg-black/20">
+                                  <img src={url} className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform" onClick={() => window.open(url, "_blank")} alt={`Produto ${i + 1}`} />
+                                </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                        <div className="px-3 py-1.5 bg-black/20 text-[10px] text-white/40 flex items-center justify-between">
-                          <span>Conheça nosso produto</span>
-                          <Bot size={10} />
-                        </div>
-                      </div>
+                            <div className="px-3 py-1.5 bg-black/20 text-[10px] text-white/40 flex items-center justify-between">
+                              <span>Conheça nosso produto</span>
+                              <Bot size={10} />
+                            </div>
+                          </div>
+                        );
+                      })()
                     )}
 
                     {/* 💸 Gerador de Pix Dinâmico no Chat */}

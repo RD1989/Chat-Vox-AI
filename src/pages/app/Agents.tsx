@@ -47,8 +47,8 @@ interface Agent {
   meta_api_token?: string;
   ask_whatsapp?: boolean;
   ai_image_generation?: boolean;
-  product_media?: string[];
-  social_proof_media?: string[];
+  product_media?: { name: string; url: string; }[];
+  social_proof_media?: { name: string; url: string; }[];
   chat_theme?: string;
   chat_appearance_mode?: "light" | "dark" | "auto";
   chat_theme_config?: any;
@@ -140,8 +140,8 @@ const Agents = () => {
       meta_api_token: agent.meta_api_token || "",
       ask_whatsapp: agent.ask_whatsapp ?? false,
       ai_image_generation: agent.ai_image_generation ?? false,
-      product_media: agent.product_media || [],
-      social_proof_media: agent.social_proof_media || [],
+      product_media: (agent.product_media || []).map((m: any) => typeof m === 'string' ? { name: "Mídia Produto (Legado)", url: m } : m),
+      social_proof_media: (agent.social_proof_media || []).map((m: any) => typeof m === 'string' ? { name: "Prova Social (Legado)", url: m } : m),
       chat_theme: agent.chat_theme || "whatsapp",
       chat_appearance_mode: agent.chat_appearance_mode || "dark",
       chat_theme_config: agent.chat_theme_config || {
@@ -337,10 +337,10 @@ const Agents = () => {
         .getPublicUrl(filePath);
 
       if (type === 'product') {
-        const product_media = [...(editAgent.product_media || []), publicUrl];
+        const product_media = [...(editAgent.product_media || []), { name: "Nova Mídia", url: publicUrl }];
         setEditAgent({ ...editAgent, product_media });
       } else {
-        const social_proof_media = [...(editAgent.social_proof_media || []), publicUrl];
+        const social_proof_media = [...(editAgent.social_proof_media || []), { name: "Nova Prova Social", url: publicUrl }];
         setEditAgent({ ...editAgent, social_proof_media });
       }
 
@@ -355,10 +355,21 @@ const Agents = () => {
   const removeMedia = (url: string, type: 'product' | 'social') => {
     if (!editAgent) return;
     if (type === 'product') {
-      const product_media = (editAgent.product_media || []).filter(m => m !== url);
+      const product_media = (editAgent.product_media || []).filter((m: any) => (m.url || m) !== url);
       setEditAgent({ ...editAgent, product_media });
     } else {
-      const social_proof_media = (editAgent.social_proof_media || []).filter(m => m !== url);
+      const social_proof_media = (editAgent.social_proof_media || []).filter((m: any) => (m.url || m) !== url);
+      setEditAgent({ ...editAgent, social_proof_media });
+    }
+  };
+
+  const updateMediaName = (url: string, newName: string, type: 'product' | 'social') => {
+    if (!editAgent) return;
+    if (type === 'product') {
+      const product_media = (editAgent.product_media || []).map((m: any) => m.url === url ? { ...m, name: newName } : m);
+      setEditAgent({ ...editAgent, product_media });
+    } else {
+      const social_proof_media = (editAgent.social_proof_media || []).map((m: any) => m.url === url ? { ...m, name: newName } : m);
       setEditAgent({ ...editAgent, social_proof_media });
     }
   };
@@ -904,15 +915,30 @@ const Agents = () => {
                       <h5 className="text-[11px] font-bold text-slate-700 dark:text-white uppercase tracking-wider">Mídias do Produto</h5>
                       <p className="text-[10px] text-slate-500 dark:text-white/40 max-w-[200px] mx-auto">Fotos e vídeos que a IA usará para demonstrar seu produto.</p>
 
-                      <div className="flex flex-wrap gap-2 mb-3 mt-2 justify-center">
-                        {editAgent.product_media?.map((url, i) => (
-                          <div key={i} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-slate-200 dark:border-white/10">
-                            <img src={url} className="w-full h-full object-cover" />
-                            <button onClick={() => removeMedia(url, 'product')} className="absolute top-0 right-0 p-1 bg-rose-500 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                              <X size={10} />
-                            </button>
-                          </div>
-                        ))}
+                      <div className="flex flex-wrap gap-3 mb-3 mt-4 justify-center">
+                        {editAgent.product_media?.map((media: any, i) => {
+                          const url = media?.url || media;
+                          const name = media?.name || '';
+                          return (
+                            <div key={i} className="relative group w-32 rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 bg-white dark:bg-black/20 flex flex-col shadow-sm">
+                              <div className="relative h-24 w-full">
+                                <img src={url} className="w-full h-full object-cover" />
+                                <button onClick={() => removeMedia(url, 'product')} className="absolute top-1 right-1 p-1.5 rounded-full bg-rose-500 hover:bg-rose-600 text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
+                                  <X size={12} />
+                                </button>
+                              </div>
+                              <div className="p-1.5 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
+                                <input
+                                  type="text"
+                                  placeholder="Nome da mídia..."
+                                  value={name}
+                                  onChange={(e) => updateMediaName(url, e.target.value, 'product')}
+                                  className="w-full bg-transparent text-[10px] text-center outline-none border-none text-slate-700 dark:text-white/80 placeholder:text-slate-400 dark:placeholder:text-white/30"
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
 
                       <div className="relative inline-block mt-2">
@@ -941,15 +967,30 @@ const Agents = () => {
                       <h5 className="text-[11px] font-bold text-slate-700 dark:text-white uppercase tracking-wider">Prova Social</h5>
                       <p className="text-[10px] text-slate-500 dark:text-white/40 max-w-[200px] mx-auto">Prints de depoimentos e resultados para gerar confiança.</p>
 
-                      <div className="flex flex-wrap gap-2 mb-3 mt-2 justify-center">
-                        {editAgent.social_proof_media?.map((url, i) => (
-                          <div key={i} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-slate-200 dark:border-white/10">
-                            <img src={url} className="w-full h-full object-cover" />
-                            <button onClick={() => removeMedia(url, 'social')} className="absolute top-0 right-0 p-1 bg-rose-500 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                              <X size={10} />
-                            </button>
-                          </div>
-                        ))}
+                      <div className="flex flex-wrap gap-3 mb-3 mt-4 justify-center">
+                        {editAgent.social_proof_media?.map((media: any, i) => {
+                          const url = media?.url || media;
+                          const name = media?.name || '';
+                          return (
+                            <div key={i} className="relative group w-32 rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 bg-white dark:bg-black/20 flex flex-col shadow-sm">
+                              <div className="relative h-24 w-full">
+                                <img src={url} className="w-full h-full object-cover" />
+                                <button onClick={() => removeMedia(url, 'social')} className="absolute top-1 right-1 p-1.5 rounded-full bg-rose-500 hover:bg-rose-600 text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
+                                  <X size={12} />
+                                </button>
+                              </div>
+                              <div className="p-1.5 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
+                                <input
+                                  type="text"
+                                  placeholder="Ex: Aluno XYZ"
+                                  value={name}
+                                  onChange={(e) => updateMediaName(url, e.target.value, 'social')}
+                                  className="w-full bg-transparent text-[10px] text-center outline-none border-none text-slate-700 dark:text-white/80 placeholder:text-slate-400 dark:placeholder:text-white/30"
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
 
                       <div className="relative inline-block mt-2">
