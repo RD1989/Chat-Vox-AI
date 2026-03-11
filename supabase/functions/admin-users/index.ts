@@ -42,7 +42,11 @@ serve(async (req) => {
       _user_id: caller.id,
       _role: "admin",
     });
+
+    console.log(`[admin-users] Chamada por: ${caller.email} (ID: ${caller.id}). IsAdmin: ${isAdmin}`);
+
     if (!isAdmin) {
+      console.warn(`[admin-users] Acesso NEGADO para ${caller.email}`);
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -50,8 +54,10 @@ serve(async (req) => {
     }
 
     const { action, user_id } = await req.json();
+    console.log(`[admin-users] Ação solicitada: ${action}`);
 
     if (action === "toggle_active") {
+      // ... (mantido igual)
       const { data: profile } = await supabase
         .from("profiles")
         .select("is_active")
@@ -77,8 +83,10 @@ serve(async (req) => {
     }
 
     if (action === "delete_user") {
+      console.log(`[admin-users] Deletando usuário: ${user_id}`);
       const { error } = await supabase.auth.admin.deleteUser(user_id);
       if (error) {
+        console.error(`[admin-users] Erro ao deletar: ${error.message}`);
         return new Response(JSON.stringify({ error: error.message }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -90,13 +98,17 @@ serve(async (req) => {
     }
 
     if (action === "list_users") {
+      console.log("[admin-users] Iniciando list_users...");
       const { data: { users }, error } = await supabase.auth.admin.listUsers();
       if (error) {
+        console.error(`[admin-users] Erro listUsers: ${error.message}`);
         return new Response(JSON.stringify({ error: error.message }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+
+      console.log(`[admin-users] Usuários encontrados no Auth: ${users?.length || 0}`);
 
       const { data: profiles } = await supabase.from("profiles").select("*");
       const { data: allLeads } = await supabase.from("vox_leads").select("user_id, qualified, qualification_score");
@@ -104,6 +116,15 @@ serve(async (req) => {
       const { data: roles } = await supabase.from("user_roles").select("*");
       const { data: plans } = await supabase.from("plans").select("*");
       const { data: finStats } = await supabase.from("admin_financial_performance").select("*");
+
+      console.log(`[admin-users] Resumo de dados carregados:
+        - Perfis: ${profiles?.length || 0}
+        - Leads: ${allLeads?.length || 0}
+        - Mensagens: ${allMessages?.length || 0}
+        - Roles: ${roles?.length || 0}
+        - Planos: ${plans?.length || 0}
+        - Fin Stats: ${finStats?.length || 0}
+      `);
 
       const enrichedUsers = users.map((u) => {
         const profile = profiles?.find((p: any) => p.id === u.id) as any;
@@ -147,6 +168,7 @@ serve(async (req) => {
           qualified_leads: qualifiedLeads,
           messages_count: userMsgs.length,
           interactive_messages: interactiveMsgs,
+          status: profile?.is_active ? "Ativo" : "Inativo",
           avg_score: avgScore,
           conversion_rate: userLeads.length > 0 ? Math.round((qualifiedLeads / userLeads.length) * 100) : 0,
           revenue: parseFloat(revenue),
@@ -166,9 +188,12 @@ serve(async (req) => {
     }
 
     if (action === "get_geo_stats") {
-      const { data: leads } = await supabase
+      console.log("[admin-users] Buscando geo_stats...");
+      const { data: leads, error: geoError } = await supabase
         .from("vox_leads")
         .select("city, region, created_at, qualified, qualification_score, user_id");
+      
+      if (geoError) console.error(`[admin-users] Erro geo_stats: ${geoError.message}`);
 
       return new Response(JSON.stringify({ leads: leads || [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
