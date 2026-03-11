@@ -27,19 +27,16 @@ serve(async (req) => {
       });
     }
 
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const callerClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { authorization: authHeader } },
-    });
-
-    const { data: { user: caller }, error: authError } = await callerClient.auth.getUser();
+    // Usar o cliente service_role para validar o token do chamador
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user: caller }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError || !caller) {
-      console.error(`[admin-users] Falha na autenticação do chamador. Erro: ${authError?.message || "User not found"}. Header: ${authHeader.substring(0, 15)}...`);
+      console.error(`[admin-users] Falha na autenticação do chamador. Erro: ${authError?.message || "User not found"}. Token: ${token.substring(0, 15)}...`);
       return new Response(JSON.stringify({ 
         error: "Unauthorized", 
         details: authError?.message || "Token inválido ou expirado",
-        header_start: authHeader.substring(0, 15) 
+        token_start: token.substring(0, 15)
       }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
