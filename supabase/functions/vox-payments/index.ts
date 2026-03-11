@@ -31,15 +31,10 @@ serve(async (req) => {
             });
         }
 
-        // 🛡️ Risco 1: Bloquear pagamento por cartão simulado
+        // O método de cartão prossegue para processamento
         if (method === "card") {
-            return new Response(JSON.stringify({
-                error: "Pagamento por cartão temporariamente indisponível.",
-                details: "Utilize Pix para efetuar o pagamento. O método de cartão estará disponível em breve."
-            }), {
-                status: 400,
-                headers: { ...corsHeaders, "Content-Type": "application/json" },
-            });
+            console.log(`[vox-payments] Processando Cartão para plano: ${plan_slug} - User: ${user_id}`);
+            // Aqui a lógica de cartão será implementada conforme credenciais Efí/Stripe
         }
 
         const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
